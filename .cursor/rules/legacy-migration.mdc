@@ -1,0 +1,65 @@
+---
+description: Migration mapping from legacy Lumen/Angular to new Laravel/React
+globs: 
+alwaysApply: true
+---
+
+# Legacy Migration Guide
+
+## Controllers Mapping
+
+| Legacy (Lumen)              | New (Laravel 12)                        |
+|-----------------------------|----------------------------------------|
+| `Auth/AuthController`       | `Auth/AuthController` + `Api/AuthController` |
+| `LandingsController`        | `Api/LandingsController` (legacy) + `Api/Panel/LandingController` |
+| `LinksController`           | `Api/LinksController` (legacy) + `Api/Panel/LinkController` |
+| `ProfileController`         | `Api/ProfileController`                |
+| `Admin/*`                   | `Api/Admin/*`                          |
+
+## Models Mapping
+
+| Legacy (MongoDB)            | New (Eloquent)                         |
+|-----------------------------|----------------------------------------|
+| `Models\Landing\Landing`    | `Models\Landing` (UUIDs, SQLite/MySQL) |
+| `Models\Landing\Link`       | `Models\Link` (UUIDs)                  |
+| `_id` (MongoDB ObjectId)    | `id` (UUID)                            |
+| `company_id` (embedded)     | `company_id` + `user_id` (relations)   |
+
+## Frontend Mapping
+
+| Legacy (Angular 9)          | New (React + Inertia)                  |
+|-----------------------------|----------------------------------------|
+| `admin/src/app/pages/landings/` | `resources/js/Pages/Panel/`        |
+| `@core/utils/landing.service.ts` | `contexts/AutoSaveContext` + hooks |
+| `@theme/components/`        | `Components/Shared/`                   |
+| `blockTypes/components/`    | `Components/Panel/Links/`              |
+| `templatePage/`             | `Components/Panel/Design/`             |
+| `configPage/`               | `Components/Panel/Settings/`           |
+
+## API Routes Mapping
+
+| Legacy                      | New                                    |
+|-----------------------------|----------------------------------------|
+| `api/v1/wizard/landing/*`   | `/api/wizard/landing/*` (deprecated)   |
+| `api/v1/wizard/links/*`     | `/api/wizard/links/*` (deprecated)     |
+| -                           | `/api/panel/links/{landingId}` (NEW)   |
+| -                           | `/api/panel/design/{landingId}` (NEW)  |
+| -                           | `/api/panel/settings/{landingId}` (NEW)|
+
+## Legacy References - Where to Find Original Code
+
+| Feature          | Legacy Location                                    |
+|------------------|----------------------------------------------------|
+| **Link Types**   | `_legacy_lumen/admin/src/app/pages/landings/components/blockTypes/` |
+| **Backgrounds**  | `_legacy_lumen/admin/src/app/pages/landings/components/templatePage/backgrounds.constants.ts` |
+| **Icons**        | `_legacy_lumen/admin/src/assets/images/icons/` (2000+ SVGs)      |
+| **API Service**  | `_legacy_lumen/admin/src/app/@core/utils/api.service.ts`         |
+| **Landing Service** | `_legacy_lumen/admin/src/app/@core/utils/landing.service.ts`  |
+| **Block Components** | `_legacy_lumen/admin/src/app/pages/landings/components/blockTypes/components/` |
+
+## When Porting from Legacy
+
+1. Find legacy code in `_legacy_lumen/`
+2. Angular components: `_legacy_lumen/admin/src/app/`
+3. API logic: `_legacy_lumen/app/Http/Controllers/`
+4. MongoDB to Eloquent: Adjust `_id` to `id`, use relations instead of embedded docs

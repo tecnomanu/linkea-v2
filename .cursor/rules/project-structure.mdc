@@ -1,0 +1,175 @@
+---
+description: Project structure and file locations for Linkea v2
+globs:
+alwaysApply: true
+---
+
+# Project Structure
+
+## New Project (Laravel 12 + Inertia + React)
+
+```
+/                           # Project root
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── Panel/      # Inertia panel views (Dashboard, Links, Design, Settings)
+│   │   │   ├── Api/        # API endpoints
+│   │   │   │   ├── Panel/  # NEW Panel API (auto-save, links, design)
+│   │   │   │   └── ...     # Other API controllers
+│   │   │   ├── Admin/      # Admin panel controllers
+│   │   │   ├── Auth/       # Authentication controllers
+│   │   │   └── Web...      # Public web controllers
+│   │   ├── Middleware/
+│   │   ├── Requests/Panel/ # Form Requests for validation
+│   │   └── Resources/      # API Resources (serializers)
+│   ├── Models/             # Eloquent models (Landing, Link, User, Company, etc.)
+│   ├── Services/           # Business logic (PanelDataService, LandingService, LinkService)
+│   ├── Repositories/       # Repository pattern for data access
+│   └── Traits/             # Reusable traits (RESTActions)
+├── resources/js/           # Frontend React (Inertia)
+│   ├── Pages/              # Inertia pages
+│   │   ├── Panel/          # Panel pages (Dashboard.tsx)
+│   │   ├── Admin/          # Admin pages
+│   │   ├── Auth/           # Login, Register
+│   │   ├── Web/            # Public pages (Home)
+│   │   └── Profile/        # User profile pages
+│   ├── Components/         # React components (see Component Organization below)
+│   │   ├── ui/             # BASE primitives (Button, Dialog, Toggle, Input, etc.)
+│   │   ├── Shared/         # EXTENDED components used across modules
+│   │   ├── Panel/          # Panel-specific (Links/, Design/, Settings/, Profile/)
+│   │   ├── Admin/          # Admin-specific components
+│   │   └── Web/            # Public site components
+│   ├── Layouts/            # Layout wrappers (PanelLayout, AuthLayout, WebLayout)
+│   ├── contexts/           # React contexts (AutoSaveContext)
+│   ├── hooks/              # Custom hooks (useAutoSave)
+│   ├── types.ts            # TypeScript interfaces (LinkBlock, UserProfile, etc.)
+│   └── constants.ts        # Constants and initial data
+├── routes/
+│   ├── web.php             # Web routes (Inertia pages)
+│   ├── api.php             # API routes (REST endpoints)
+│   └── auth.php            # Auth routes
+└── database/migrations/    # Database schema
+```
+
+## Legacy Project Reference (`_legacy_lumen/`)
+
+```
+_legacy_lumen/
+├── app/
+│   ├── Http/Controllers/   # Legacy Lumen controllers
+│   │   ├── Auth/           # AuthController (login, register, verify)
+│   │   ├── Admin/          # Admin controllers
+│   │   └── ...             # Other controllers
+│   └── Models/
+│       ├── Landing/        # Landing.php, Link.php (MongoDB models)
+│       ├── User.php
+│       └── Company.php
+├── admin/src/              # ANGULAR 9 FRONTEND (separate app)
+│   ├── app/
+│   │   ├── @core/          # Core services, models, interceptors
+│   │   │   ├── utils/      # ApiService, LandingService, UserService, etc.
+│   │   │   └── models/     # TypeScript interfaces
+│   │   ├── @theme/         # Theme components, directives, pipes
+│   │   ├── pages/
+│   │   │   └── landings/   # Main panel (wizard)
+│   │   │       └── components/
+│   │   │           ├── linksPage/      # Links management
+│   │   │           ├── templatePage/   # Design/appearance
+│   │   │           ├── configPage/     # Settings
+│   │   │           └── blockTypes/     # Block type components
+│   │   ├── admin/          # Admin module (users, companies, etc.)
+│   │   └── auth/           # Auth module
+│   └── assets/images/icons/ # 2000+ SVG icons
+└── routes/api.php          # Legacy API routes
+```
+
+## Quick Reference - File Locations by Feature
+
+| Feature            | Backend                                    | Frontend                                    |
+| ------------------ | ------------------------------------------ | ------------------------------------------- |
+| **Panel Views**    | `Controllers/Panel/PanelController`        | `Pages/Panel/Dashboard.tsx`                 |
+| **Links Tab**      | `Controllers/Api/Panel/LinkController`     | `Components/Panel/Links/LinksTab.tsx`       |
+| **Design Tab**     | `Controllers/Api/Panel/LandingController`  | `Components/Panel/Design/DesignTab.tsx`     |
+| **Settings Tab**   | `Controllers/Api/Panel/LandingController`  | `Components/Panel/Settings/SettingsTab.tsx` |
+| **Phone Preview**  | -                                          | `Components/Shared/PhonePreview.tsx`        |
+| **Auto-save**      | `Services/PanelDataService`                | `contexts/AutoSaveContext.tsx`              |
+| **Auth**           | `Controllers/Auth/` + `Api/AuthController` | `Pages/Auth/Login.tsx`, `Register.tsx`      |
+| **Public Landing** | `Controllers/SystemRouterController`       | `Pages/LandingView.tsx`                     |
+| **Home/Web**       | `Controllers/WebController`                | `Pages/Web/Home.tsx`                        |
+
+## Component Organization (IMPORTANT)
+
+When creating or using React components, follow this hierarchy strictly:
+
+### 1. `Components/ui/` - Base Primitives
+
+**What goes here:** Atomic, reusable UI building blocks with NO business logic.
+
+Examples: Button, Dialog, Toggle, Input, Select, Tooltip, ConfirmDialog, SegmentedSelect...
+
+**Rules:**
+
+-   NO business logic, only presentation
+-   Must be generic and reusable across ANY module
+-   Use Headless UI or Radix for accessibility
+
+### 2. `Components/Shared/` - Extended/Composite Components
+
+**What goes here:** Components that combine `ui/` primitives OR are used by 2+ modules.
+
+Examples: PhonePreview, Sidebar, Header, CookieConsent, AutoSaveIndicator...
+
+**Rules:**
+
+-   CAN import from `ui/`
+-   Must be used by 2+ modules to belong here
+-   If only used in one module, move it to that module's folder
+
+### 3. `Components/{Module}/` - Module-Specific Components
+
+**What goes here:** Components specific to one module/feature.
+
+```
+Components/
+├── Panel/
+│   ├── Links/
+│   ├── Design/
+│   ├── Settings/
+│   └── Profile/
+├── Admin/
+├── Web/
+└── Auth/
+```
+
+**Rules:**
+
+-   Can import from `ui/` and `Shared/`
+-   NEVER import from other module folders (Panel should not import from Admin)
+-   If needed in multiple modules, promote to `Shared/`
+
+### Decision Tree: Where Does My Component Go?
+
+```
+Is it a basic UI primitive (button, input, dialog)?
+  └─ YES → Components/ui/
+  └─ NO ↓
+
+Is it used by 2+ modules?
+  └─ YES → Components/Shared/
+  └─ NO ↓
+
+Which module uses it?
+  └─ Panel → Components/Panel/{feature}/
+  └─ Admin → Components/Admin/
+  └─ Web → Components/Web/
+  └─ Auth → Components/Auth/
+```
+
+### Before Creating a New Component
+
+1. **Check `ui/` first** - Run `ls resources/js/Components/ui/` to see base components
+2. **Check `Shared/`** - Run `ls resources/js/Components/Shared/` to see shared components
+3. **Check the module folder** - Is there a similar component in the same module?
+
+**ALWAYS reuse existing components before creating new ones.**

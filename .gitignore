@@ -1,0 +1,55 @@
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.backup
+.env.production
+.env.local
+.env.*.local
+
+# IDE / Editors
+.phpactor.json
+.phpunit.result.cache
+/.fleet
+/.idea
+/.nova
+/.phpunit.cache
+/.vscode
+/.zed
+
+# Auth
+/auth.json
+
+# Dependencies
+/node_modules
+/vendor
+
+# Build
+/public/build
+/public/hot
+/public/storage
+
+# Storage
+/storage/*.key
+/storage/pail
+/storage/mongo_import/
+/storage/framework/views/*.php
+/storage/logs/*.log
+
+# Laravel
+Homestead.json
+Homestead.yaml
+
+# Legacy code (not part of v2)
+/_legacy_lumen
+
+# Database (local)
+/database/database.sqlite
+
+# Old admin resources
+resources/linkea.ar-admin-2.0

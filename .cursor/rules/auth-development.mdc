@@ -1,0 +1,60 @@
+---
+description: Guidelines for working on authentication features
+globs: app/Http/Controllers/Auth/**,resources/js/Pages/Auth/**,routes/auth.php
+alwaysApply: false
+---
+
+# Authentication Development Guidelines
+
+## File Locations
+
+-   **Routes**: `routes/auth.php`
+-   **Inertia Controllers**: `app/Http/Controllers/Auth/AuthController.php`
+-   **API Controllers**: `app/Http/Controllers/Api/AuthController.php`
+-   **Service**: `app/Services/AuthService.php`
+-   **Frontend Pages**: `resources/js/Pages/Auth/`
+
+## Auth Types
+
+### Inertia (Web) - Session Based
+
+```php
+// routes/auth.php - uses 'auth' middleware
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'create'])->name('login');
+    Route::post('/login', [AuthController::class, 'store']);
+});
+```
+
+### API - Token Based (Sanctum)
+
+```php
+// routes/api.php
+Route::prefix('auth')->group(function () {
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register']);
+});
+```
+
+## Frontend Pages
+
+```
+resources/js/Pages/Auth/
+├── Login.tsx       # Login form
+└── Register.tsx    # Registration form
+```
+
+## Legacy Reference
+
+-   Legacy auth: `_legacy_lumen/app/Http/Controllers/Auth/AuthController.php`
+-   Angular auth module: `_legacy_lumen/admin/src/app/auth/`
+
+## User Model
+
+Key fields:
+
+-   `email`, `password`
+-   `first_name`, `last_name`, `username`
+-   `company_id`, `role_id`
+-   `avatar`, `settings`
+-   `verify` (email verification status)

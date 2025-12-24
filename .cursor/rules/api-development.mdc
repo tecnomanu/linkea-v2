@@ -1,0 +1,74 @@
+---
+description: Guidelines for working on API endpoints
+globs: app/Http/Controllers/Api/**,routes/api.php
+alwaysApply: false
+---
+
+# API Development Guidelines
+
+## Route Structure
+
+```php
+// routes/api.php
+
+// Panel API (session auth - Inertia users)
+Route::prefix('panel')->middleware(['web', 'auth'])->group(function () {
+    Route::post('/links/{landingId}', [LinkController::class, 'saveLinks']);
+    Route::post('/design/{landingId}', [LandingController::class, 'saveDesign']);
+    Route::post('/settings/{landingId}', [LandingController::class, 'saveSettings']);
+});
+
+// Authenticated API (token auth - Sanctum)
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/me/data', [ProfileController::class, 'get']);
+    Route::prefix('admin')->middleware('role:root')->group(function () {
+        // Admin routes
+    });
+});
+```
+
+## Controllers Location
+
+```
+app/Http/Controllers/Api/
+├── Panel/                  # NEW - Panel auto-save endpoints
+│   ├── LinkController.php
+│   └── LandingController.php
+├── AuthController.php      # Login, register, password reset
+├── ProfileController.php   # User profile
+├── LandingsController.php  # Legacy wizard endpoints
+├── LinksController.php     # Legacy wizard endpoints
+├── Admin/
+│   └── NewslettersController.php
+└── ...
+```
+
+## Using RESTActions Trait
+
+For standard CRUD operations, use the `RESTActions` trait:
+
+```php
+use App\Traits\RESTActions;
+
+class MyController extends Controller
+{
+    use RESTActions;
+    
+    protected $model = MyModel::class;
+}
+```
+
+Provides: `all()`, `get()`, `add()`, `put()`, `remove()`, `destroy()`, `replicate()`
+
+## Form Requests
+
+Validation requests go in `app/Http/Requests/Panel/`:
+- `SaveLinksRequest.php`
+- `SaveDesignRequest.php`
+- `SaveSettingsRequest.php`
+
+## API Resources (Serializers)
+
+Transform models for API responses:
+- `app/Http/Resources/LandingResource.php`
+- `app/Http/Resources/LinkResource.php`

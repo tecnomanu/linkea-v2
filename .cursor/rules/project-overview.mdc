@@ -1,0 +1,49 @@
+---
+description: Overview of Linkea v2 project - migration from Lumen/Angular to Laravel/React
+globs: 
+alwaysApply: true
+---
+
+# Linkea v2 - Project Overview
+
+**Linkea** is a "link in bio" platform (similar to Linktree) being migrated from:
+- **Legacy**: Lumen (PHP) + MongoDB + Angular 9 (separate app in `_legacy_lumen/admin`)
+- **New v2**: Laravel 12 + Inertia.js + React + TypeScript + SQLite/MySQL
+
+The legacy project is preserved in `_legacy_lumen/` for reference during migration.
+
+## Conventions
+
+1. **Code comments**: Always in English
+2. **User-facing text**: Spanish (es-AR)
+3. **File naming**:
+   - React components: PascalCase (`LinkCard.tsx`)
+   - TypeScript files: camelCase (`useAutoSave.ts`)
+   - PHP files: PascalCase classes, snake_case migrations
+4. **IDs**: UUIDs for new models (HasUuids trait)
+5. **Soft deletes**: All main models use SoftDeletes
+6. **NO EMOJIS**: Never use emojis in the codebase or UI. Use Lucide icons instead.
+   - Exception: Email templates and email notifications may use emojis
+   - For visual indicators, use icons from `lucide-react`
+
+## Commands
+
+```bash
+# Development
+php artisan serve           # Start Laravel server
+npm run dev                 # Start Vite dev server
+
+# Database
+php artisan migrate         # Run migrations
+php artisan db:seed         # Seed database
+
+# Cache
+php artisan cache:clear     # Clear cache
+php artisan config:clear    # Clear config cache
+```
+
+## Authentication
+
+- **Inertia (web)**: Session-based via `auth` middleware
+- **API (sanctum)**: Token-based via `auth:sanctum` middleware
+- Panel API uses `['web', 'auth']` since users are session-authenticated via Inertia

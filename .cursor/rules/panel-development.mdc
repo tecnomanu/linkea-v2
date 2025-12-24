@@ -1,0 +1,62 @@
+---
+description: Guidelines for working on Panel features (Links, Design, Settings)
+globs: resources/js/Pages/Panel/**,resources/js/Components/Panel/**,app/Http/Controllers/Panel/**,app/Http/Controllers/Api/Panel/**
+alwaysApply: false
+---
+
+# Panel Development Guidelines
+
+## File Locations
+
+When working on Panel features:
+
+1. **View/Page**: `resources/js/Pages/Panel/Dashboard.tsx`
+2. **Components**: `resources/js/Components/Panel/{feature}/`
+3. **API Endpoint**: `app/Http/Controllers/Api/Panel/`
+4. **Service Logic**: `app/Services/PanelDataService.php`
+
+## Panel Components Structure
+
+```
+Components/Panel/
+├── Links/
+│   ├── LinksTab.tsx      # Main links management
+│   ├── LinkCard.tsx      # Individual link editor
+│   ├── LinkBar.tsx       # Link list item
+│   ├── BlockSelector.tsx # Block type picker
+│   ├── IconSelector.tsx  # Icon picker
+│   └── SocialLinkCard.tsx
+├── Design/
+│   └── DesignTab.tsx     # Appearance settings
+├── Settings/
+│   └── SettingsTab.tsx   # General settings
+└── Profile/
+    └── ProfileTab.tsx    # User profile
+```
+
+## API Endpoints
+
+```
+POST /api/panel/links/{landingId}        # Save block links
+POST /api/panel/social-links/{landingId} # Save social links
+POST /api/panel/design/{landingId}       # Save design config
+POST /api/panel/settings/{landingId}     # Save settings
+POST /api/panel/validate-handle/{landingId} # Validate unique handle
+```
+
+## Auto-save System
+
+- Context: `resources/js/contexts/AutoSaveContext.tsx`
+- Hook: `resources/js/hooks/useAutoSave.ts`
+- Backend: `app/Services/PanelDataService.php`
+
+The auto-save debounces changes and sends to `/api/panel/*` endpoints.
+
+## Adding a New Block Type
+
+1. Add type to `resources/js/types.ts` in `BlockType`
+2. Create component in `Components/Panel/Links/`
+3. Add to `BlockSelector.tsx`
+4. Update `PhonePreview.tsx` to render it
+5. Handle in `PanelDataService.php` if needed
+6. Reference legacy: `_legacy_lumen/admin/src/app/pages/landings/components/blockTypes/`

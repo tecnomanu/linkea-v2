@@ -1,0 +1,103 @@
+<?php
+
+namespace App\Http\Requests\Panel;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+class SaveLinksRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'links' => 'present|array',
+            'links.*.id' => 'nullable|string',
+            'links.*.title' => 'nullable|string|max:255',  // Nullable for social links
+            'links.*.url' => 'nullable|string|max:2048',   // Nullable for headers
+            'links.*.type' => ['required', 'string', Rule::in([
+                // Standard link types
+                'link',
+                'button',
+                'classic',
+                // Headers
+                'header',
+                'heading',
+                // Social
+                'social',
+                // Embeds
+                'youtube',
+                'spotify',
+                'soundcloud',
+                'tiktok',
+                'twitch',
+                // Messaging
+                'whatsapp',
+                // Legacy/other
+                'mastodon',
+                'twitter',
+                'video',
+                'music'
+            ])],
+            'links.*.isEnabled' => 'boolean',
+            'links.*.order' => 'required|integer|min:0',
+            'links.*.icon' => 'nullable|array',
+            'links.*.headerSize' => 'nullable|string|in:small,medium,large',
+            'links.*.showInlinePlayer' => 'nullable|boolean',
+            'links.*.autoPlay' => 'nullable|boolean',
+            'links.*.startMuted' => 'nullable|boolean',
+            'links.*.playerSize' => 'nullable|string',
+            'links.*.phoneNumber' => 'nullable|string|max:20',
+            'links.*.predefinedMessage' => 'nullable|string|max:1000',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'links.*.title.required' => 'Each link must have a title',
+            'links.*.url.required' => 'Each link must have a URL',
+            'links.*.type.required' => 'Each link must have a type',
+            'links.*.type.in' => 'Invalid link type provided',
+        ];
+    }
+
+    /**
+     * Transform frontend data structure to backend format
+     */
+    public function toServiceFormat(): array
+    {
+        return collect($this->validated()['links'] ?? [])->map(function ($link, $index) {
+            return [
+                'id' => $link['id'] ?? null,
+                'text' => $link['title'],
+                'link' => $link['url'],
+                'type' => $link['type'],
+                'state' => $link['isEnabled'] ?? true,
+                'order' => $link['order'] ?? $index,
+                'group' => $link['type'] === 'social' ? 'socials' : 'links',
+                'icon' => $link['icon'] ?? null,
+                'config' => $this->extractConfig($link),
+            ];
+        })->toArray();
+    }
+
+    protected function extractConfig(array $link): ?array
+    {
+        $config = array_filter([
+            'header_size' => $link['headerSize'] ?? null,
+            'show_inline_player' => $link['showInlinePlayer'] ?? null,
+            'auto_play' => $link['autoPlay'] ?? null,
+            'start_muted' => $link['startMuted'] ?? null,
+            'player_size' => $link['playerSize'] ?? null,
+            'phone_number' => $link['phoneNumber'] ?? null,
+            'predefined_message' => $link['predefinedMessage'] ?? null,
+        ], fn($v) => $v !== null);
+
+        return empty($config) ? null : $config;
+    }
+}

@@ -1,0 +1,32 @@
+# Dependencies - No indexar
+vendor/
+node_modules/
+
+# Build artifacts
+public/build/
+public/hot/
+public/storage/
+
+# Storage (logs, cache, etc)
+storage/framework/
+storage/logs/
+storage/app/public/
+
+# Cache files
+.phpunit.cache/
+bootstrap/cache/
+*.cache
+
+# IDE folders
+.idea/
+.vscode/
+.fleet/
+.nova/
+.zed/
+
+# Misc
+.DS_Store
+*.zip
+.history/
+reports/
+
