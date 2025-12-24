@@ -18,7 +18,6 @@ import {
 import { Plus, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { BlockSelector } from "./BlockSelector";
-import { LinkBar } from "./LinkBar";
 import { LinkCard } from "./LinkCard";
 import { SocialLinkCard } from "./SocialLinkCard";
 
@@ -38,8 +37,6 @@ interface LinksTabProps {
     onUpdateSocialLinks: (socialLinks: SocialLink[]) => void;
     currentLinkType: "blocks" | "social";
     onChangeLinkType: (type: "blocks" | "social") => void;
-    landing?: any;
-    user?: any;
 }
 
 export const LinksTab: React.FC<LinksTabProps> = ({
@@ -48,8 +45,6 @@ export const LinksTab: React.FC<LinksTabProps> = ({
     onUpdateLinks,
     onUpdateSocialLinks,
     currentLinkType,
-    landing,
-    user,
 }) => {
     const [isBlockSelectorOpen, setIsBlockSelectorOpen] = useState(false);
 
@@ -232,11 +227,8 @@ export const LinksTab: React.FC<LinksTabProps> = ({
                 onSelect={handleAddBlock}
             />
 
-            {/* Sticky Section: LinkBar + Add Block / Add Social */}
-            <div className="sticky top-0 md:top-20 z-30 bg-slate-50/95 dark:bg-neutral-950/95 backdrop-blur-xl -mx-4 px-4 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12 py-4 space-y-4">
-                {/* LinkBar - Public URL */}
-                {landing && user && <LinkBar landing={landing} user={user} />}
-
+            {/* Sticky Section: Add Block / Add Social */}
+            <div className="sticky top-24 md:top-40 z-20 bg-slate-50/95 dark:bg-neutral-950/95 backdrop-blur-xl -mx-4 px-4 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12 py-4">
                 {/* Add Block / Add Social Button */}
                 {currentLinkType === "blocks" ? (
                     <div className="bg-white dark:bg-neutral-900 rounded-[28px] md:rounded-[32px] p-2 border border-neutral-100 dark:border-neutral-800 shadow-soft-xl flex gap-2 md:gap-3">

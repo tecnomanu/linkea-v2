@@ -556,9 +556,8 @@ export default function Dashboard({
                     )}
                 </div>
 
-                {/* Sticky LinkBar - Shows public URL (visible on all tabs except profile and links) */}
-                {/* Note: Links tab has its own sticky container that includes LinkBar */}
-                {activeTab !== "profile" && activeTab !== "links" && (
+                {/* Sticky LinkBar - Shows public URL (visible on all tabs except profile) */}
+                {activeTab !== "profile" && (
                     <div className="sticky top-0 md:top-20 z-30 bg-slate-50/95 dark:bg-neutral-950/95 backdrop-blur-xl -mx-4 px-4 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12 py-4">
                         <LinkBar landing={landing} user={auth.user} />
                     </div>
@@ -577,8 +576,6 @@ export default function Dashboard({
                         onUpdateSocialLinks={setSocialLinks}
                         currentLinkType={currentLinkType}
                         onChangeLinkType={setCurrentLinkType}
-                        landing={landing}
-                        user={auth.user}
                     />
                 )}
 

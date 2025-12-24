@@ -225,52 +225,52 @@ export const BlockSelector: React.FC<BlockSelectorProps> = ({
                             </p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {filteredBlocks
-                                .filter((type) => !BLOCK_CONFIG[type]?.hidden)
-                                .map((type) => {
-                                    const block = BLOCK_CONFIG[type];
-                                    return (
-                                        <button
-                                            key={type}
+                            .filter((type) => !BLOCK_CONFIG[type]?.hidden)
+                            .map((type) => {
+                                const block = BLOCK_CONFIG[type];
+                                return (
+                                    <button
+                                        key={type}
                                             onClick={() => {
                                                 onSelect(type);
                                                 setSearchQuery("");
                                             }}
-                                            className="group flex items-center gap-4 p-4 rounded-2xl border border-neutral-100 dark:border-neutral-800 hover:border-brand-200 dark:hover:border-brand-500/50 hover:bg-brand-50/30 dark:hover:bg-brand-900/10 hover:shadow-lg hover:shadow-brand-500/5 transition-all duration-300 text-left bg-white dark:bg-neutral-900"
+                                        className="group flex items-center gap-4 p-4 rounded-2xl border border-neutral-100 dark:border-neutral-800 hover:border-brand-200 dark:hover:border-brand-500/50 hover:bg-brand-50/30 dark:hover:bg-brand-900/10 hover:shadow-lg hover:shadow-brand-500/5 transition-all duration-300 text-left bg-white dark:bg-neutral-900"
+                                    >
+                                        <div
+                                            className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-3 ${block.colorClass}`}
                                         >
-                                            <div
-                                                className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-3 ${block.colorClass}`}
+                                            {block.icon}
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-neutral-900 dark:text-white group-hover:text-brand-700 dark:group-hover:text-brand-400 transition-colors">
+                                                {block.label}
+                                            </h3>
+                                            <p className="text-xs text-neutral-400 font-medium">
+                                                {block.desc}
+                                            </p>
+                                        </div>
+                                        <div className="ml-auto opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-brand-400">
+                                            <svg
+                                                className="w-5 h-5"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
                                             >
-                                                {block.icon}
-                                            </div>
-                                            <div>
-                                                <h3 className="font-bold text-neutral-900 dark:text-white group-hover:text-brand-700 dark:group-hover:text-brand-400 transition-colors">
-                                                    {block.label}
-                                                </h3>
-                                                <p className="text-xs text-neutral-400 font-medium">
-                                                    {block.desc}
-                                                </p>
-                                            </div>
-                                            <div className="ml-auto opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-brand-400">
-                                                <svg
-                                                    className="w-5 h-5"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M12 4v16m8-8H4"
-                                                    />
-                                                </svg>
-                                            </div>
-                                        </button>
-                                    );
-                                })}
-                        </div>
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M12 4v16m8-8H4"
+                                                />
+                                            </svg>
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                    </div>
                     )}
                 </DialogBody>
             </DialogContent>
