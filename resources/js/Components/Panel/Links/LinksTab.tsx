@@ -78,16 +78,98 @@ export const LinksTab: React.FC<LinksTabProps> = ({
     };
 
     const handleAddBlock = (type: BlockType) => {
+        // Get default values based on block type
+        const getDefaultsForType = () => {
+            switch (type) {
+                case "header":
+                    return { title: "Nueva seccion", url: "" };
+                case "calendar":
+                    return {
+                        title: "Agendar Cita",
+                        url: "",
+                        calendarProvider: "calendly" as const,
+                        calendarDisplayMode: "button" as const,
+                    };
+                case "youtube":
+                case "video":
+                    return {
+                        title: "",
+                        url: "",
+                        showInlinePlayer: true,
+                        autoPlay: false,
+                        startMuted: true,
+                    };
+                case "spotify":
+                case "music":
+                    return {
+                        title: "",
+                        url: "",
+                        showInlinePlayer: true,
+                        playerSize: "normal" as const,
+                    };
+                case "whatsapp":
+                    return {
+                        title: "Escribinos por WhatsApp",
+                        url: "",
+                        phoneNumber: "",
+                        predefinedMessage: "",
+                    };
+                case "email":
+                    return {
+                        title: "Contactame",
+                        url: "",
+                        emailAddress: "",
+                        emailSubject: "",
+                        emailBody: "",
+                    };
+                case "map":
+                    return {
+                        title: "Nuestra Ubicacion",
+                        url: "",
+                        mapAddress: "",
+                        mapQuery: "",
+                        mapZoom: 15,
+                        mapDisplayMode: "button" as const,
+                    };
+                case "vimeo":
+                    return {
+                        title: "",
+                        url: "",
+                        showInlinePlayer: true,
+                    };
+                case "tiktok":
+                    return {
+                        title: "",
+                        url: "",
+                        showInlinePlayer: false,
+                    };
+                case "soundcloud":
+                    return {
+                        title: "",
+                        url: "",
+                        showInlinePlayer: true,
+                    };
+                case "twitch":
+                    return {
+                        title: "",
+                        url: "",
+                        showInlinePlayer: false,
+                    };
+                default:
+                    return { title: "", url: "https://" };
+            }
+        };
+
+        const defaults = getDefaultsForType();
         const newLink: LinkBlock = {
             id: Math.random().toString(36).substr(2, 9),
-            title: type === "header" ? "NEW SECTION" : "",
-            url: type === "header" ? "" : "https://",
             isEnabled: true,
             clicks: 0,
             type: type,
             sparklineData: Array(7)
                 .fill(0)
                 .map(() => ({ value: 0 })),
+            ...defaults,
         };
         onUpdateLinks([newLink, ...links]);
         setIsBlockSelectorOpen(false);
@@ -165,11 +247,11 @@ export const LinksTab: React.FC<LinksTabProps> = ({
                             <div className="bg-neutral-800 dark:bg-neutral-200 rounded-full p-1 group-hover:rotate-90 transition-transform">
                                 <Plus size={18} />
                             </div>
-                            <span>Add Block</span>
+                            <span>Agregar Bloque</span>
                         </button>
                         <button className="px-4 md:px-8 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-400 hover:to-brand-500 text-white rounded-[20px] md:rounded-[24px] font-bold transition-all hover:shadow-glow hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2">
                             <Sparkles size={18} className="animate-pulse" />
-                            <span className="hidden sm:inline">AI Magic</span>
+                            <span className="hidden sm:inline">IA Magica</span>
                         </button>
                     </div>
                 ) : (
@@ -181,7 +263,7 @@ export const LinksTab: React.FC<LinksTabProps> = ({
                             <div className="bg-white/20 rounded-full p-1 group-hover:rotate-90 transition-transform">
                                 <Plus size={18} />
                             </div>
-                            <span>Add Social Link</span>
+                            <span>Agregar Link Social</span>
                         </button>
                     </div>
                 )}
@@ -210,8 +292,8 @@ export const LinksTab: React.FC<LinksTabProps> = ({
                             {links.length === 0 && (
                                 <div className="text-center py-20 text-neutral-400">
                                     <p>
-                                        No links yet. Click the button above to
-                                        start!
+                                        No tenes enlaces aun. Hace clic en el
+                                        boton de arriba para empezar.
                                     </p>
                                 </div>
                             )}

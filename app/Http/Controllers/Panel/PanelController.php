@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Panel;
 use App\Http\Controllers\Controller;
 use App\Services\LandingService;
 use App\Services\LinkService;
+use App\Services\StatisticsService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -13,7 +14,8 @@ class PanelController extends Controller
 {
     public function __construct(
         protected LandingService $landingService,
-        protected LinkService $linkService
+        protected LinkService $linkService,
+        protected StatisticsService $statisticsService
     ) {}
 
     public function index(): Response|RedirectResponse
@@ -63,12 +65,18 @@ class PanelController extends Controller
             ? $this->linkService->getSocialLinks($landing->id)
             : collect();
 
+        // Get dashboard stats only for dashboard tab (lazy load for performance)
+        $dashboardStats = ($activeTab === 'dashboard' && $landing)
+            ? $this->statisticsService->getLandingDashboardStats($landing->id)
+            : null;
+
         return Inertia::render('Panel/Dashboard', [
             'landing' => $landing,
             'links' => $links,
             'socialLinks' => $socialLinks,
             'auth' => ['user' => $user],
             'activeTab' => $activeTab,
+            'dashboardStats' => $dashboardStats,
         ]);
     }
 }

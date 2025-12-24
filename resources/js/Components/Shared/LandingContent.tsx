@@ -8,8 +8,10 @@
 import { Icon } from "@/constants/icons";
 import { isLinkComplete } from "@/hooks/useLinkValidation";
 import { LinkBlock, UserProfile } from "@/types";
+import { calculateContrastColors } from "@/utils/colorUtils";
 import { isLegacyIcon, renderLegacyIcon } from "@/utils/iconHelper";
 import {
+    Calendar,
     ExternalLink,
     Ghost,
     Globe,
@@ -20,7 +22,16 @@ import {
     X as XIcon,
     Youtube,
 } from "lucide-react";
-import React from "react";
+import React, { useMemo } from "react";
+import {
+    CalendarBlock,
+    EmailBlock,
+    MapBlock,
+    SoundCloudBlock,
+    TikTokBlock,
+    TwitchBlock,
+    VimeoBlock,
+} from "./blocks";
 
 export type DeviceMode = "mobile" | "tablet" | "desktop";
 
@@ -77,6 +88,8 @@ const getIcon = (iconName: string, size = 16) => {
             return <XIcon size={size} />;
         case "Mastodon":
             return <Ghost size={size} />;
+        case "Calendar":
+            return <Calendar size={size} />;
         case "Type":
             return null;
         default:
@@ -147,6 +160,54 @@ export const LandingContent: React.FC<LandingContentProps> = ({
     // Only consider actual Tailwind preset themes, NOT custom SVG backgrounds like "large_triangles"
     const isThemePreset = isPresetTheme(user.theme);
     const isDarkTheme = user.theme === "midnight";
+
+    // Calculate text color based on background for custom themes
+    // For preset themes, use the theme's built-in colors
+    // For custom themes, use textColor if set, otherwise auto-calculate from background
+    const computedTextColors = useMemo(() => {
+        if (isThemePreset) {
+            // Preset themes have known colors
+            return {
+                text: isDarkTheme ? "#ffffff" : "#1a1a1a",
+                textMuted: isDarkTheme ? "#a3a3a3" : "#666666",
+            };
+        }
+
+        // Use explicitly set textColor if available
+        if (design.textColor) {
+            // Derive muted from primary
+            const isLightText =
+                design.textColor === "#ffffff" ||
+                design.textColor === "#fff" ||
+                design.textColor === "white";
+            return {
+                text: design.textColor,
+                textMuted: isLightText ? "#a3a3a3" : "#666666",
+            };
+        }
+
+        // Auto-calculate based on background color and/or image
+        // This handles SVG patterns, gradients, and solid colors
+        const bgImage =
+            typeof design.backgroundImage === "string"
+                ? design.backgroundImage
+                : typeof design.backgroundImage === "object" &&
+                  design.backgroundImage?.image
+                ? design.backgroundImage.image
+                : undefined;
+
+        return calculateContrastColors(
+            design.backgroundColor || "#ffffff",
+            bgImage
+        );
+    }, [
+        isThemePreset,
+        isDarkTheme,
+        design.textColor,
+        design.backgroundColor,
+        design.backgroundImage,
+    ]);
+
     const baseTextColor = isDarkTheme ? "text-white" : "text-neutral-900";
     const subTextColor = isDarkTheme ? "text-neutral-400" : "text-neutral-600";
 
@@ -304,7 +365,9 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                     className={`text-2xl font-bold mb-1 tracking-tight ${
                         isThemePreset ? baseTextColor : ""
                     }`}
-                    style={!isThemePreset ? { color: "#1a1a1a" } : {}}
+                    style={
+                        !isThemePreset ? { color: computedTextColors.text } : {}
+                    }
                 >
                     {user.name}
                 </h2>
@@ -315,8 +378,11 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                     style={
                         !isThemePreset
                             ? {
-                                  color: "#666",
-                                  backgroundColor: "rgba(0,0,0,0.05)",
+                                  color: computedTextColors.textMuted,
+                                  backgroundColor:
+                                      computedTextColors.text === "#ffffff"
+                                          ? "rgba(255,255,255,0.1)"
+                                          : "rgba(0,0,0,0.05)",
                               }
                             : {}
                     }
@@ -336,7 +402,11 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                         className={`text-sm max-w-[260px] leading-relaxed ${
                             isThemePreset ? subTextColor : ""
                         }`}
-                        style={!isThemePreset ? { color: "#444" } : {}}
+                        style={
+                            !isThemePreset
+                                ? { color: computedTextColors.textMuted }
+                                : {}
+                        }
                     >
                         {user.bio}
                     </p>
@@ -415,11 +485,11 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                             <div
                                 key={link.id}
                                 className={`text-center ${sizeClass} ${
-                                    isThemePreset ? "" : "text-neutral-900"
+                                    isThemePreset ? "" : ""
                                 } animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards`}
                                 style={{
                                     ...(!isThemePreset
-                                        ? { color: "#1a1a1a" }
+                                        ? { color: computedTextColors.text }
                                         : {}),
                                     animationDelay: `${delay}ms`,
                                 }}
@@ -429,9 +499,131 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                         );
                     }
 
-                    // Media Embeds
+                    // Calendar Block - uses dedicated component
+                    if (link.type === "calendar") {
+                        return (
+                            <CalendarBlock
+                                key={link.id}
+                                link={link}
+                                design={design}
+                                buttonClassName={btnClassName}
+                                buttonStyle={btnStyle}
+                                isPreview={isPreview}
+                                onClick={(e) => handleLinkClick(e, link.id)}
+                                animationDelay={delay}
+                                roundingClass={getRounding()}
+                            />
+                        );
+                    }
+
+                    // Email Block - mailto link
+                    if (link.type === "email") {
+                        return (
+                            <EmailBlock
+                                key={link.id}
+                                link={link}
+                                design={design}
+                                buttonClassName={btnClassName}
+                                buttonStyle={btnStyle}
+                                isPreview={isPreview}
+                                onClick={(e) => handleLinkClick(e, link.id)}
+                                animationDelay={delay}
+                                roundingClass={getRounding()}
+                            />
+                        );
+                    }
+
+                    // Map Block - Google Maps
+                    if (link.type === "map") {
+                        return (
+                            <MapBlock
+                                key={link.id}
+                                link={link}
+                                design={design}
+                                buttonClassName={btnClassName}
+                                buttonStyle={btnStyle}
+                                isPreview={isPreview}
+                                onClick={(e) => handleLinkClick(e, link.id)}
+                                animationDelay={delay}
+                                roundingClass={getRounding()}
+                            />
+                        );
+                    }
+
+                    // Vimeo Block - video embed
+                    if (link.type === "vimeo") {
+                        return (
+                            <VimeoBlock
+                                key={link.id}
+                                link={link}
+                                design={design}
+                                buttonClassName={btnClassName}
+                                buttonStyle={btnStyle}
+                                isPreview={isPreview}
+                                onClick={(e) => handleLinkClick(e, link.id)}
+                                animationDelay={delay}
+                                roundingClass={getRounding()}
+                            />
+                        );
+                    }
+
+                    // TikTok Block - external link
+                    if (link.type === "tiktok") {
+                        return (
+                            <TikTokBlock
+                                key={link.id}
+                                link={link}
+                                design={design}
+                                buttonClassName={btnClassName}
+                                buttonStyle={btnStyle}
+                                isPreview={isPreview}
+                                onClick={(e) => handleLinkClick(e, link.id)}
+                                animationDelay={delay}
+                                roundingClass={getRounding()}
+                            />
+                        );
+                    }
+
+                    // Twitch Block - stream embed/link
+                    if (link.type === "twitch") {
+                        return (
+                            <TwitchBlock
+                                key={link.id}
+                                link={link}
+                                design={design}
+                                buttonClassName={btnClassName}
+                                buttonStyle={btnStyle}
+                                isPreview={isPreview}
+                                onClick={(e) => handleLinkClick(e, link.id)}
+                                animationDelay={delay}
+                                roundingClass={getRounding()}
+                            />
+                        );
+                    }
+
+                    // SoundCloud Block - audio embed
+                    if (link.type === "soundcloud") {
+                        return (
+                            <SoundCloudBlock
+                                key={link.id}
+                                link={link}
+                                design={design}
+                                buttonClassName={btnClassName}
+                                buttonStyle={btnStyle}
+                                isPreview={isPreview}
+                                onClick={(e) => handleLinkClick(e, link.id)}
+                                animationDelay={delay}
+                                roundingClass={getRounding()}
+                            />
+                        );
+                    }
+
+                    // Media Embeds (YouTube/Spotify)
                     if (
-                        (link.type === "video" || link.type === "music") &&
+                        (link.type === "video" ||
+                            link.type === "music" ||
+                            link.type === "youtube" ||
+                            link.type === "spotify") &&
                         link.showInlinePlayer
                     ) {
                         const isSpotify = link.type === "music";
@@ -498,8 +690,8 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                             link.predefinedMessage || ""
                         )}`;
                         subLabel = link.phoneNumber || "";
-                    } else if (link.type === "video") subLabel = "Watch Video";
-                    else if (link.type === "music") subLabel = "Listen now";
+                    } else if (link.type === "video") subLabel = "Ver Video";
+                    else if (link.type === "music") subLabel = "Escuchar";
 
                     // Determine icon: legacy SVG icon takes priority, then type-based fallback
                     const hasLegacyIcon = isLegacyIcon(link.icon);
@@ -509,6 +701,36 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                     else if (link.type === "music") iconName = "Music";
                     else if (link.type === "twitter") iconName = "Twitter";
                     else if (link.type === "mastodon") iconName = "Mastodon";
+
+                    // Icon display settings
+                    const showIcons = design.showButtonIcons !== false;
+                    const iconAlignment = design.buttonIconAlignment || "left";
+                    // Subtext (URL/description) is hidden by default
+                    const showSubtext = design.showLinkSubtext === true;
+
+                    // Icon background style - fixed for outline buttons
+                    const getIconContainerStyle = (): React.CSSProperties => {
+                        if (design.buttonStyle === "outline") {
+                            return {
+                                backgroundColor: `${design.buttonColor}15`,
+                            };
+                        }
+                        return {};
+                    };
+
+                    // Render the icon element
+                    const renderIcon = (size: number = 22) => (
+                        <span style={{ color: design.buttonTextColor }}>
+                            {hasLegacyIcon
+                                ? renderLegacyIcon(
+                                      link.icon,
+                                      size,
+                                      "",
+                                      design.buttonTextColor
+                                  )
+                                : getIcon(iconName, size)}
+                        </span>
+                    );
 
                     return (
                         <a
@@ -523,41 +745,66 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                                 animationDelay: `${delay}ms`,
                             }}
                         >
-                            <div className="flex items-center p-3">
+                            <div
+                                className={`flex items-center p-3 ${
+                                    iconAlignment === "right" ? "relative" : ""
+                                }`}
+                            >
+                                {/* Left icon - separate column */}
+                                {showIcons && iconAlignment === "left" && (
+                                    <div
+                                        className={`w-11 h-11 flex items-center justify-center mr-4 shrink-0 transition-colors duration-300 ${getRounding()} ${
+                                            design.buttonStyle === "outline"
+                                                ? ""
+                                                : "bg-white/20"
+                                        }`}
+                                        style={getIconContainerStyle()}
+                                    >
+                                        {renderIcon(22)}
+                                    </div>
+                                )}
+
+                                {/* Text content */}
                                 <div
-                                    className={`w-11 h-11 flex items-center justify-center mr-4 flex-shrink-0 transition-colors duration-300 ${getRounding()} ${
-                                        design.buttonStyle === "outline"
-                                            ? "bg-current opacity-10"
-                                            : "bg-white/20"
+                                    className={`flex-1 min-w-0 ${
+                                        iconAlignment === "inline"
+                                            ? "flex items-center gap-3"
+                                            : "text-left"
+                                    } ${
+                                        iconAlignment === "right" ? "pr-12" : ""
                                     }`}
                                 >
-                                    <span
-                                        style={
+                                    {/* Inline icon - before text */}
+                                    {showIcons &&
+                                        iconAlignment === "inline" &&
+                                        renderIcon(18)}
+                                    <div className="min-w-0">
+                                        <h3 className="text-base font-bold truncate">
+                                            {link.title}
+                                        </h3>
+                                        {showSubtext &&
+                                            subLabel &&
+                                            iconAlignment !== "inline" && (
+                                                <p className="text-xs truncate opacity-70">
+                                                    {subLabel}
+                                                </p>
+                                            )}
+                                    </div>
+                                </div>
+
+                                {/* Right icon - absolute positioned */}
+                                {showIcons && iconAlignment === "right" && (
+                                    <div
+                                        className={`absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center shrink-0 ${getRounding()} ${
                                             design.buttonStyle === "outline"
-                                                ? { opacity: 10 }
-                                                : {}
-                                        }
+                                                ? ""
+                                                : "bg-white/20"
+                                        }`}
+                                        style={getIconContainerStyle()}
                                     >
-                                        {hasLegacyIcon
-                                            ? renderLegacyIcon(
-                                                  link.icon,
-                                                  22,
-                                                  "",
-                                                  design.buttonTextColor
-                                              )
-                                            : getIcon(iconName, 22)}
-                                    </span>
-                                </div>
-                                <div className="flex-1 min-w-0 text-left">
-                                    <h3 className="text-base font-bold truncate">
-                                        {link.title}
-                                    </h3>
-                                    {subLabel && (
-                                        <p className="text-xs truncate opacity-70">
-                                            {subLabel}
-                                        </p>
-                                    )}
-                                </div>
+                                        {renderIcon(20)}
+                                    </div>
+                                )}
                             </div>
                         </a>
                     );
@@ -570,7 +817,11 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                     className={`flex items-center gap-2 text-xs opacity-60 hover:opacity-100 transition-opacity ${
                         isThemePreset ? subTextColor : ""
                     }`}
-                    style={!isThemePreset ? { color: "#666" } : {}}
+                    style={
+                        !isThemePreset
+                            ? { color: computedTextColors.textMuted }
+                            : {}
+                    }
                 >
                     <a
                         href="/privacy"

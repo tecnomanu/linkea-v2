@@ -1,3 +1,4 @@
+import { AuthDivider, SocialLoginButtons } from "@/Components/Auth";
 import { Button } from "@/Components/ui/Button";
 import { Input } from "@/Components/ui/Input";
 import AuthLayout from "@/Layouts/AuthLayout";
@@ -21,27 +22,62 @@ export default function Register() {
         });
     };
 
+    // Social login handlers (placeholder - needs OAuth implementation)
+    const handleGoogleLogin = () => {
+        // TODO: Implement Google OAuth
+        console.log("Google login clicked");
+    };
+
+    const handleAppleLogin = () => {
+        // TODO: Implement Apple OAuth
+        console.log("Apple login clicked");
+    };
+
     return (
         <AuthLayout
-            title="Create Account"
-            subtitle="Get started with your free account today"
+            title="Unite a Linkea"
+            subtitle="Crea tu cuenta gratis y empeza hoy"
+            heroVariant="register"
         >
+            {/* Email field first (like Linktree) */}
             <form onSubmit={submit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <Input
+                    id="email"
+                    type="email"
+                    label="Email"
+                    placeholder="tu@email.com"
+                    value={data.email}
+                    onChange={(e) => setData("email", e.target.value)}
+                    autoFocus
+                    error={errors.email}
+                />
+
+                <Input
+                    id="username"
+                    type="text"
+                    label="Nombre de tu linkea"
+                    placeholder="tu-linkea"
+                    value={data.username}
+                    onChange={(e) => setData("username", e.target.value)}
+                    error={errors.username}
+                />
+
+                <div className="grid grid-cols-2 gap-3">
                     <Input
                         id="first_name"
                         type="text"
-                        label="Name"
+                        label="Nombre"
+                        placeholder="Juan"
                         value={data.first_name}
                         onChange={(e) => setData("first_name", e.target.value)}
-                        autoFocus
                         error={errors.first_name}
                     />
 
                     <Input
                         id="last_name"
                         type="text"
-                        label="Last Name"
+                        label="Apellido"
+                        placeholder="Perez"
                         value={data.last_name}
                         onChange={(e) => setData("last_name", e.target.value)}
                         error={errors.last_name}
@@ -49,27 +85,10 @@ export default function Register() {
                 </div>
 
                 <Input
-                    id="username"
-                    type="text"
-                    label="Username"
-                    value={data.username}
-                    onChange={(e) => setData("username", e.target.value)}
-                    error={errors.username}
-                />
-
-                <Input
-                    id="email"
-                    type="email"
-                    label="Email"
-                    value={data.email}
-                    onChange={(e) => setData("email", e.target.value)}
-                    error={errors.email}
-                />
-
-                <Input
                     id="password"
                     type="password"
-                    label="Password"
+                    label="Contrasena"
+                    placeholder="Minimo 8 caracteres"
                     value={data.password}
                     onChange={(e) => setData("password", e.target.value)}
                     error={errors.password}
@@ -78,7 +97,8 @@ export default function Register() {
                 <Input
                     id="password_confirmation"
                     type="password"
-                    label="Confirm Password"
+                    label="Confirmar contrasena"
+                    placeholder="Repeti tu contrasena"
                     value={data.password_confirmation}
                     onChange={(e) =>
                         setData("password_confirmation", e.target.value)
@@ -86,22 +106,34 @@ export default function Register() {
                     error={errors.password_confirmation}
                 />
 
-                <div className="flex items-center justify-end">
-                    <Link
-                        href={route("login")}
-                        className="underline text-sm text-neutral-500 dark:text-neutral-400 hover:text-brand-500 rounded-md transition-colors"
-                    >
-                        Already registered?
-                    </Link>
-                </div>
-
                 <Button
-                    className="w-full text-base py-6 rounded-2xl"
+                    className="w-full py-6 text-base rounded-xl font-bold"
                     isLoading={processing}
                 >
-                    Register
+                    Crear cuenta
                 </Button>
             </form>
+
+            {/* Divider */}
+            <AuthDivider />
+
+            {/* Social login options */}
+            <SocialLoginButtons
+                onGoogleClick={handleGoogleLogin}
+                onAppleClick={handleAppleLogin}
+                disabled={processing}
+            />
+
+            {/* Link to login */}
+            <div className="mt-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
+                Ya tenes una cuenta?{" "}
+                <Link
+                    href={route("login")}
+                    className="text-brand-500 hover:text-brand-600 font-semibold transition-colors"
+                >
+                    Ingresa
+                </Link>
+            </div>
         </AuthLayout>
     );
 }

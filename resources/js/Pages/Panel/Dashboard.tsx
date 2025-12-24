@@ -1,3 +1,4 @@
+import { DashboardTab } from "@/Components/Panel/Dashboard/DashboardTab";
 import { DesignTab } from "@/Components/Panel/Design/DesignTab";
 import { LinkBar } from "@/Components/Panel/Links/LinkBar";
 import { LinksTab, SocialLink } from "@/Components/Panel/Links/LinksTab";
@@ -9,7 +10,6 @@ import {
 } from "@/Components/Shared/AutoSaveSettings";
 import { DevicePreviewModal } from "@/Components/Shared/DevicePreviewModal";
 import { DeviceMode, PhonePreview } from "@/Components/Shared/PhonePreview";
-import { StatsBento } from "@/Components/Shared/StatsBento";
 import {
     useWhatsNewModal,
     WhatsNewModal,
@@ -22,6 +22,30 @@ import { Head } from "@inertiajs/react";
 import { Eye, Maximize2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+interface DashboardStats {
+    totalClicks: number;
+    totalLinks: number;
+    activeLinks: number;
+    clicksToday: number;
+    clicksThisWeek: number;
+    clicksThisMonth: number;
+    weeklyChange: number;
+    dailyAverage: number;
+    chartData: { date: string; fullDate: string; clicks: number }[];
+    topLinks: {
+        id: string;
+        title: string;
+        type: string;
+        clicks: number;
+        sparklineData: { value: number }[];
+    }[];
+    linksByType: {
+        type: string;
+        count: number;
+        clicks: number;
+    }[];
+}
+
 interface DashboardProps {
     landing: any;
     links: any[];
@@ -30,6 +54,7 @@ interface DashboardProps {
         user: any;
     };
     activeTab?: string; // Passed from controller
+    dashboardStats?: DashboardStats | null;
 }
 
 export default function Dashboard({
@@ -38,6 +63,7 @@ export default function Dashboard({
     socialLinks: serverSocialLinks = [],
     auth,
     activeTab: serverActiveTab = "dashboard",
+    dashboardStats = null,
 }: DashboardProps) {
     // Sync state with prop if needed, but primarily rely on prop for the "View"
     const activeTab = serverActiveTab;
@@ -64,6 +90,22 @@ export default function Dashboard({
         playerSize: link.config?.player_size,
         phoneNumber: link.config?.phone_number,
         predefinedMessage: link.config?.predefined_message,
+        // Calendar specific
+        calendarProvider: link.config?.calendar_provider,
+        calendarDisplayMode: link.config?.calendar_display_mode,
+        // Email specific
+        emailAddress: link.config?.email_address,
+        emailSubject: link.config?.email_subject,
+        emailBody: link.config?.email_body,
+        // Map specific
+        mapAddress: link.config?.map_address,
+        mapQuery: link.config?.map_query,
+        mapZoom: link.config?.map_zoom,
+        mapDisplayMode: link.config?.map_display_mode,
+        // Video embeds (Vimeo, TikTok, Twitch)
+        videoId: link.config?.video_id,
+        // SoundCloud
+        soundcloudUrl: link.config?.soundcloud_url,
     }));
 
     // Serialize server user/landing to frontend UserProfile format
@@ -94,6 +136,18 @@ export default function Dashboard({
             backgroundImage:
                 landing?.template_config?.background?.backgroundImage ||
                 undefined,
+            backgroundSize:
+                landing?.template_config?.background?.backgroundSize ||
+                undefined,
+            backgroundPosition:
+                landing?.template_config?.background?.backgroundPosition ||
+                undefined,
+            backgroundRepeat:
+                landing?.template_config?.background?.backgroundRepeat ||
+                undefined,
+            backgroundAttachment:
+                landing?.template_config?.background?.backgroundAttachment ||
+                undefined,
             // Legacy background editor props (colors, opacity, scale)
             backgroundProps:
                 landing?.template_config?.background?.props || undefined,
@@ -105,7 +159,14 @@ export default function Dashboard({
                 landing?.template_config?.buttons?.backgroundColor || "#000000",
             buttonTextColor:
                 landing?.template_config?.buttons?.textColor || "#ffffff",
+            // Button icon options
+            showButtonIcons:
+                landing?.template_config?.buttons?.showIcons ?? true,
+            buttonIconAlignment:
+                landing?.template_config?.buttons?.iconAlignment || "left",
             fontPair: landing?.template_config?.fontPair || "modern",
+            // Text color for landing content (auto-calculated if not set)
+            textColor: landing?.template_config?.textColor || undefined,
             roundedAvatar:
                 landing?.template_config?.header?.roundedAvatar ?? true,
         },
@@ -371,7 +432,19 @@ export default function Dashboard({
 
     return (
         <>
-            <Head title={activeTab === "links" ? "My Links" : activeTab} />
+            <Head
+                title={
+                    activeTab === "links"
+                        ? "Enlaces"
+                        : activeTab === "appearance"
+                        ? "Apariencia"
+                        : activeTab === "settings"
+                        ? "Ajustes"
+                        : activeTab === "dashboard"
+                        ? "Panel"
+                        : activeTab
+                }
+            />
 
             {/* Added top padding for mobile to account for fixed MobileNav */}
             <div className="flex-1 w-full max-w-5xl mx-auto p-4 md:p-8 lg:p-12 pt-32 md:pt-8 overflow-y-auto h-screen hide-scrollbar relative">
@@ -492,7 +565,9 @@ export default function Dashboard({
                 )}
 
                 {/* Content Rendering based on activeTab */}
-                {activeTab === "dashboard" && <StatsBento />}
+                {activeTab === "dashboard" && (
+                    <DashboardTab stats={dashboardStats} />
+                )}
 
                 {activeTab === "links" && (
                     <LinksTab

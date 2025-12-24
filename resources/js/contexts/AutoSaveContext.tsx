@@ -393,6 +393,23 @@ export function AutoSaveProvider({ children }: { children: ReactNode }) {
     }, [hasChanges]);
 
     // =========================================================================
+    // DEBOUNCED AUTO-SAVE
+    // =========================================================================
+
+    // Auto-save when enabled and changes exist (debounced)
+    useEffect(() => {
+        if (!autoSaveEnabled || !hasChanges || isSaving) {
+            return;
+        }
+
+        const timeoutId = setTimeout(() => {
+            saveAllChanges();
+        }, 1500); // 1.5 second debounce
+
+        return () => clearTimeout(timeoutId);
+    }, [autoSaveEnabled, hasChanges, isSaving, saveAllChanges]);
+
+    // =========================================================================
     // CONTEXT VALUE
     // =========================================================================
 

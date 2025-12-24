@@ -35,8 +35,15 @@ class SaveLinksRequest extends FormRequest
                 'soundcloud',
                 'tiktok',
                 'twitch',
+                'vimeo',
                 // Messaging
                 'whatsapp',
+                'email',
+                // Scheduling & Leads
+                'calendar',
+                // Contact & Forms
+                'map',
+                'contact',
                 // Legacy/other
                 'mastodon',
                 'twitter',
@@ -53,6 +60,22 @@ class SaveLinksRequest extends FormRequest
             'links.*.playerSize' => 'nullable|string',
             'links.*.phoneNumber' => 'nullable|string|max:20',
             'links.*.predefinedMessage' => 'nullable|string|max:1000',
+            // Calendar specific
+            'links.*.calendarProvider' => 'nullable|string|in:calendly,cal,acuity,other',
+            'links.*.calendarDisplayMode' => 'nullable|string|in:button,inline',
+            // Email specific
+            'links.*.emailAddress' => 'nullable|email|max:255',
+            'links.*.emailSubject' => 'nullable|string|max:255',
+            'links.*.emailBody' => 'nullable|string|max:1000',
+            // Map specific
+            'links.*.mapAddress' => 'nullable|string|max:500',
+            'links.*.mapQuery' => 'nullable|string|max:500',
+            'links.*.mapZoom' => 'nullable|integer|min:1|max:21',
+            'links.*.mapDisplayMode' => 'nullable|string|in:button,inline',
+            // Video embeds
+            'links.*.videoId' => 'nullable|string|max:255',
+            // SoundCloud
+            'links.*.soundcloudUrl' => 'nullable|string|max:2048',
         ];
     }
 
@@ -96,6 +119,22 @@ class SaveLinksRequest extends FormRequest
             'player_size' => $link['playerSize'] ?? null,
             'phone_number' => $link['phoneNumber'] ?? null,
             'predefined_message' => $link['predefinedMessage'] ?? null,
+            // Calendar specific
+            'calendar_provider' => $link['calendarProvider'] ?? null,
+            'calendar_display_mode' => $link['calendarDisplayMode'] ?? null,
+            // Email specific
+            'email_address' => $link['emailAddress'] ?? null,
+            'email_subject' => $link['emailSubject'] ?? null,
+            'email_body' => $link['emailBody'] ?? null,
+            // Map specific
+            'map_address' => $link['mapAddress'] ?? null,
+            'map_query' => $link['mapQuery'] ?? null,
+            'map_zoom' => $link['mapZoom'] ?? null,
+            'map_display_mode' => $link['mapDisplayMode'] ?? null,
+            // Video embeds
+            'video_id' => $link['videoId'] ?? null,
+            // SoundCloud
+            'soundcloud_url' => $link['soundcloudUrl'] ?? null,
         ], fn($v) => $v !== null);
 
         return empty($config) ? null : $config;

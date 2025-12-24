@@ -76,38 +76,78 @@ export const LinkCard: React.FC<LinkCardProps> = ({
         switch (link.type) {
             case "header":
                 return {
-                    placeholder: "Section Headline",
-                    subPlaceholder: "Header Text",
+                    placeholder: "Titulo de seccion",
+                    subPlaceholder: "",
                 };
             case "video":
+            case "youtube":
                 return {
-                    placeholder: "Video Title",
-                    subPlaceholder: "YouTube URL",
+                    placeholder: "Titulo del video",
+                    subPlaceholder: "URL de YouTube",
                 };
             case "music":
+            case "spotify":
                 return {
-                    placeholder: "Track Title",
-                    subPlaceholder: "Spotify URL",
+                    placeholder: "Titulo de la cancion",
+                    subPlaceholder: "URL de Spotify",
                 };
             case "whatsapp":
                 return {
-                    placeholder: "Action Label (e.g. Chat with us)",
-                    subPlaceholder: "WhatsApp Configuration",
+                    placeholder: "Texto del boton (ej: Escribinos)",
+                    subPlaceholder: "",
                 };
             case "twitter":
                 return {
-                    placeholder: "Tweet Title",
-                    subPlaceholder: "Tweet URL",
+                    placeholder: "Titulo del tweet",
+                    subPlaceholder: "URL del Tweet",
                 };
             case "mastodon":
                 return {
-                    placeholder: "Profile Name",
-                    subPlaceholder: "Mastodon Profile URL",
+                    placeholder: "Nombre del perfil",
+                    subPlaceholder: "URL de Mastodon",
+                };
+            case "calendar":
+                return {
+                    placeholder: "Agendar Cita",
+                    subPlaceholder: "",
+                    hideUrlInput: true,
+                };
+            case "email":
+                return {
+                    placeholder: "Contactame",
+                    subPlaceholder: "",
+                    hideUrlInput: true,
+                };
+            case "map":
+                return {
+                    placeholder: "Nuestra Ubicacion",
+                    subPlaceholder: "",
+                    hideUrlInput: true,
+                };
+            case "vimeo":
+                return {
+                    placeholder: "Titulo del video",
+                    subPlaceholder: "URL de Vimeo",
+                };
+            case "tiktok":
+                return {
+                    placeholder: "Titulo del video",
+                    subPlaceholder: "URL de TikTok",
+                };
+            case "soundcloud":
+                return {
+                    placeholder: "Titulo del audio",
+                    subPlaceholder: "URL de SoundCloud",
+                };
+            case "twitch":
+                return {
+                    placeholder: "Canal de Twitch",
+                    subPlaceholder: "URL o nombre del canal",
                 };
             default:
                 return {
-                    placeholder: "Link Title",
-                    subPlaceholder: "https://example.com",
+                    placeholder: "Titulo del enlace",
+                    subPlaceholder: "https://ejemplo.com",
                 };
         }
     };
@@ -236,7 +276,78 @@ export const LinkCard: React.FC<LinkCardProps> = ({
                                             : link.phoneNumber
                                             ? `+${link.phoneNumber}`
                                             : validationError ||
-                                              "No number configured"}
+                                              "Sin numero configurado"}
+                                    </span>
+                                </div>
+                            ) : link.type === "calendar" ? (
+                                <div className="flex items-center gap-1.5 px-1 -ml-1">
+                                    {isValid ? (
+                                        <Check
+                                            size={12}
+                                            className="text-green-500 shrink-0"
+                                        />
+                                    ) : (
+                                        <XCircle
+                                            size={12}
+                                            className="text-amber-500 shrink-0"
+                                        />
+                                    )}
+                                    <span
+                                        className={`text-xs font-medium truncate ${
+                                            isValid
+                                                ? "text-green-600 dark:text-green-400"
+                                                : "text-amber-600 dark:text-amber-400"
+                                        }`}
+                                    >
+                                        {link.url
+                                            ? link.url.replace(/^https?:\/\//, '').substring(0, 30) + (link.url.length > 30 ? '...' : '')
+                                            : "Configurar en opciones"}
+                                    </span>
+                                </div>
+                            ) : link.type === "email" ? (
+                                <div className="flex items-center gap-1.5 px-1 -ml-1">
+                                    {link.emailAddress ? (
+                                        <Check
+                                            size={12}
+                                            className="text-green-500 shrink-0"
+                                        />
+                                    ) : (
+                                        <XCircle
+                                            size={12}
+                                            className="text-amber-500 shrink-0"
+                                        />
+                                    )}
+                                    <span
+                                        className={`text-xs font-medium truncate ${
+                                            link.emailAddress
+                                                ? "text-green-600 dark:text-green-400"
+                                                : "text-amber-600 dark:text-amber-400"
+                                        }`}
+                                    >
+                                        {link.emailAddress || "Configurar en opciones"}
+                                    </span>
+                                </div>
+                            ) : link.type === "map" ? (
+                                <div className="flex items-center gap-1.5 px-1 -ml-1">
+                                    {link.mapAddress || link.mapQuery ? (
+                                        <Check
+                                            size={12}
+                                            className="text-green-500 shrink-0"
+                                        />
+                                    ) : (
+                                        <XCircle
+                                            size={12}
+                                            className="text-amber-500 shrink-0"
+                                        />
+                                    )}
+                                    <span
+                                        className={`text-xs font-medium truncate ${
+                                            link.mapAddress || link.mapQuery
+                                                ? "text-green-600 dark:text-green-400"
+                                                : "text-amber-600 dark:text-amber-400"
+                                        }`}
+                                    >
+                                        {link.mapAddress || link.mapQuery || "Configurar en opciones"}
                                     </span>
                                 </div>
                             ) : (

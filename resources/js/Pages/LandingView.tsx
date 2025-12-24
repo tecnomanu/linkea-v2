@@ -64,8 +64,21 @@ export default function LandingView({
         autoPlay: link.config?.auto_play,
         startMuted: link.config?.start_muted,
         playerSize: link.config?.player_size,
+        // WhatsApp
         phoneNumber: link.config?.phone_number,
         predefinedMessage: link.config?.predefined_message,
+        // Calendar
+        calendarProvider: link.config?.calendar_provider,
+        calendarDisplayMode: link.config?.calendar_display_mode,
+        // Email
+        emailAddress: link.config?.email_address,
+        emailSubject: link.config?.email_subject,
+        emailBody: link.config?.email_body,
+        // Map
+        mapAddress: link.config?.map_address,
+        mapQuery: link.config?.map_query,
+        mapZoom: link.config?.map_zoom,
+        mapDisplayMode: link.config?.map_display_mode,
     }));
 
     // Resolve background image - can be string (CSS/SVG) or object {image: 'path'}
@@ -118,7 +131,13 @@ export default function LandingView({
                 landing?.template_config?.buttons?.backgroundColor || "#000000",
             buttonTextColor:
                 landing?.template_config?.buttons?.textColor || "#ffffff",
+            showButtonIcons:
+                landing?.template_config?.buttons?.showIcons ?? true,
+            buttonIconAlignment:
+                landing?.template_config?.buttons?.iconAlignment || "left",
             fontPair: landing?.template_config?.fontPair || "modern",
+            // Text color from backend (legacy support) - if not set, will be auto-calculated
+            textColor: landing?.template_config?.textColor || undefined,
             roundedAvatar:
                 landing?.template_config?.header?.roundedAvatar ??
                 landing?.template_config?.image_rounded ??

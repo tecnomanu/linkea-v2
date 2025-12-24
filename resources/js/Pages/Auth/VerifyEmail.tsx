@@ -60,7 +60,7 @@ export default function VerifyEmail({ status }: Props) {
                 />
 
                 <Button
-                    className="w-full text-base py-6 rounded-2xl"
+                    className="w-full py-6 text-base rounded-xl font-bold"
                     isLoading={processing}
                 >
                     Verificar mi cuenta

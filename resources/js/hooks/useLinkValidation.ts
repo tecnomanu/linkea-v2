@@ -18,6 +18,14 @@ const URL_PATTERNS = {
         /^(https?:\/\/)?(open\.)?spotify\.com\/(track|album|playlist|artist|episode|show)\/[a-zA-Z0-9]+/i,
     // WhatsApp API URL
     whatsapp: /^https?:\/\/(api\.)?wa\.me\/.+/i,
+    // Calendar URLs (Calendly, Cal.com, Acuity, etc.)
+    calendly: /^(https?:\/\/)?(www\.)?calendly\.com\/[a-zA-Z0-9_-]+/i,
+    calcom: /^(https?:\/\/)?(www\.)?cal\.com\/[a-zA-Z0-9_-]+/i,
+    acuity: /^(https?:\/\/)?(www\.)?[a-zA-Z0-9_-]+\.acuityscheduling\.com/i,
+    // TODO: Vimeo URL pattern
+    // vimeo: /^(https?:\/\/)?(www\.)?vimeo\.com\/[0-9]+/i,
+    // TODO: TikTok URL pattern
+    // tiktok: /^(https?:\/\/)?(www\.)?tiktok\.com\/@[a-zA-Z0-9._-]+\/video\/[0-9]+/i,
 };
 
 /**
@@ -93,6 +101,37 @@ export const useLinkValidation = () => {
     };
 
     /**
+     * Validates a Calendar/Booking URL (Calendly, Cal.com, Acuity)
+     * @param url - The URL to validate
+     * @returns true if it's a valid calendar URL
+     */
+    const validateCalendarUrl = (url: string): boolean => {
+        if (!url) return false;
+        const trimmedUrl = url.trim();
+        return (
+            URL_PATTERNS.calendly.test(trimmedUrl) ||
+            URL_PATTERNS.calcom.test(trimmedUrl) ||
+            URL_PATTERNS.acuity.test(trimmedUrl) ||
+            // Allow any URL for "other" calendar providers
+            URL_PATTERNS.http.test(trimmedUrl)
+        );
+    };
+
+    /**
+     * Detects which calendar provider from a URL
+     * @param url - The calendar URL
+     * @returns Provider name or 'other'
+     */
+    const detectCalendarProvider = (url: string): 'calendly' | 'cal' | 'acuity' | 'other' => {
+        if (!url) return 'other';
+        const trimmedUrl = url.trim().toLowerCase();
+        if (trimmedUrl.includes('calendly.com')) return 'calendly';
+        if (trimmedUrl.includes('cal.com')) return 'cal';
+        if (trimmedUrl.includes('acuityscheduling.com')) return 'acuity';
+        return 'other';
+    };
+
+    /**
      * Checks if a link has the minimum required data to be displayed
      * @param link - The LinkBlock to validate
      * @returns true if the link is complete and valid
@@ -123,6 +162,34 @@ export const useLinkValidation = () => {
             case "spotify":
                 // Spotify needs a valid Spotify URL
                 return validateSpotifyUrl(link.url);
+
+            case "calendar":
+                // Calendar needs a valid calendar URL
+                return validateCalendarUrl(link.url);
+
+            case "email":
+                // Email needs a valid email address
+                return !!(link.emailAddress && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(link.emailAddress));
+
+            case "map":
+                // Map needs either address or query
+                return !!(link.mapAddress || link.mapQuery);
+
+            case "vimeo":
+                // Vimeo needs a valid Vimeo URL
+                return !!(link.url && /vimeo\.com\/\d+/i.test(link.url));
+
+            case "tiktok":
+                // TikTok needs a valid TikTok URL
+                return !!(link.url && /tiktok\.com/i.test(link.url));
+
+            case "soundcloud":
+                // SoundCloud needs a valid SoundCloud URL
+                return !!(link.url && /soundcloud\.com/i.test(link.url));
+
+            case "twitch":
+                // Twitch needs a URL or channel name
+                return !!(link.url && (link.url.includes('twitch.tv') || /^[a-zA-Z0-9_]+$/.test(link.url)));
 
             case "link":
             case "button":
@@ -180,6 +247,63 @@ export const useLinkValidation = () => {
                 }
                 return null;
 
+            case "calendar":
+                if (!link.url) {
+                    return "URL de calendario requerida";
+                }
+                if (!validateCalendarUrl(link.url)) {
+                    return "URL de calendario invalida";
+                }
+                return null;
+
+            case "email":
+                if (!link.emailAddress) {
+                    return "Email requerido";
+                }
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(link.emailAddress)) {
+                    return "Email invalido";
+                }
+                return null;
+
+            case "map":
+                if (!link.mapAddress && !link.mapQuery) {
+                    return "Direccion o busqueda requerida";
+                }
+                return null;
+
+            case "vimeo":
+                if (!link.url) {
+                    return "URL de Vimeo requerida";
+                }
+                if (!/vimeo\.com\/\d+/i.test(link.url)) {
+                    return "URL de Vimeo invalida";
+                }
+                return null;
+
+            case "tiktok":
+                if (!link.url) {
+                    return "URL de TikTok requerida";
+                }
+                if (!/tiktok\.com/i.test(link.url)) {
+                    return "URL de TikTok invalida";
+                }
+                return null;
+
+            case "soundcloud":
+                if (!link.url) {
+                    return "URL de SoundCloud requerida";
+                }
+                if (!/soundcloud\.com/i.test(link.url)) {
+                    return "URL de SoundCloud invalida";
+                }
+                return null;
+
+            case "twitch":
+                if (!link.url) {
+                    return "Canal de Twitch requerido";
+                }
+                return null;
+
             default:
                 if (!link.url) {
                     return "URL requerida";
@@ -218,6 +342,8 @@ export const useLinkValidation = () => {
         validateYoutubeUrl,
         validateSpotifyUrl,
         validatePhone,
+        validateCalendarUrl,
+        detectCalendarProvider,
         isLinkComplete,
         getValidationError,
         normalizeUrl,
@@ -260,6 +386,27 @@ export const isLinkComplete = (link: LinkBlock): boolean => {
         case "music":
         case "spotify":
             return URL_PATTERNS.spotify.test(link.url || "");
+        case "calendar":
+            // Calendar accepts Calendly, Cal.com, Acuity, or any valid URL
+            return URL_PATTERNS.http.test(link.url || "");
+        case "email":
+            // Email needs a valid email address
+            return !!(link.emailAddress && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(link.emailAddress));
+        case "map":
+            // Map needs either address or query
+            return !!(link.mapAddress || link.mapQuery);
+        case "vimeo":
+            // Vimeo needs a valid Vimeo URL
+            return !!(link.url && /vimeo\.com\/\d+/i.test(link.url));
+        case "tiktok":
+            // TikTok needs a valid TikTok URL
+            return !!(link.url && /tiktok\.com/i.test(link.url));
+        case "soundcloud":
+            // SoundCloud needs a valid SoundCloud URL
+            return !!(link.url && /soundcloud\.com/i.test(link.url));
+        case "twitch":
+            // Twitch needs a URL with twitch.tv
+            return !!(link.url && link.url.includes('twitch.tv'));
         default:
             return validateUrl(link.url);
     }

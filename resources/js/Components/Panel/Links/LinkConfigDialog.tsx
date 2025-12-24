@@ -11,9 +11,14 @@ import { LinkBlock } from "@/types";
 import React from "react";
 import { BLOCK_CONFIG } from "./BlockSelector";
 import {
+    CalendarConfig,
     DefaultConfig,
+    EmailConfig,
     HeaderConfig,
+    MapConfig,
     MediaConfig,
+    SoundCloudConfig,
+    VideoEmbedConfig,
     WhatsAppConfig,
 } from "./configs";
 
@@ -40,7 +45,21 @@ export const LinkConfigDialog: React.FC<LinkConfigDialogProps> = ({
                 return <WhatsAppConfig link={link} onUpdate={onUpdate} />;
             case "video":
             case "music":
+            case "youtube":
+            case "spotify":
                 return <MediaConfig link={link} onUpdate={onUpdate} />;
+            case "calendar":
+                return <CalendarConfig link={link} onUpdate={onUpdate} />;
+            case "email":
+                return <EmailConfig link={link} onUpdate={onUpdate} />;
+            case "map":
+                return <MapConfig link={link} onUpdate={onUpdate} />;
+            case "vimeo":
+            case "tiktok":
+            case "twitch":
+                return <VideoEmbedConfig link={link} onUpdate={onUpdate} />;
+            case "soundcloud":
+                return <SoundCloudConfig link={link} onUpdate={onUpdate} />;
             case "classic":
             case "twitter":
             case "mastodon":
@@ -65,7 +84,7 @@ export const LinkConfigDialog: React.FC<LinkConfigDialogProps> = ({
                         </div>
                         <div>
                             <h3 className="font-bold text-neutral-900 dark:text-white text-lg">
-                                Configure Block
+                                Configurar Bloque
                             </h3>
                             <p className="text-xs text-neutral-500 dark:text-neutral-400 font-medium uppercase tracking-wider">
                                 {config.label}
@@ -80,7 +99,7 @@ export const LinkConfigDialog: React.FC<LinkConfigDialogProps> = ({
                 </DialogBody>
 
                 <DialogFooter className="justify-end bg-neutral-50/50 dark:bg-neutral-900/50">
-                    <Button onClick={onClose}>Done</Button>
+                    <Button onClick={onClose}>Listo</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

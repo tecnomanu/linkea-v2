@@ -13,12 +13,12 @@ export const HeaderConfig: React.FC<HeaderConfigProps> = ({
 }) => {
     return (
         <SegmentedSelect
-            label="Header Size"
+            label="Tamaño de cabecera"
             value={link.headerSize || "medium"}
             options={[
-                { value: "small", label: "Small" },
-                { value: "medium", label: "Medium" },
-                { value: "large", label: "Large" },
+                { value: "small", label: "Chico" },
+                { value: "medium", label: "Mediano" },
+                { value: "large", label: "Grande" },
             ]}
             onChange={(val) =>
                 onUpdate(link.id, {

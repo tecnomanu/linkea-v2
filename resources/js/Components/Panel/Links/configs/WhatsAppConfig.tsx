@@ -15,7 +15,7 @@ export const WhatsAppConfig: React.FC<WhatsAppConfigProps> = ({
             {/* Phone Number */}
             <div className="space-y-1.5">
                 <label className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                    WhatsApp Number
+                    Numero de WhatsApp
                 </label>
                 <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -34,14 +34,14 @@ export const WhatsAppConfig: React.FC<WhatsAppConfigProps> = ({
                     />
                 </div>
                 <p className="text-xs text-neutral-400">
-                    Include country code, no spaces.
+                    Incluye el codigo de pais, sin espacios.
                 </p>
             </div>
 
             {/* Predefined Message */}
             <div className="space-y-1.5">
                 <label className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                    Predefined Message
+                    Mensaje predefinido
                 </label>
                 <textarea
                     value={link.predefinedMessage || ""}
@@ -52,7 +52,7 @@ export const WhatsAppConfig: React.FC<WhatsAppConfigProps> = ({
                     }
                     rows={3}
                     className="w-full bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl px-4 py-3 text-sm text-neutral-700 dark:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all resize-none"
-                    placeholder="Hello! I saw your link..."
+                    placeholder="Hola! Vi tu enlace y queria..."
                 />
             </div>
         </div>

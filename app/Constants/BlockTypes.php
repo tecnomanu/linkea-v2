@@ -29,12 +29,21 @@ final class BlockTypes
 
     // Messaging
     public const WHATSAPP = 'whatsapp';
+    public const EMAIL = 'email';          // TODO: implement full block
+
+    // Scheduling & Leads
+    public const CALENDAR = 'calendar';    // Calendly, Cal.com, Acuity, etc.
+
+    // Contact & Forms
+    public const MAP = 'map';              // TODO: implement full block
+    public const CONTACT = 'contact';      // TODO: implement full block
 
     // Legacy/other
     public const MASTODON = 'mastodon';
     public const TWITTER = 'twitter';
     public const VIDEO = 'video';
     public const MUSIC = 'music';
+    public const VIMEO = 'vimeo';          // TODO: implement full block
 
     /**
      * All valid block types
@@ -51,7 +60,12 @@ final class BlockTypes
         self::SOUNDCLOUD,
         self::TIKTOK,
         self::TWITCH,
+        self::VIMEO,
         self::WHATSAPP,
+        self::EMAIL,
+        self::CALENDAR,
+        self::MAP,
+        self::CONTACT,
         self::MASTODON,
         self::TWITTER,
         self::VIDEO,
@@ -71,6 +85,8 @@ final class BlockTypes
         self::SOUNDCLOUD,
         self::TIKTOK,
         self::TWITCH,
+        self::VIMEO,
+        self::CALENDAR,  // Calendar URL (Calendly, Cal.com, etc.)
         self::MASTODON,
         self::TWITTER,
     ];
@@ -84,6 +100,9 @@ final class BlockTypes
         self::SOUNDCLOUD,
         self::TIKTOK,
         self::TWITCH,
+        self::VIMEO,
+        self::CALENDAR,  // Calendar can be embedded inline
+        self::MAP,       // Maps are embedded
     ];
 
     public static function isValid(string $type): bool

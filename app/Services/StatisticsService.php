@@ -167,4 +167,150 @@ class StatisticsService
             'hasData' => true,
         ];
     }
+
+    /**
+     * Get comprehensive dashboard stats for a landing.
+     * 
+     * @return array{
+     *     totalClicks: int,
+     *     totalLinks: int,
+     *     activeLinks: int,
+     *     clicksToday: int,
+     *     clicksThisWeek: int,
+     *     clicksThisMonth: int,
+     *     weeklyChange: float,
+     *     dailyAverage: float,
+     *     chartData: array,
+     *     topLinks: array,
+     *     linksByType: array
+     * }
+     */
+    public function getLandingDashboardStats(string $landingId, int $chartDays = 30): array
+    {
+        // Explicitly exclude soft deleted links
+        $links = Link::where('landing_id', $landingId)
+            ->whereNull('deleted_at')
+            ->get();
+        $linkIds = $links->pluck('id')->toArray();
+        
+        $today = Carbon::today();
+        $startOfWeek = Carbon::now()->startOfWeek();
+        $startOfMonth = Carbon::now()->startOfMonth();
+        $startOfLastWeek = Carbon::now()->subWeek()->startOfWeek();
+        $endOfLastWeek = Carbon::now()->subWeek()->endOfWeek();
+
+        // Total clicks (all time)
+        $totalClicks = $links->sum('visited');
+
+        // Clicks today
+        $clicksToday = LinkStatistic::whereIn('link_id', $linkIds)
+            ->where('date', $today)
+            ->sum('visits');
+
+        // Clicks this week
+        $clicksThisWeek = LinkStatistic::whereIn('link_id', $linkIds)
+            ->where('date', '>=', $startOfWeek)
+            ->sum('visits');
+
+        // Clicks last week (for comparison)
+        $clicksLastWeek = LinkStatistic::whereIn('link_id', $linkIds)
+            ->whereBetween('date', [$startOfLastWeek, $endOfLastWeek])
+            ->sum('visits');
+
+        // Clicks this month
+        $clicksThisMonth = LinkStatistic::whereIn('link_id', $linkIds)
+            ->where('date', '>=', $startOfMonth)
+            ->sum('visits');
+
+        // Weekly change percentage
+        $weeklyChange = $clicksLastWeek > 0 
+            ? round((($clicksThisWeek - $clicksLastWeek) / $clicksLastWeek) * 100, 1)
+            : ($clicksThisWeek > 0 ? 100 : 0);
+
+        // Daily average (last 30 days)
+        $last30DaysClicks = LinkStatistic::whereIn('link_id', $linkIds)
+            ->where('date', '>=', Carbon::today()->subDays(29))
+            ->sum('visits');
+        $dailyAverage = round($last30DaysClicks / 30, 1);
+
+        // Chart data (clicks per day)
+        $chartData = $this->getAggregatedChartData($linkIds, $chartDays);
+
+        // Top performing links (by clicks)
+        $topLinks = $links
+            ->where('state', true)
+            ->where('type', '!=', 'header')
+            ->sortByDesc('visited')
+            ->take(5)
+            ->map(function ($link) use ($linkIds) {
+                $sparkline = $this->getSparklineData($link->id, 7);
+                return [
+                    'id' => $link->id,
+                    'title' => $link->text,
+                    'type' => $link->type,
+                    'clicks' => $link->visited ?? 0,
+                    'sparklineData' => $sparkline,
+                ];
+            })
+            ->values()
+            ->toArray();
+
+        // Links breakdown by type
+        $linksByType = $links
+            ->where('state', true)
+            ->groupBy('type')
+            ->map(function ($group, $type) {
+                return [
+                    'type' => $type,
+                    'count' => $group->count(),
+                    'clicks' => $group->sum('visited'),
+                ];
+            })
+            ->sortByDesc('clicks')
+            ->values()
+            ->toArray();
+
+        return [
+            'totalClicks' => $totalClicks,
+            'totalLinks' => $links->count(),
+            'activeLinks' => $links->where('state', true)->count(),
+            'clicksToday' => $clicksToday,
+            'clicksThisWeek' => $clicksThisWeek,
+            'clicksThisMonth' => $clicksThisMonth,
+            'weeklyChange' => $weeklyChange,
+            'dailyAverage' => $dailyAverage,
+            'chartData' => $chartData,
+            'topLinks' => $topLinks,
+            'linksByType' => $linksByType,
+        ];
+    }
+
+    /**
+     * Get aggregated chart data for multiple links.
+     */
+    protected function getAggregatedChartData(array $linkIds, int $days): array
+    {
+        $startDate = Carbon::today()->subDays($days - 1);
+
+        $statistics = LinkStatistic::whereIn('link_id', $linkIds)
+            ->where('date', '>=', $startDate)
+            ->selectRaw('date, SUM(visits) as total_visits')
+            ->groupBy('date')
+            ->orderBy('date', 'asc')
+            ->get()
+            ->keyBy(fn($stat) => Carbon::parse($stat->date)->format('Y-m-d'));
+
+        $chartData = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $date = Carbon::today()->subDays($i);
+            $dateKey = $date->format('Y-m-d');
+            $chartData[] = [
+                'date' => $date->format('d M'),
+                'fullDate' => $dateKey,
+                'clicks' => (int) ($statistics->get($dateKey)?->total_visits ?? 0),
+            ];
+        }
+
+        return $chartData;
+    }
 }

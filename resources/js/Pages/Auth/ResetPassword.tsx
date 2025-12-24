@@ -26,7 +26,7 @@ export default function ResetPassword({ token, email }: Props) {
     return (
         <AuthLayout
             title="Nueva contrasena"
-            subtitle="Ingresa tu nueva contrasena para recuperar el acceso a tu cuenta"
+            subtitle="Ingresa tu nueva contrasena para recuperar el acceso"
         >
             <form onSubmit={submit} className="space-y-5">
                 <Input
@@ -63,17 +63,17 @@ export default function ResetPassword({ token, email }: Props) {
                 />
 
                 <Button
-                    className="w-full text-base py-6 rounded-2xl"
+                    className="w-full py-6 text-base rounded-xl font-bold"
                     isLoading={processing}
                 >
                     Cambiar contrasena
                 </Button>
             </form>
 
-            <div className="mt-6 text-center">
+            <div className="mt-8 text-center">
                 <Link
                     href={route("login")}
-                    className="inline-flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-brand-500 transition-colors"
+                    className="inline-flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-brand-500 dark:hover:text-brand-400 transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4" />
                     Volver al login
@@ -82,4 +82,3 @@ export default function ResetPassword({ token, email }: Props) {
         </AuthLayout>
     );
 }
-

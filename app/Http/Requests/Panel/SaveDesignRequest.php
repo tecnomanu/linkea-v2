@@ -19,15 +19,26 @@ class SaveDesignRequest extends FormRequest
             'avatar' => 'nullable|string', // Can be base64 image (large)
             'theme' => 'nullable|string|max:50',
             'customDesign' => 'nullable|array',
+            // Background properties
             'customDesign.backgroundColor' => 'nullable|string|max:50',
             'customDesign.backgroundImage' => 'nullable|string', // SVG data URL can be very large
+            'customDesign.backgroundSize' => 'nullable|string|max:50',
+            'customDesign.backgroundPosition' => 'nullable|string|max:50',
+            'customDesign.backgroundRepeat' => 'nullable|string|max:50',
+            'customDesign.backgroundAttachment' => 'nullable|string|in:fixed,scroll',
             'customDesign.backgroundProps' => 'nullable|array', // Legacy bg editor props (colors, opacity, scale)
             'customDesign.backgroundControls' => 'nullable|array', // Legacy bg editor controls config
+            // Button properties
             'customDesign.buttonStyle' => 'nullable|string|in:solid,outline,soft,hard',
             'customDesign.buttonShape' => 'nullable|string|in:sharp,rounded,pill',
             'customDesign.buttonColor' => 'nullable|string|max:50',
             'customDesign.buttonTextColor' => 'nullable|string|max:50',
+            'customDesign.showButtonIcons' => 'nullable|boolean',
+            'customDesign.buttonIconAlignment' => 'nullable|string|in:left,inline,right',
+            // Typography
             'customDesign.fontPair' => 'nullable|string|in:modern,elegant,mono',
+            // Text color for page content (auto-calculated if not set)
+            'customDesign.textColor' => 'nullable|string|max:50',
             'customDesign.roundedAvatar' => 'nullable|boolean',
         ];
     }
@@ -49,10 +60,11 @@ class SaveDesignRequest extends FormRequest
         // Include backgroundImage if provided (SVG patterns, gradients, etc.)
         if (isset($customDesign['backgroundImage']) && $customDesign['backgroundImage']) {
             $backgroundConfig['backgroundImage'] = $customDesign['backgroundImage'];
-            // Also set common background properties for legacy compatibility
-            $backgroundConfig['backgroundAttachment'] = 'fixed';
-            $backgroundConfig['backgroundSize'] = 'cover';
-            $backgroundConfig['backgroundPosition'] = 'center';
+            // Use provided values or defaults
+            $backgroundConfig['backgroundSize'] = $customDesign['backgroundSize'] ?? 'cover';
+            $backgroundConfig['backgroundPosition'] = $customDesign['backgroundPosition'] ?? 'center';
+            $backgroundConfig['backgroundRepeat'] = $customDesign['backgroundRepeat'] ?? 'no-repeat';
+            $backgroundConfig['backgroundAttachment'] = $customDesign['backgroundAttachment'] ?? 'scroll';
         }
 
         // Include legacy background editor props and controls
@@ -63,6 +75,22 @@ class SaveDesignRequest extends FormRequest
             $backgroundConfig['controls'] = $customDesign['backgroundControls'];
         }
 
+        // Build buttons config with icon options
+        $buttonsConfig = array_filter([
+            'style' => $customDesign['buttonStyle'] ?? null,
+            'shape' => $customDesign['buttonShape'] ?? null,
+            'backgroundColor' => $customDesign['buttonColor'] ?? null,
+            'textColor' => $customDesign['buttonTextColor'] ?? null,
+        ]);
+        
+        // Add icon options (use isset to preserve false/explicit values)
+        if (isset($customDesign['showButtonIcons'])) {
+            $buttonsConfig['showIcons'] = $customDesign['showButtonIcons'];
+        }
+        if (isset($customDesign['buttonIconAlignment'])) {
+            $buttonsConfig['iconAlignment'] = $customDesign['buttonIconAlignment'];
+        }
+
         $result = [
             'name' => $data['name'] ?? null,
             'options' => array_filter([
@@ -70,15 +98,10 @@ class SaveDesignRequest extends FormRequest
             ]),
             'template_config' => [
                 'background' => $backgroundConfig,
-                'buttons' => array_filter([
-                    'style' => $customDesign['buttonStyle'] ?? null,
-                    'shape' => $customDesign['buttonShape'] ?? null,
-                    'backgroundColor' => $customDesign['buttonColor'] ?? null,
-                    'textColor' => $customDesign['buttonTextColor'] ?? null,
-                ]),
-                'typography' => array_filter([
-                    'fontPair' => $customDesign['fontPair'] ?? null,
-                ]),
+                'buttons' => $buttonsConfig,
+                'fontPair' => $customDesign['fontPair'] ?? 'modern',
+                // Text color for page content (legacy support)
+                'textColor' => $customDesign['textColor'] ?? null,
                 'header' => [
                     'roundedAvatar' => $customDesign['roundedAvatar'] ?? true,
                 ],

@@ -32,25 +32,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {
             id: "dashboard",
             icon: <LayoutGrid size={20} />,
-            label: "Overview",
+            label: "Inicio",
             route: "panel",
         },
         {
             id: "links",
             icon: <Layers size={20} />,
-            label: "Links",
+            label: "Enlaces",
             route: "panel.links",
         },
         {
             id: "appearance",
             icon: <Palette size={20} />,
-            label: "Design",
+            label: "Apariencia",
             route: "panel.design",
         },
         {
             id: "settings",
             icon: <Settings size={20} />,
-            label: "Settings",
+            label: "Ajustes",
             route: "panel.settings",
         },
     ];

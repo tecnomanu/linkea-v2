@@ -17,11 +17,11 @@ export const MediaConfig: React.FC<MediaConfigProps> = ({ link, onUpdate }) => {
             {/* Player Size - Only for music */}
             {isMusic && (
                 <SegmentedSelect
-                    label="Player Size"
+                    label="Tamaño del reproductor"
                     value={link.playerSize || "normal"}
                     options={[
                         { value: "normal", label: "Normal" },
-                        { value: "compact", label: "Compact" },
+                        { value: "compact", label: "Compacto" },
                     ]}
                     columns={2}
                     onChange={(val) =>
@@ -36,13 +36,13 @@ export const MediaConfig: React.FC<MediaConfigProps> = ({ link, onUpdate }) => {
             {/* Playback Options */}
             <div className="space-y-1.5">
                 <label className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                    Playback Options
+                    Opciones de reproduccion
                 </label>
                 <div className="grid gap-2">
                     {/* Show Inline Player */}
                     <div className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700">
                         <Toggle
-                            label="Show Inline Player"
+                            label="Mostrar reproductor en linea"
                             checked={link.showInlinePlayer ?? false}
                             onChange={(val) =>
                                 onUpdate(link.id, {
@@ -56,7 +56,7 @@ export const MediaConfig: React.FC<MediaConfigProps> = ({ link, onUpdate }) => {
                     {/* Auto Play */}
                     <div className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700">
                         <Toggle
-                            label="Auto Play Media"
+                            label="Reproducir automaticamente"
                             checked={link.autoPlay ?? false}
                             onChange={(val) =>
                                 onUpdate(link.id, {
@@ -71,7 +71,7 @@ export const MediaConfig: React.FC<MediaConfigProps> = ({ link, onUpdate }) => {
                     {isVideo && (
                         <div className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700">
                             <Toggle
-                                label="Start Muted"
+                                label="Iniciar silenciado"
                                 checked={link.startMuted ?? false}
                                 onChange={(val) =>
                                     onUpdate(link.id, {

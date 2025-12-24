@@ -1,3 +1,4 @@
+import { AuthDivider, SocialLoginButtons } from "@/Components/Auth";
 import { Button } from "@/Components/ui/Button";
 import { Input } from "@/Components/ui/Input";
 import AuthLayout from "@/Layouts/AuthLayout";
@@ -16,11 +17,24 @@ export default function Login() {
         post(route("login"));
     };
 
+    // Social login handlers (placeholder - needs OAuth implementation)
+    const handleGoogleLogin = () => {
+        // TODO: Implement Google OAuth
+        console.log("Google login clicked");
+    };
+
+    const handleAppleLogin = () => {
+        // TODO: Implement Apple OAuth
+        console.log("Apple login clicked");
+    };
+
     return (
         <AuthLayout
             title="Bienvenido"
-            subtitle="Ingresa con tu email o nombre de tu linkea"
+            subtitle="Ingresa a tu cuenta de Linkea"
+            heroVariant="login"
         >
+            {/* Login form */}
             <form onSubmit={submit} className="space-y-5">
                 <Input
                     id="identifier"
@@ -37,33 +51,51 @@ export default function Login() {
                     id="password"
                     type="password"
                     label="Contrasena"
+                    placeholder="Tu contrasena"
                     value={data.password}
                     onChange={(e) => setData("password", e.target.value)}
                     error={errors.password}
                 />
 
-                <div className="flex items-center justify-between">
-                    <Link
-                        href={route("password.request")}
-                        className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-brand-500 transition-colors"
-                    >
-                        Olvidaste tu contrasena?
-                    </Link>
-                    <Link
-                        href={route("register")}
-                        className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-brand-500 transition-colors"
-                    >
-                        Registrate
-                    </Link>
-                </div>
-
                 <Button
-                    className="w-full text-base py-6 rounded-2xl"
+                    className="w-full py-6 text-base rounded-xl font-bold"
                     isLoading={processing}
                 >
                     Ingresar
                 </Button>
             </form>
+
+            {/* Divider */}
+            <AuthDivider />
+
+            {/* Social login options */}
+            <SocialLoginButtons
+                onGoogleClick={handleGoogleLogin}
+                onAppleClick={handleAppleLogin}
+                disabled={processing}
+            />
+
+            {/* Links */}
+            <div className="mt-8 space-y-3">
+                <div className="flex items-center justify-center gap-2 text-sm">
+                    <Link
+                        href={route("password.request")}
+                        className="text-neutral-500 dark:text-neutral-400 hover:text-brand-500 dark:hover:text-brand-400 transition-colors"
+                    >
+                        Olvidaste tu contrasena?
+                    </Link>
+                </div>
+
+                <div className="text-center text-sm text-neutral-500 dark:text-neutral-400">
+                    No tenes una cuenta?{" "}
+                    <Link
+                        href={route("register")}
+                        className="text-brand-500 hover:text-brand-600 font-semibold transition-colors"
+                    >
+                        Registrate
+                    </Link>
+                </div>
+            </div>
         </AuthLayout>
     );
 }
