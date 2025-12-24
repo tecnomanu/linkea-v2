@@ -15,6 +15,23 @@ class SystemRouterController extends Controller
         return response("UP");
     }
 
+    /**
+     * Serve the llm.txt file for AI agents context.
+     */
+    public function llmContext()
+    {
+        $filePath = public_path('llm.txt');
+        
+        if (file_exists($filePath)) {
+            return response()->file($filePath, [
+                'Content-Type' => 'text/plain; charset=UTF-8',
+            ]);
+        }
+        
+        return response("# Linkea.ar - No llm.txt found", 404)
+            ->header('Content-Type', 'text/plain');
+    }
+
     public function privacy()
     {
         return Inertia::render('Privacy');

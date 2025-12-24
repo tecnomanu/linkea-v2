@@ -1,7 +1,7 @@
+import { AdminMobileNav } from "@/Components/Admin/AdminMobileNav";
+import { AdminSidebar } from "@/Components/Admin/AdminSidebar";
 import { Head, usePage } from "@inertiajs/react";
 import { PropsWithChildren, useEffect, useState } from "react";
-import { AdminSidebar } from "@/Components/Admin/AdminSidebar";
-import { AdminMobileNav } from "@/Components/Admin/AdminMobileNav";
 
 interface AdminLayoutProps {
     title?: string;
@@ -60,7 +60,10 @@ export default function AdminLayout({
                 isDarkMode ? "dark" : ""
             } transition-colors duration-300 min-h-screen bg-slate-50 dark:bg-neutral-950`}
         >
-            {title && <Head title={title} />}
+            <Head>
+                {title && <title>{title}</title>}
+                <meta name="robots" content="noindex, nofollow" />
+            </Head>
 
             <div className="flex min-h-screen font-sans selection:bg-red-500/20 selection:text-red-900 dark:text-white">
                 <AdminSidebar
@@ -87,4 +90,3 @@ export default function AdminLayout({
         </div>
     );
 }
-

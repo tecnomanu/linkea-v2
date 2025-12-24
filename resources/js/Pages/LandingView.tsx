@@ -13,6 +13,7 @@
 
 import { CookieConsent } from "@/Components/Shared/CookieConsent";
 import { LandingContent, SocialLink } from "@/Components/Shared/LandingContent";
+import { landingFullJsonLd } from "@/Components/Shared/SEOHead";
 import { BlockType, LinkBlock, UserProfile } from "@/types";
 import { Head } from "@inertiajs/react";
 import { useEffect, useMemo } from "react";
@@ -134,7 +135,18 @@ export default function LandingView({
     const seoDescription =
         landing?.options?.description ||
         `Links de ${user.name} - Creado con Linkea`;
-    const seoImage = user.avatar;
+    const seoImage = user.avatar?.startsWith("http")
+        ? user.avatar
+        : `https://linkea.ar${user.avatar}`;
+    const canonicalUrl = `https://linkea.ar/${user.handle}`;
+
+    // JSON-LD structured data for this profile (includes breadcrumbs)
+    const profileJsonLd = landingFullJsonLd(
+        user.name,
+        user.handle,
+        user.bio,
+        seoImage
+    );
 
     // Tracking IDs (support both new and legacy field names)
     const googleAnalyticsId =
@@ -208,6 +220,10 @@ export default function LandingView({
             <Head>
                 <title>{seoTitle}</title>
                 <meta name="description" content={seoDescription} />
+                <meta name="robots" content="index, follow" />
+
+                {/* Canonical URL */}
+                <link rel="canonical" href={canonicalUrl} />
 
                 {/* Favicon - use landing logo if available, otherwise default */}
                 <link
@@ -221,16 +237,26 @@ export default function LandingView({
                 />
 
                 {/* Open Graph */}
+                <meta property="og:site_name" content="Linkea" />
+                <meta property="og:locale" content="es_AR" />
+                <meta property="og:type" content="profile" />
+                <meta property="og:url" content={canonicalUrl} />
                 <meta property="og:title" content={seoTitle} />
                 <meta property="og:description" content={seoDescription} />
                 <meta property="og:image" content={seoImage} />
-                <meta property="og:type" content="website" />
+                <meta property="og:image:width" content="400" />
+                <meta property="og:image:height" content="400" />
 
                 {/* Twitter Card */}
                 <meta name="twitter:card" content="summary_large_image" />
                 <meta name="twitter:title" content={seoTitle} />
                 <meta name="twitter:description" content={seoDescription} />
                 <meta name="twitter:image" content={seoImage} />
+
+                {/* JSON-LD Structured Data */}
+                <script type="application/ld+json">
+                    {JSON.stringify(profileJsonLd)}
+                </script>
             </Head>
 
             {/* Main Content - LandingContent handles its own background */}

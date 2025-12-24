@@ -12,4 +12,8 @@ declare global {
         absolute?: boolean,
         config?: Config
     ): string | Router;
+
+    interface Window {
+        __LINKEA_APP_NAME__: string;
+    }
 }

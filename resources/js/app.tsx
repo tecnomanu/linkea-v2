@@ -5,32 +5,61 @@ import { createInertiaApp } from "@inertiajs/react";
 import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
 import { createRoot } from "react-dom/client";
 
-const appName = import.meta.env.VITE_APP_NAME || "Linkea";
+// Type for shared props from Laravel
+interface SharedProps {
+    appName: string;
+    auth: {
+        user: {
+            id: string;
+            name: string;
+            email: string;
+            avatar: string | null;
+            role_name: string;
+        } | null;
+    };
+    flash: {
+        success: string | null;
+        error: string | null;
+    };
+}
 
 createInertiaApp({
-    title: (title) => `${title} | ${appName}`,
+    // Title function receives the page title, appName comes from shared props
+    title: (title) => {
+        // If title already includes "linkea", don't append
+        if (title?.toLowerCase().includes("linkea")) {
+            return title;
+        }
+        // Fallback to "Linkea" - the actual appName is used in individual pages
+        return title ? `${title} | Linkea` : "Linkea";
+    },
     resolve: (name) =>
         resolvePageComponent(
             `./Pages/${name}.tsx`,
             import.meta.glob("./Pages/**/*.tsx")
         ),
     setup({ el, App, props }) {
+        // Access appName from shared props (comes from Laravel config)
+        const sharedProps = props.initialPage.props as unknown as SharedProps;
+        const appName = sharedProps.appName || "Linkea";
+
+        // Store globally for components that need it
+        window.__LINKEA_APP_NAME__ = appName;
+
         const root = createRoot(el);
         root.render(<App {...props} />);
     },
     progress: {
-        color: "#4B5563",
+        color: "#f97316", // Brand orange color
     },
 });
 
 // Global error handler for CSRF token expiration (419)
 document.addEventListener("inertia:error", (event: any) => {
-    // Check if the error is a 419 (CSRF token mismatch/expiration)
     if (event.detail?.response?.status === 419) {
         console.warn(
             "CSRF token expired (419). Reloading page to refresh session..."
         );
-        // Reload the page to get a fresh CSRF token
         window.location.reload();
     }
 });

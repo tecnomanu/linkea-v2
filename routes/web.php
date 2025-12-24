@@ -32,6 +32,7 @@ Route::get('/', [WebController::class, 'index'])->name('home');
 Route::get('/health', [SystemRouterController::class, 'health'])->name('health');
 Route::get('/privacy', [SystemRouterController::class, 'privacy'])->name('privacy');
 Route::get('/sitemap.xml', [SystemRouterController::class, 'sitemap'])->name('sitemap');
+Route::get('/llm.txt', [SystemRouterController::class, 'llmContext'])->name('llm.context');
 
 // Statistics - Moved to api.php (no CSRF needed for public tracking)
 

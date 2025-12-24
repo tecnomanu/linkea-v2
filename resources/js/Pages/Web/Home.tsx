@@ -15,15 +15,19 @@ interface HomeProps {
 
 export default function Home({ featuredLandings }: HomeProps) {
     return (
-        <WebLayout title="Linkea - Todos tus enlaces en un solo lugar">
+        <WebLayout
+            title="Linkea - Todos tus enlaces en un solo lugar | Link in Bio Argentina"
+            description="Crea tu pagina de links personalizada gratis. Comparte todos tus enlaces en un solo lugar con Linkea, la mejor alternativa argentina a Linktree. 100% gratis, sin limites."
+            canonical="/"
+        >
             {/* Hero + Stats */}
             <HeroSection landings={featuredLandings} />
             <StatsSection />
 
-            {/* NEW: Features highlight from 2.0 - replaces PremiumAlertSection */}
+            {/* NEW: Features highlight from 2.0 */}
             <FeaturesHighlightSection />
 
-            {/* How it works - moved up after benefits */}
+            {/* How it works */}
             <HowItWorksSection />
 
             {/* Social proof: community previews */}

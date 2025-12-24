@@ -66,7 +66,10 @@ export default function PanelLayout({
                     isDarkMode ? "dark" : ""
                 } transition-colors duration-300 min-h-screen bg-slate-50 dark:bg-neutral-950`}
             >
-                {title && <Head title={title} />}
+                <Head>
+                    {title && <title>{title}</title>}
+                    <meta name="robots" content="noindex, nofollow" />
+                </Head>
 
                 <div className="flex min-h-screen font-sans selection:bg-brand-500/20 selection:text-brand-900 dark:text-white">
                     <Sidebar

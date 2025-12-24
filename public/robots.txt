@@ -1,2 +1,43 @@
+# Linkea.ar - Robots.txt
+# https://linkea.ar
+
 User-agent: *
-Disallow:
+Allow: /
+
+# Sitemap
+Sitemap: https://linkea.ar/sitemap.xml
+
+# Disallow private areas
+Disallow: /panel/
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /horizon/
+
+# Allow search engines to find public landings
+Allow: /$
+
+# Block common crawlers from heavy resources
+User-agent: GPTBot
+Allow: /
+Allow: /llm.txt
+
+User-agent: ChatGPT-User
+Allow: /
+Allow: /llm.txt
+
+User-agent: Claude-Web
+Allow: /
+Allow: /llm.txt
+
+User-agent: Anthropic-AI
+Allow: /
+Allow: /llm.txt
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /llm.txt
+
+# Block unnecessary bot traffic to API
+User-agent: *
+Disallow: /api/*
