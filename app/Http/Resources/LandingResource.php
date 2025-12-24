@@ -49,3 +49,4 @@ class LandingResource extends JsonResource
     }
 }
 
+
