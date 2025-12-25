@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'mautic' => [
+        'api_url' => env('MAUTIC_APIURL'),
+        'username' => env('MAUTIC_USERNAME'),
+        'password' => env('MAUTIC_PASSWORD'),
+    ],
+
 ];

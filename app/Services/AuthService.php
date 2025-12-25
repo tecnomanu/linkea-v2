@@ -3,6 +3,9 @@
 namespace App\Services;
 
 use App\Constants\UserRoles;
+use App\Jobs\Mautic\AddToMautic;
+use App\Jobs\Mautic\SetVerifyMautic;
+use App\Jobs\Mautic\UpdateLastActiveMautic;
 use App\Models\Company;
 use App\Models\Landing;
 use App\Models\Role;
@@ -63,6 +66,9 @@ class AuthService
         if (!Auth::attempt(['email' => $user->email, 'password' => $password])) {
             return false;
         }
+
+        // Dispatch Mautic job to update last active (queued)
+        UpdateLastActiveMautic::dispatch($user);
 
         return true;
     }
@@ -141,6 +147,9 @@ class AuthService
             // Generate token
             $token = $user->createToken('auth_token')->plainTextToken;
 
+            // Dispatch Mautic job to add contact (queued)
+            AddToMautic::dispatch($user);
+
             return [
                 'user' => $user->fresh(),
                 'token' => $token,
@@ -174,6 +183,9 @@ class AuthService
         }
 
         $user->update(['verified_at' => Carbon::now()]);
+
+        // Dispatch Mautic job to mark as verified (queued)
+        SetVerifyMautic::dispatch($user);
 
         return true;
     }
