@@ -103,6 +103,24 @@ Route::middleware(['auth', 'root'])->prefix('admin')->name('admin.')->group(func
 
 /**
  * =======================================================================
+ * DEVELOPMENT/TEST ROUTES (Only available in local/debug mode)
+ * =======================================================================
+ * These routes return 404 in production to hide their existence.
+ */
+
+use App\Http\Controllers\Dev\EmailPreviewController;
+
+if (app()->environment('local', 'development', 'testing') || config('app.debug')) {
+    Route::prefix('test')->group(function () {
+        // Email Templates Preview
+        Route::get('/email-templates', [EmailPreviewController::class, 'index'])->name('test.email-templates');
+        Route::get('/email-templates/{template}', [EmailPreviewController::class, 'show'])->name('test.email-templates.show');
+        Route::post('/email-templates/{template}/send', [EmailPreviewController::class, 'sendTest'])->name('test.email-templates.send');
+    });
+}
+
+/**
+ * =======================================================================
  * CATCH-ALL ROUTE (Must be last)
  * =======================================================================
  * 

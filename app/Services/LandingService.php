@@ -84,8 +84,8 @@ class LandingService
             'user_id' => $user->id,
             'slug' => $username,
             'logo' => [
-                'image' => "https://avatars.dicebear.com/api/big-ears-neutral/{$username}.svg",
-                'thumb' => "https://avatars.dicebear.com/api/big-ears-neutral/{$username}.svg",
+                'image' => "https://api.dicebear.com/9.x/lorelei/svg?seed={$username}",
+                'thumb' => "https://api.dicebear.com/9.x/lorelei/svg?seed={$username}",
             ],
             'verify' => true,
             'domain_name' => $username,

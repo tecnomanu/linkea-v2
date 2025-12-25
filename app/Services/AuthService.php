@@ -7,6 +7,7 @@ use App\Models\Company;
 use App\Models\Landing;
 use App\Models\Role;
 use App\Models\User;
+use App\Notifications\VerifyUserCode;
 use App\Repositories\Contracts\UserRepository;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -134,6 +135,9 @@ class AuthService
             // Create default landing
             $this->landingService->createDefault($user, $username);
 
+            // Send verification email notification (queued)
+            $user->notify(new VerifyUserCode());
+
             // Generate token
             $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -142,6 +146,20 @@ class AuthService
                 'token' => $token,
             ];
         });
+    }
+
+    /**
+     * Resend verification code to user.
+     */
+    public function resendVerificationCode(User $user): void
+    {
+        // Generate new verification code
+        $user->update([
+            'verification_code' => $this->generateVerificationCode(),
+        ]);
+
+        // Send verification email notification (queued)
+        $user->notify(new VerifyUserCode());
     }
 
     /**

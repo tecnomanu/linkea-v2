@@ -194,12 +194,8 @@ class AuthController extends Controller
             return redirect()->intended('/panel');
         }
 
-        // Generate new code and send email
-        $user->update([
-            'verification_code' => rand(100000, 999999),
-        ]);
-
-        // TODO: Send verification email with new code
+        // Generate new code and send verification email via service
+        $this->authService->resendVerificationCode($user);
 
         return back()->with('status', 'verification-link-sent');
     }
