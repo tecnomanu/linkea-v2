@@ -5,249 +5,202 @@
 This guide documents the complete process for creating a new block type in Linkea.
 Use the **Calendar block** as the reference implementation.
 
+## IMPORTANT: Centralized Configuration
+
+**All block configuration is centralized in `resources/js/config/blockConfig.ts`**
+
+This is the **single source of truth** for:
+- Block labels and descriptions
+- Icons (Lucide component + name for serialization)
+- Color classes and badge styles
+- Default values when creating blocks
+- Input placeholders
+- Visibility in selector
+
+**DO NOT duplicate this information in other files.**
+
 ## Files to Modify/Create (Checklist)
 
 When creating a new block, you need to touch these files in order:
 
-### 1. Types & Constants (Frontend)
+### 1. Centralized Block Configuration (FIRST!)
+
+**File:** `resources/js/config/blockConfig.ts`
+
+- Add entry to `BLOCK_TYPES` record
+- This automatically updates: BlockSelector, LinkCard, LinksTab
+
+```typescript
+// Add new block type
+newblock: {
+    label: "New Block",
+    description: "Description for selector",
+    icon: NewBlockIcon,          // Lucide component
+    iconName: "new-block-icon",  // Lucide icon name for DB
+    colorClass: "bg-purple-500 text-white",
+    badgeClass: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+    hideUrlInput: true,          // Set true if no URL input needed
+    titlePlaceholder: "Block Title",
+    urlPlaceholder: "https://...",  // Optional
+    defaults: {
+        title: "Default Title",
+        url: "",
+        // Block-specific default values
+        newBlockField: "",
+    },
+},
+```
+
+### 2. Types & Constants (Frontend)
 
 **File:** `resources/js/types.ts`
 
--   Add block type to `BlockType` union
--   Add any specific types (e.g., `CalendarProvider`, `EmailProvider`)
--   Add optional fields to `LinkBlock` interface
+- Add block type to `BlockType` union
+- Add any specific types (e.g., `CalendarProvider`)
+- Add optional fields to `LinkBlock` interface
 
 ```typescript
 // Add to BlockType union
 export type BlockType =
     | "link"
-    | "calendar" // <-- Add here
-    | "email"; // <-- New block
-// ...
+    | "newblock"; // <-- Add here
 
 // Add specific types if needed
-export type EmailProvider = "gmail" | "outlook" | "other";
+export type NewBlockProvider = "option1" | "option2";
 
 // Add optional fields to LinkBlock
 export interface LinkBlock {
     // ... existing fields
-    emailAddress?: string; // New block specific
-    emailSubject?: string;
-    emailProvider?: EmailProvider;
+    newBlockField?: string;
+    newBlockProvider?: NewBlockProvider;
 }
 ```
 
-### 2. Backend Validation
+### 3. Backend Validation
 
 **File:** `app/Http/Requests/Panel/SaveLinksRequest.php`
 
--   Add type to `Rule::in()` array in `rules()`
--   Add validation rules for block-specific fields
--   Add field mapping in `extractConfig()`
+- Add type to `Rule::in()` array in `rules()`
+- Add validation rules for block-specific fields
+- Add field mapping in `extractConfig()`
 
 ```php
 // In rules():
 'links.*.type' => ['required', 'string', Rule::in([
     // ...existing types
-    'email',  // <-- Add here
+    'newblock',  // <-- Add here
 ])],
 // Add specific field validation
-'links.*.emailAddress' => 'nullable|email|max:255',
-'links.*.emailSubject' => 'nullable|string|max:255',
-'links.*.emailProvider' => 'nullable|string|in:gmail,outlook,other',
+'links.*.newBlockField' => 'nullable|string|max:255',
 
 // In extractConfig():
 $config = array_filter([
     // ...existing
-    'email_address' => $link['emailAddress'] ?? null,
-    'email_subject' => $link['emailSubject'] ?? null,
-    'email_provider' => $link['emailProvider'] ?? null,
+    'new_block_field' => $link['newBlockField'] ?? null,
 ], fn($v) => $v !== null);
 ```
 
-### 3. Backend Constants (Optional)
+### 4. Backend Constants (Optional)
 
 **File:** `app/Constants/BlockTypes.php`
 
--   Add constant for the type
--   Add to `ALL` array
--   Add to `REQUIRES_URL`, `EMBEDDABLE`, etc. if applicable
-
 ```php
-public const EMAIL = 'email';
+public const NEWBLOCK = 'newblock';
 
 public const ALL = [
     // ...
-    self::EMAIL,
+    self::NEWBLOCK,
 ];
 ```
 
-### 4. Validation Hook (Frontend)
+### 5. Validation Hook (Frontend)
 
 **File:** `resources/js/hooks/useLinkValidation.ts`
 
--   Add URL pattern if needed
--   Add validation function
--   Update `isLinkComplete()` switch case
--   Update `getValidationError()` switch case
+- Add URL pattern if needed
+- Update `isLinkComplete()` switch case
+- Update `getValidationError()` switch case
 
 ```typescript
-// Add pattern if needed
-const URL_PATTERNS = {
-    email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,  // Simple email regex
-};
-
 // Update isLinkComplete
-case "email":
-    return !!link.emailAddress && URL_PATTERNS.email.test(link.emailAddress);
+case "newblock":
+    return !!link.newBlockField;
 
 // Update getValidationError
-case "email":
-    if (!link.emailAddress) return "Email requerido";
-    if (!URL_PATTERNS.email.test(link.emailAddress)) return "Email invalido";
+case "newblock":
+    if (!link.newBlockField) return "Campo requerido";
     return null;
 ```
 
-### 5. Block Selector
-
-**File:** `resources/js/Components/Panel/Links/BlockSelector.tsx`
-
--   Add entry to `BLOCK_CONFIG` with label, description, icon, colors
-
-```typescript
-email: {
-    label: "Email",
-    desc: "Recibir mensajes por correo",
-    icon: <Mail size={24} />,
-    colorClass: "bg-red-500 text-white",
-    badgeBg: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-},
-```
-
-### 6. Link Card Placeholders
-
-**File:** `resources/js/Components/Panel/Links/LinkCard.tsx`
-
--   Update `getTypeAssets()` to return placeholders for the new type
-
-```typescript
-case "email":
-    return {
-        placeholder: "Contactame",
-        subPlaceholder: "tu@email.com",
-    };
-```
-
-### 7. Links Tab Defaults
-
-**File:** `resources/js/Components/Panel/Links/LinksTab.tsx`
-
--   Update `handleAddBlock()` to set default values for new block
-
-```typescript
-const newLink: LinkBlock = {
-    // ... base fields
-    ...(type === "email" && {
-        emailAddress: "",
-        emailProvider: "gmail",
-    }),
-};
-```
-
-### 8. Configuration Component
+### 6. Configuration Component
 
 **File:** `resources/js/Components/Panel/Links/configs/{BlockName}Config.tsx` (NEW)
 
-Create a configuration panel component:
-
 ```typescript
 /**
- * EmailConfig - Configuration panel for Email block
+ * NewBlockConfig - Configuration panel for NewBlock
  *
  * Related files:
- * - types.ts: EmailProvider type
- * - useLinkValidation.ts: email validation
- * - blocks/EmailBlock.tsx: Renderer for LandingContent
- * - LandingContent.tsx: Uses EmailBlock for public display
+ * - config/blockConfig.ts: Centralized block configuration
+ * - types.ts: NewBlockProvider, LinkBlock
+ * - blocks/NewBlockBlock.tsx: Renderer for LandingContent
  */
 
 import { LinkBlock } from "@/types";
 import React from "react";
 
-interface EmailConfigProps {
+interface NewBlockConfigProps {
     link: LinkBlock;
     onUpdate: (id: string, updates: Partial<LinkBlock>) => void;
 }
 
-export const EmailConfig: React.FC<EmailConfigProps> = ({ link, onUpdate }) => {
+export const NewBlockConfig: React.FC<NewBlockConfigProps> = ({ link, onUpdate }) => {
     return (
         <div className="space-y-5">
-            {/* Email Address */}
-            <div className="space-y-1.5">
-                <label className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                    Email
-                </label>
-                <input
-                    type="email"
-                    value={link.emailAddress || ""}
-                    onChange={(e) =>
-                        onUpdate(link.id, { emailAddress: e.target.value })
-                    }
-                    className="w-full bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl px-4 py-3 text-sm"
-                    placeholder="tu@email.com"
-                />
-            </div>
-            {/* More fields... */}
+            {/* Configuration fields */}
         </div>
     );
 };
 ```
 
-### 9. Export Configuration
+### 7. Export Configuration
 
 **File:** `resources/js/Components/Panel/Links/configs/index.ts`
 
--   Add export for new config component
-
 ```typescript
-export { EmailConfig } from "./EmailConfig";
+export { NewBlockConfig } from "./NewBlockConfig";
 ```
 
-### 10. Link Config Dialog
+### 8. Link Config Dialog
 
 **File:** `resources/js/Components/Panel/Links/LinkConfigDialog.tsx`
 
--   Import and add case in `renderConfigContent()` switch
-
 ```typescript
-import { EmailConfig } from "./configs";
+import { NewBlockConfig } from "./configs";
 
 // In renderConfigContent():
-case "email":
-    return <EmailConfig link={link} onUpdate={onUpdate} />;
+case "newblock":
+    return <NewBlockConfig link={link} onUpdate={onUpdate} />;
 ```
 
-### 11. Block Renderer (Public Landing)
+### 9. Block Renderer (Public Landing)
 
 **File:** `resources/js/Components/Shared/blocks/{BlockName}Block.tsx` (NEW)
 
-Create the public-facing renderer:
-
 ```typescript
 /**
- * EmailBlock - Public landing page renderer for Email blocks
+ * NewBlockBlock - Public landing page renderer
  *
  * Related files:
- * - types.ts: EmailProvider, LinkBlock
- * - configs/EmailConfig.tsx: Panel configuration UI
- * - LandingContent.tsx: Parent component that renders this block
+ * - config/blockConfig.ts: Centralized configuration
+ * - configs/NewBlockConfig.tsx: Panel configuration UI
+ * - LandingContent.tsx: Parent component
  */
 
 import { LinkBlock, UserProfile } from "@/types";
-import { Mail } from "lucide-react";
 import React from "react";
 
-interface EmailBlockProps {
+interface NewBlockBlockProps {
     link: LinkBlock;
     design: UserProfile["customDesign"];
     buttonClassName: string;
@@ -258,7 +211,7 @@ interface EmailBlockProps {
     roundingClass?: string;
 }
 
-export const EmailBlock: React.FC<EmailBlockProps> = ({
+export const NewBlockBlock: React.FC<NewBlockBlockProps> = ({
     link,
     design,
     buttonClassName,
@@ -268,53 +221,31 @@ export const EmailBlock: React.FC<EmailBlockProps> = ({
     animationDelay = 0,
     roundingClass = "rounded-[20px]",
 }) => {
-    const mailtoUrl = `mailto:${link.emailAddress}${
-        link.emailSubject
-            ? `?subject=${encodeURIComponent(link.emailSubject)}`
-            : ""
-    }`;
-
-    return (
-        <a
-            href={mailtoUrl}
-            onClick={(e) => {
-                if (isPreview) {
-                    e.preventDefault();
-                    return;
-                }
-                onClick?.(e);
-            }}
-            className={`${buttonClassName} animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards`}
-            style={{ ...buttonStyle, animationDelay: `${animationDelay}ms` }}
-        >
-            {/* Block content */}
-        </a>
-    );
+    // Block implementation
 };
+
+export default NewBlockBlock;
 ```
 
-### 12. Export Block Renderer
+### 10. Export Block Renderer
 
 **File:** `resources/js/Components/Shared/blocks/index.ts`
 
 ```typescript
-export { EmailBlock } from "./EmailBlock";
+export { NewBlockBlock } from "./NewBlockBlock";
 ```
 
-### 13. Landing Content Integration
+### 11. Landing Content Integration
 
 **File:** `resources/js/Components/Shared/LandingContent.tsx`
 
--   Import block renderer
--   Add rendering logic in the link mapping
-
 ```typescript
-import { EmailBlock } from "./blocks";
+import { NewBlockBlock } from "./blocks";
 
 // In the activeLinks.map():
-if (link.type === "email") {
+if (link.type === "newblock") {
     return (
-        <EmailBlock
+        <NewBlockBlock
             key={link.id}
             link={link}
             design={customDesign}
@@ -329,20 +260,67 @@ if (link.type === "email") {
 }
 ```
 
-### 14. Dashboard Serialization
+### 12. Dashboard Payload Serialization (CRITICAL)
 
 **File:** `resources/js/Pages/Panel/Dashboard.tsx`
 
--   Update `initialLinks` mapping to include new config fields
+- **CRITICAL:** Update `linksPayload` to include ALL new config fields
+- This is how data is sent to the backend when saving!
+
+```typescript
+// In linksPayload useMemo - add ALL new block fields:
+const linksPayload = useMemo(
+    () => ({
+        links: links.map((link, index) => ({
+            // ... existing fields
+            newBlockField: link.newBlockField,
+            newBlockProvider: link.newBlockProvider,
+        })),
+    }),
+    [links]
+);
+```
+
+### 13. Dashboard Initial Data Mapping
+
+**File:** `resources/js/Pages/Panel/Dashboard.tsx`
 
 ```typescript
 const initialLinks: LinkBlock[] = serverLinks.map((link) => ({
     // ... existing fields
-    emailAddress: link.config?.email_address,
-    emailSubject: link.config?.email_subject,
-    emailProvider: link.config?.email_provider,
+    newBlockField: link.config?.new_block_field,
 }));
 ```
+
+### 14. Landing View Data Mapping
+
+**File:** `resources/js/Pages/LandingView.tsx`
+
+```typescript
+const links: LinkBlock[] = serverLinks.map((link) => ({
+    // ... existing fields
+    newBlockField: link.config?.new_block_field,
+}));
+```
+
+## Quick Summary: Files to Update
+
+| Step | File | Action |
+|------|------|--------|
+| 1 | `config/blockConfig.ts` | Add BLOCK_TYPES entry (label, icon, defaults) |
+| 2 | `types.ts` | Add BlockType + specific types + LinkBlock fields |
+| 3 | `SaveLinksRequest.php` | Add validation + extractConfig |
+| 4 | `BlockTypes.php` | Add constant (optional) |
+| 5 | `useLinkValidation.ts` | Add validation logic |
+| 6 | `configs/{Name}Config.tsx` | Create config component |
+| 7 | `configs/index.ts` | Export config |
+| 8 | `LinkConfigDialog.tsx` | Add switch case |
+| 9 | `blocks/{Name}Block.tsx` | Create renderer |
+| 10 | `blocks/index.ts` | Export renderer |
+| 11 | `LandingContent.tsx` | Add render logic |
+| 12 | `Dashboard.tsx` linksPayload | **Add ALL new fields** |
+| 13 | `Dashboard.tsx` initialLinks | Map config fields |
+| 14 | `LandingView.tsx` | Map config fields |
 
 ## Block Types Reference
 
@@ -351,7 +329,7 @@ const initialLinks: LinkBlock[] = serverLinks.map((link) => ({
 | Type         | Config           | Renderer        | Status |
 | ------------ | ---------------- | --------------- | ------ |
 | `link`       | DefaultConfig    | Standard button | Done   |
-| `header`     | HeaderConfig     | Text divider    | Done   |
+| `header`     | DefaultConfig    | Text divider    | Done   |
 | `whatsapp`   | WhatsAppConfig   | WhatsApp button | Done   |
 | `calendar`   | CalendarConfig   | CalendarBlock   | Done   |
 | `youtube`    | MediaConfig      | Embed/Button    | Done   |
@@ -362,12 +340,6 @@ const initialLinks: LinkBlock[] = serverLinks.map((link) => ({
 | `tiktok`     | VideoEmbedConfig | TikTokBlock     | Done   |
 | `soundcloud` | SoundCloudConfig | SoundCloudBlock | Done   |
 | `twitch`     | VideoEmbedConfig | TwitchBlock     | Done   |
-
-### TODO Blocks
-
-| Type      | Priority | Description  |
-| --------- | -------- | ------------ |
-| `contact` | Low      | Contact form |
 
 ## Testing Workflow
 
@@ -383,22 +355,37 @@ const initialLinks: LinkBlock[] = serverLinks.map((link) => ({
 
 ### Config Components
 
--   Use `space-y-5` for vertical spacing
--   Labels: `text-xs font-bold text-neutral-500 uppercase tracking-wider`
--   Inputs: `bg-neutral-50 dark:bg-neutral-800 border rounded-xl px-4 py-3`
--   Info boxes: `p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl`
+- Use `space-y-5` for vertical spacing
+- Labels: `text-xs font-bold text-neutral-500 uppercase tracking-wider`
+- Inputs: `bg-neutral-50 dark:bg-neutral-800 border rounded-xl px-4 py-3`
+- Info boxes: `p-4 bg-neutral-100 dark:bg-neutral-800 rounded-xl` (gray neutral style)
 
 ### Block Renderers
 
--   Accept `buttonClassName`, `buttonStyle`, `roundingClass` from parent
--   Support `isPreview` mode (disable clicks)
--   Use `animate-in slide-in-from-bottom-2 fade-in` animations
--   Support `animationDelay` for staggered entry
--   Icons from `lucide-react`
+- Accept `buttonClassName`, `buttonStyle`, `roundingClass` from parent
+- Support `isPreview` mode (disable clicks)
+- Use `animate-in slide-in-from-bottom-2 fade-in` animations
+- Support `animationDelay` for staggered entry
+- Icons from `lucide-react`
+
+## Icons
+
+### Lucide Icons vs Legacy Icons
+
+- **Lucide Icons**: Stored as `{ type: "lucide", name: "icon-name" }`
+- **Legacy Icons**: Stored as `{ type: "folder", name: "filename" }` (SVGs in `/assets/images/icons/`)
+
+The helper function `isLegacyIcon()` in `utils/iconHelper.tsx` distinguishes between them.
+
+When a block is created:
+1. `createBlockDefaults()` from `blockConfig.ts` sets the default icon
+2. The icon uses `{ type: "lucide", name: config.iconName }`
+3. `LinkCard` renders using the `config.icon` Lucide component
+4. Users can override with a legacy icon via IconSelector
 
 ## Legacy Reference
 
 Check legacy implementations in:
 
--   `_legacy_lumen/admin/src/app/pages/landings/components/blockTypes/components/`
--   `_legacy_lumen/resources/views/components/landing/buttons-link.blade.php`
+- `_legacy_lumen/admin/src/app/pages/landings/components/blockTypes/components/`
+- `_legacy_lumen/resources/views/components/landing/buttons-link.blade.php`

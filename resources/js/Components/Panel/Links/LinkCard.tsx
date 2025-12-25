@@ -1,21 +1,20 @@
+/**
+ * LinkCard - Individual link/block editor in the panel
+ *
+ * Uses centralized configuration from @/config/blockConfig.ts
+ */
+
 import { Button } from "@/Components/ui/Button";
 import { ConfirmDialog } from "@/Components/ui/ConfirmDialog";
 import { Toggle } from "@/Components/ui/Toggle";
+import { getBlockConfig, getLucideIcon } from "@/config/blockConfig";
 import { Icon } from "@/constants/icons";
 import { useDebounceWithPending } from "@/hooks/useDebounce";
 import { useLinkValidation } from "@/hooks/useLinkValidation";
 import { LinkBlock } from "@/types";
-import { isLegacyIcon } from "@/utils/iconHelper";
-import {
-    Check,
-    Image as ImageIcon,
-    Loader2,
-    Settings,
-    Trash2,
-    XCircle,
-} from "lucide-react";
+import { isLegacyIcon, isLucideIcon } from "@/utils/iconHelper";
+import { Check, Loader2, Settings, Trash2, XCircle } from "lucide-react";
 import React, { useMemo, useState } from "react";
-import { BLOCK_CONFIG } from "./BlockSelector";
 import { IconSelector } from "./IconSelector";
 import { LinkCardContainer } from "./LinkCardContainer";
 import { LinkConfigDialog } from "./LinkConfigDialog";
@@ -38,6 +37,9 @@ export const LinkCard: React.FC<LinkCardProps> = ({
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showStats, setShowStats] = useState(false);
     const { isLinkComplete, getValidationError } = useLinkValidation();
+
+    // Get block configuration from centralized config
+    const config = useMemo(() => getBlockConfig(link.type), [link.type]);
 
     // Debounce the value that needs validation (URL or phone number)
     const valueToValidate = useMemo(() => {
@@ -69,90 +71,200 @@ export const LinkCard: React.FC<LinkCardProps> = ({
     const isValid = isLinkComplete(linkForValidation);
     const validationError = getValidationError(linkForValidation);
 
-    // --- Styles & Assets based on Type ---
-    const config = BLOCK_CONFIG[link.type] || BLOCK_CONFIG["link"];
+    // Render the icon based on link.icon or fallback to config default
+    const renderIcon = () => {
+        const iconSize = 20;
 
-    const getTypeAssets = () => {
-        switch (link.type) {
-            case "header":
-                return {
-                    placeholder: "Titulo de seccion",
-                    subPlaceholder: "",
-                };
-            case "video":
-            case "youtube":
-                return {
-                    placeholder: "Titulo del video",
-                    subPlaceholder: "URL de YouTube",
-                };
-            case "music":
-            case "spotify":
-                return {
-                    placeholder: "Titulo de la cancion",
-                    subPlaceholder: "URL de Spotify",
-                };
-            case "whatsapp":
-                return {
-                    placeholder: "Texto del boton (ej: Escribinos)",
-                    subPlaceholder: "",
-                };
-            case "twitter":
-                return {
-                    placeholder: "Titulo del tweet",
-                    subPlaceholder: "URL del Tweet",
-                };
-            case "mastodon":
-                return {
-                    placeholder: "Nombre del perfil",
-                    subPlaceholder: "URL de Mastodon",
-                };
-            case "calendar":
-                return {
-                    placeholder: "Agendar Cita",
-                    subPlaceholder: "",
-                    hideUrlInput: true,
-                };
-            case "email":
-                return {
-                    placeholder: "Contactame",
-                    subPlaceholder: "",
-                    hideUrlInput: true,
-                };
-            case "map":
-                return {
-                    placeholder: "Nuestra Ubicacion",
-                    subPlaceholder: "",
-                    hideUrlInput: true,
-                };
-            case "vimeo":
-                return {
-                    placeholder: "Titulo del video",
-                    subPlaceholder: "URL de Vimeo",
-                };
-            case "tiktok":
-                return {
-                    placeholder: "Titulo del video",
-                    subPlaceholder: "URL de TikTok",
-                };
-            case "soundcloud":
-                return {
-                    placeholder: "Titulo del audio",
-                    subPlaceholder: "URL de SoundCloud",
-                };
-            case "twitch":
-                return {
-                    placeholder: "Canal de Twitch",
-                    subPlaceholder: "URL o nombre del canal",
-                };
-            default:
-                return {
-                    placeholder: "Titulo del enlace",
-                    subPlaceholder: "https://ejemplo.com",
-                };
+        // If user has selected a legacy icon (from icon picker), show it
+        if (isLegacyIcon(link.icon)) {
+            return (
+                <img
+                    src={`/assets/images/icons/${link.icon.type}/${link.icon.name}.svg`}
+                    alt={link.icon.name}
+                    className="w-5 h-5"
+                    style={{
+                        filter:
+                            link.isEnabled && link.icon.type !== "colors"
+                                ? "brightness(0) invert(1)"
+                                : "none",
+                    }}
+                />
+            );
         }
+
+        // If user has a Lucide icon saved, use that specific icon
+        if (isLucideIcon(link.icon)) {
+            const iconObj = link.icon as unknown as {
+                type: string;
+                name: string;
+            };
+            const SavedIcon = getLucideIcon(iconObj.name);
+            return <SavedIcon size={iconSize} />;
+        }
+
+        // Fallback to default icon from config
+        const DefaultIcon = config.icon;
+        return <DefaultIcon size={iconSize} />;
     };
 
-    const placeholders = getTypeAssets();
+    // Get status display for special block types
+    const renderStatusLine = () => {
+        // WhatsApp - show phone number status
+        if (link.type === "whatsapp") {
+            return (
+                <div className="flex items-center gap-1.5 px-1 -ml-1">
+                    {isValidating ? (
+                        <Loader2
+                            size={12}
+                            className="text-neutral-400 shrink-0 animate-spin"
+                        />
+                    ) : isValid ? (
+                        <Check size={12} className="text-green-500 shrink-0" />
+                    ) : (
+                        <XCircle
+                            size={12}
+                            className="text-amber-500 shrink-0"
+                        />
+                    )}
+                    <span
+                        className={`text-xs font-medium truncate ${
+                            isValidating
+                                ? "text-neutral-400"
+                                : isValid
+                                ? "text-green-600 dark:text-green-400"
+                                : "text-amber-600 dark:text-amber-400"
+                        }`}
+                    >
+                        {isValidating
+                            ? "Validando..."
+                            : link.phoneNumber
+                            ? `+${link.phoneNumber}`
+                            : validationError || "Sin numero configurado"}
+                    </span>
+                </div>
+            );
+        }
+
+        // Calendar - show URL status
+        if (link.type === "calendar") {
+            return (
+                <div className="flex items-center gap-1.5 px-1 -ml-1">
+                    {isValid ? (
+                        <Check size={12} className="text-green-500 shrink-0" />
+                    ) : (
+                        <XCircle
+                            size={12}
+                            className="text-amber-500 shrink-0"
+                        />
+                    )}
+                    <span
+                        className={`text-xs font-medium truncate ${
+                            isValid
+                                ? "text-green-600 dark:text-green-400"
+                                : "text-amber-600 dark:text-amber-400"
+                        }`}
+                    >
+                        {link.url
+                            ? link.url
+                                  .replace(/^https?:\/\//, "")
+                                  .substring(0, 30) +
+                              (link.url.length > 30 ? "..." : "")
+                            : "Configurar en opciones"}
+                    </span>
+                </div>
+            );
+        }
+
+        // Email - show email address status
+        if (link.type === "email") {
+            return (
+                <div className="flex items-center gap-1.5 px-1 -ml-1">
+                    {link.emailAddress ? (
+                        <Check size={12} className="text-green-500 shrink-0" />
+                    ) : (
+                        <XCircle
+                            size={12}
+                            className="text-amber-500 shrink-0"
+                        />
+                    )}
+                    <span
+                        className={`text-xs font-medium truncate ${
+                            link.emailAddress
+                                ? "text-green-600 dark:text-green-400"
+                                : "text-amber-600 dark:text-amber-400"
+                        }`}
+                    >
+                        {link.emailAddress || "Configurar en opciones"}
+                    </span>
+                </div>
+            );
+        }
+
+        // Map - show address status
+        if (link.type === "map") {
+            const hasLocation = link.mapAddress || link.mapQuery;
+            return (
+                <div className="flex items-center gap-1.5 px-1 -ml-1">
+                    {hasLocation ? (
+                        <Check size={12} className="text-green-500 shrink-0" />
+                    ) : (
+                        <XCircle
+                            size={12}
+                            className="text-amber-500 shrink-0"
+                        />
+                    )}
+                    <span
+                        className={`text-xs font-medium truncate ${
+                            hasLocation
+                                ? "text-green-600 dark:text-green-400"
+                                : "text-amber-600 dark:text-amber-400"
+                        }`}
+                    >
+                        {link.mapAddress ||
+                            link.mapQuery ||
+                            "Configurar en opciones"}
+                    </span>
+                </div>
+            );
+        }
+
+        // Default URL input for other types
+        if (!config.hideUrlInput) {
+            return (
+                <div className="flex items-center gap-1.5 min-w-0">
+                    {isValidating ? (
+                        <Loader2
+                            size={12}
+                            className="text-neutral-400 shrink-0 animate-spin"
+                        />
+                    ) : isValid ? (
+                        <Check size={12} className="text-green-500 shrink-0" />
+                    ) : (
+                        <XCircle
+                            size={12}
+                            className="text-amber-500 shrink-0"
+                        />
+                    )}
+                    <input
+                        type="text"
+                        value={link.url}
+                        onChange={(e) =>
+                            onUpdate(link.id, { url: e.target.value })
+                        }
+                        className="text-sm text-neutral-500 dark:text-neutral-500 bg-transparent outline-none focus:bg-neutral-50 dark:focus:bg-neutral-800 rounded px-1 -ml-1 w-full truncate font-medium hover:text-brand-500 focus:text-brand-500 transition-colors"
+                        placeholder={config.urlPlaceholder}
+                        title={
+                            isValidating
+                                ? "Validando..."
+                                : link.url || validationError || ""
+                        }
+                    />
+                </div>
+            );
+        }
+
+        return null;
+    };
 
     return (
         <>
@@ -161,7 +273,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({
                 isEnabled={link.isEnabled}
                 badge={{
                     label: config.label,
-                    className: config.badgeBg,
+                    className: config.badgeClass,
                 }}
                 expandedContent={
                     showStats && link.type !== "header" ? (
@@ -197,27 +309,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({
                             link.type !== "header" ? "Cambiar icono" : undefined
                         }
                     >
-                        {isLegacyIcon(link.icon) ? (
-                            <img
-                                src={`/assets/images/icons/${link.icon.type}/${link.icon.name}.svg`}
-                                alt={link.icon.name}
-                                className="w-5 h-5"
-                                style={{
-                                    filter:
-                                        link.isEnabled &&
-                                        link.icon.type !== "colors"
-                                            ? "brightness(0) invert(1)"
-                                            : "none",
-                                }}
-                            />
-                        ) : config.icon ? (
-                            React.cloneElement(
-                                config.icon as React.ReactElement<any>,
-                                { size: 20 }
-                            )
-                        ) : (
-                            <ImageIcon size={20} />
-                        )}
+                        {renderIcon()}
                     </button>
 
                     {/* Inputs */}
@@ -240,156 +332,10 @@ export const LinkCard: React.FC<LinkCardProps> = ({
                                         : "text-base"
                                 }
                             `}
-                            placeholder={placeholders.placeholder}
+                            placeholder={config.titlePlaceholder}
                         />
 
-                        {link.type !== "header" &&
-                            (link.type === "whatsapp" ? (
-                                <div className="flex items-center gap-1.5 px-1 -ml-1">
-                                    {isValidating ? (
-                                        <Loader2
-                                            size={12}
-                                            className="text-neutral-400 shrink-0 animate-spin"
-                                        />
-                                    ) : isValid ? (
-                                        <Check
-                                            size={12}
-                                            className="text-green-500 shrink-0"
-                                        />
-                                    ) : (
-                                        <XCircle
-                                            size={12}
-                                            className="text-amber-500 shrink-0"
-                                        />
-                                    )}
-                                    <span
-                                        className={`text-xs font-medium truncate ${
-                                            isValidating
-                                                ? "text-neutral-400"
-                                                : isValid
-                                                ? "text-green-600 dark:text-green-400"
-                                                : "text-amber-600 dark:text-amber-400"
-                                        }`}
-                                    >
-                                        {isValidating
-                                            ? "Validando..."
-                                            : link.phoneNumber
-                                            ? `+${link.phoneNumber}`
-                                            : validationError ||
-                                              "Sin numero configurado"}
-                                    </span>
-                                </div>
-                            ) : link.type === "calendar" ? (
-                                <div className="flex items-center gap-1.5 px-1 -ml-1">
-                                    {isValid ? (
-                                        <Check
-                                            size={12}
-                                            className="text-green-500 shrink-0"
-                                        />
-                                    ) : (
-                                        <XCircle
-                                            size={12}
-                                            className="text-amber-500 shrink-0"
-                                        />
-                                    )}
-                                    <span
-                                        className={`text-xs font-medium truncate ${
-                                            isValid
-                                                ? "text-green-600 dark:text-green-400"
-                                                : "text-amber-600 dark:text-amber-400"
-                                        }`}
-                                    >
-                                        {link.url
-                                            ? link.url.replace(/^https?:\/\//, '').substring(0, 30) + (link.url.length > 30 ? '...' : '')
-                                            : "Configurar en opciones"}
-                                    </span>
-                                </div>
-                            ) : link.type === "email" ? (
-                                <div className="flex items-center gap-1.5 px-1 -ml-1">
-                                    {link.emailAddress ? (
-                                        <Check
-                                            size={12}
-                                            className="text-green-500 shrink-0"
-                                        />
-                                    ) : (
-                                        <XCircle
-                                            size={12}
-                                            className="text-amber-500 shrink-0"
-                                        />
-                                    )}
-                                    <span
-                                        className={`text-xs font-medium truncate ${
-                                            link.emailAddress
-                                                ? "text-green-600 dark:text-green-400"
-                                                : "text-amber-600 dark:text-amber-400"
-                                        }`}
-                                    >
-                                        {link.emailAddress || "Configurar en opciones"}
-                                    </span>
-                                </div>
-                            ) : link.type === "map" ? (
-                                <div className="flex items-center gap-1.5 px-1 -ml-1">
-                                    {link.mapAddress || link.mapQuery ? (
-                                        <Check
-                                            size={12}
-                                            className="text-green-500 shrink-0"
-                                        />
-                                    ) : (
-                                        <XCircle
-                                            size={12}
-                                            className="text-amber-500 shrink-0"
-                                        />
-                                    )}
-                                    <span
-                                        className={`text-xs font-medium truncate ${
-                                            link.mapAddress || link.mapQuery
-                                                ? "text-green-600 dark:text-green-400"
-                                                : "text-amber-600 dark:text-amber-400"
-                                        }`}
-                                    >
-                                        {link.mapAddress || link.mapQuery || "Configurar en opciones"}
-                                    </span>
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-1.5 min-w-0">
-                                    {isValidating ? (
-                                        <Loader2
-                                            size={12}
-                                            className="text-neutral-400 shrink-0 animate-spin"
-                                        />
-                                    ) : isValid ? (
-                                        <Check
-                                            size={12}
-                                            className="text-green-500 shrink-0"
-                                        />
-                                    ) : (
-                                        <XCircle
-                                            size={12}
-                                            className="text-amber-500 shrink-0"
-                                        />
-                                    )}
-                                    <input
-                                        type="text"
-                                        value={link.url}
-                                        onChange={(e) =>
-                                            onUpdate(link.id, {
-                                                url: e.target.value,
-                                            })
-                                        }
-                                        className="text-sm text-neutral-500 dark:text-neutral-500 bg-transparent outline-none focus:bg-neutral-50 dark:focus:bg-neutral-800 rounded px-1 -ml-1 w-full truncate font-medium hover:text-brand-500 focus:text-brand-500 transition-colors"
-                                        placeholder={
-                                            placeholders.subPlaceholder
-                                        }
-                                        title={
-                                            isValidating
-                                                ? "Validando..."
-                                                : link.url ||
-                                                  validationError ||
-                                                  ""
-                                        }
-                                    />
-                                </div>
-                            ))}
+                        {link.type !== "header" && renderStatusLine()}
                     </div>
                 </div>
 

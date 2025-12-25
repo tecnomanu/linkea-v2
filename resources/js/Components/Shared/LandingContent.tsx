@@ -5,11 +5,16 @@
  * Any changes here will reflect in both places.
  */
 
+import { getLucideIcon } from "@/config/blockConfig";
 import { Icon } from "@/constants/icons";
 import { isLinkComplete } from "@/hooks/useLinkValidation";
 import { LinkBlock, UserProfile } from "@/types";
 import { calculateContrastColors } from "@/utils/colorUtils";
-import { isLegacyIcon, renderLegacyIcon } from "@/utils/iconHelper";
+import {
+    isLegacyIcon,
+    isLucideIcon,
+    renderLegacyIcon,
+} from "@/utils/iconHelper";
 import {
     Calendar,
     ExternalLink,
@@ -237,6 +242,9 @@ export const LandingContent: React.FC<LandingContentProps> = ({
 
     const backgroundImageValue = resolveBackgroundImage(design.backgroundImage);
 
+    // Check if background image is enabled (defaults to true if not explicitly set to false)
+    const isBackgroundEnabled = (design as any).backgroundEnabled !== false;
+
     // In preview mode, always use 'scroll' to prevent weird fixed background behavior
     // In public pages (fullScreen), respect the original backgroundAttachment setting
     const effectiveBackgroundAttachment = isPreview
@@ -247,15 +255,17 @@ export const LandingContent: React.FC<LandingContentProps> = ({
         ? {
               backgroundColor: design.backgroundColor,
               color: "#000",
-              ...(backgroundImageValue && {
-                  backgroundImage: backgroundImageValue,
-                  backgroundSize: (design as any).backgroundSize || "cover",
-                  backgroundPosition:
-                      (design as any).backgroundPosition || "center",
-                  backgroundAttachment: effectiveBackgroundAttachment,
-                  backgroundRepeat:
-                      (design as any).backgroundRepeat || "repeat",
-              }),
+              // Only apply background image if enabled
+              ...(backgroundImageValue &&
+                  isBackgroundEnabled && {
+                      backgroundImage: backgroundImageValue,
+                      backgroundSize: (design as any).backgroundSize || "cover",
+                      backgroundPosition:
+                          (design as any).backgroundPosition || "center",
+                      backgroundAttachment: effectiveBackgroundAttachment,
+                      backgroundRepeat:
+                          (design as any).backgroundRepeat || "repeat",
+                  }),
           }
         : {};
     const containerClasses = isThemePreset
@@ -276,6 +286,18 @@ export const LandingContent: React.FC<LandingContentProps> = ({
             case "rounded":
             default:
                 return "rounded-[20px]";
+        }
+    };
+
+    // Block rounding - more subtle than buttons for embed containers
+    const getBlockRounding = () => {
+        switch (design.buttonShape) {
+            case "sharp":
+                return "rounded-none";
+            case "pill":
+            case "rounded":
+            default:
+                return "rounded-2xl"; // Subtle rounding for blocks
         }
     };
 
@@ -511,7 +533,7 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                                 isPreview={isPreview}
                                 onClick={(e) => handleLinkClick(e, link.id)}
                                 animationDelay={delay}
-                                roundingClass={getRounding()}
+                                roundingClass={getBlockRounding()}
                             />
                         );
                     }
@@ -693,8 +715,9 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                     } else if (link.type === "video") subLabel = "Ver Video";
                     else if (link.type === "music") subLabel = "Escuchar";
 
-                    // Determine icon: legacy SVG icon takes priority, then type-based fallback
+                    // Determine icon: legacy SVG icon takes priority, then Lucide icon, then type-based fallback
                     const hasLegacyIcon = isLegacyIcon(link.icon);
+                    const hasLucideIcon = isLucideIcon(link.icon);
                     let iconName = "Globe";
                     if (link.type === "whatsapp") iconName = "MessageCircle";
                     else if (link.type === "video") iconName = "Youtube";
@@ -719,18 +742,42 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                     };
 
                     // Render the icon element
-                    const renderIcon = (size: number = 22) => (
-                        <span style={{ color: design.buttonTextColor }}>
-                            {hasLegacyIcon
-                                ? renderLegacyIcon(
-                                      link.icon,
-                                      size,
-                                      "",
-                                      design.buttonTextColor
-                                  )
-                                : getIcon(iconName, size)}
-                        </span>
-                    );
+                    const renderIcon = (size: number = 22) => {
+                        // Legacy SVG icon (from icon picker)
+                        if (hasLegacyIcon) {
+                            return (
+                                <span style={{ color: design.buttonTextColor }}>
+                                    {renderLegacyIcon(
+                                        link.icon,
+                                        size,
+                                        "",
+                                        design.buttonTextColor
+                                    )}
+                                </span>
+                            );
+                        }
+
+                        // Lucide icon saved in link (user can change via config)
+                        if (hasLucideIcon) {
+                            const iconObj = link.icon as unknown as {
+                                type: string;
+                                name: string;
+                            };
+                            const SavedIcon = getLucideIcon(iconObj.name);
+                            return (
+                                <span style={{ color: design.buttonTextColor }}>
+                                    <SavedIcon size={size} />
+                                </span>
+                            );
+                        }
+
+                        // Fallback to type-based icon
+                        return (
+                            <span style={{ color: design.buttonTextColor }}>
+                                {getIcon(iconName, size)}
+                            </span>
+                        );
+                    };
 
                     return (
                         <a

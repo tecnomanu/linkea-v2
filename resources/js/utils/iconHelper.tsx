@@ -153,13 +153,27 @@ export const renderLegacyIcon = (
 };
 
 /**
- * Checks if an icon is a valid legacy icon object
+ * Checks if an icon is a valid legacy icon object (SVG file from assets)
+ * Excludes Lucide icons which are stored as { type: "lucide", name: "xxx" }
  */
 export const isLegacyIcon = (icon: any): icon is LegacyIcon => {
     return (
         icon &&
         typeof icon === "object" &&
         typeof icon.type === "string" &&
+        typeof icon.name === "string" &&
+        icon.type !== "lucide" // Exclude Lucide icons
+    );
+};
+
+/**
+ * Checks if an icon is a Lucide icon reference
+ */
+export const isLucideIcon = (icon: any): boolean => {
+    return (
+        icon &&
+        typeof icon === "object" &&
+        icon.type === "lucide" &&
         typeof icon.name === "string"
     );
 };
