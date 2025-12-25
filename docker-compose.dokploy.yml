@@ -1,0 +1,70 @@
+services:
+  app:
+    image: incubit-projects/linkea-v2:latest
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      target: production
+    restart: unless-stopped
+    working_dir: /var/www
+    expose:
+      - "80"
+    networks:
+      - linkea-internal
+      - dokploy-network
+    depends_on:
+      - mysql
+      - redis
+
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_DATABASE: ${DB_DATABASE:-linkea}
+      MYSQL_USER: ${DB_USERNAME:-linkea}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+    volumes:
+      - linkea_mysql_data_v2:/var/lib/mysql
+    networks:
+      linkea-internal:
+        aliases:
+          - linkea-mysql
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${DB_PASSWORD:-secret}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - linkea_redis_data_v2:/data
+    networks:
+      linkea-internal:
+        aliases:
+          - linkea-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+networks:
+  linkea-internal:
+    driver: bridge
+
+volumes:
+  linkea_mysql_data_v2:
+  linkea_redis_data_v2:

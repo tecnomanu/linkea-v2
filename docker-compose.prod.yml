@@ -1,0 +1,113 @@
+# =============================================================================
+# Linkea v2 - Production/Staging Environment (Custom Dockerfile)
+# =============================================================================
+# Usage:
+#   docker compose -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.prod.yml exec app php artisan migrate --force
+#   docker compose -f docker-compose.prod.yml exec app php artisan db:seed --force
+#
+# This uses the custom Dockerfile with nginx, php-fpm, horizon, and cron
+# all managed by supervisord in a single container.
+# =============================================================================
+
+services:
+  # =========================================================================
+  # Main Application (nginx + php-fpm + horizon + cron via supervisord)
+  # =========================================================================
+  app:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      target: production
+    restart: unless-stopped
+    working_dir: /var/www
+    ports:
+      - "${APP_PORT:-8080}:80"
+    volumes:
+      - linkea_storage:/var/www/storage
+    networks:
+      - linkea-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_URL=${APP_URL:-http://localhost:8080}
+      - DB_CONNECTION=mysql
+      - DB_HOST=linkea-mysql
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE:-linkea}
+      - DB_USERNAME=${DB_USERNAME:-linkea}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - REDIS_HOST=linkea-redis
+      - REDIS_PORT=6379
+      - CACHE_DRIVER=redis
+      - QUEUE_CONNECTION=redis
+      - SESSION_DRIVER=redis
+
+  # =========================================================================
+  # MySQL Database
+  # =========================================================================
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_DATABASE: ${DB_DATABASE:-linkea}
+      MYSQL_USER: ${DB_USERNAME:-linkea}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+    volumes:
+      - linkea_mysql_data:/var/lib/mysql
+    networks:
+      linkea-network:
+        aliases:
+          - linkea-mysql
+    ports:
+      - "${FORWARD_DB_PORT:-3307}:3306"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${DB_PASSWORD:-secret}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # =========================================================================
+  # Redis Cache & Queue
+  # =========================================================================
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - linkea_redis_data:/data
+    networks:
+      linkea-network:
+        aliases:
+          - linkea-redis
+    ports:
+      - "${FORWARD_REDIS_PORT:-6380}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+networks:
+  linkea-network:
+    driver: bridge
+
+volumes:
+  linkea_storage:
+  linkea_mysql_data:
+  linkea_redis_data:
