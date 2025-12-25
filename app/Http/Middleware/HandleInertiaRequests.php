@@ -38,6 +38,7 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'appName' => config('app.name', 'Linkea'),
+            'appUrl' => rtrim(config('app.url', 'https://linkea.ar'), '/'),
             'auth' => [
                 'user' => $request->user() ? [
                     'id' => $request->user()->id,
@@ -48,8 +49,8 @@ class HandleInertiaRequests extends Middleware
                 ] : null,
             ],
             'flash' => [
-                'success' => fn () => $request->session()->get('success'),
-                'error' => fn () => $request->session()->get('error'),
+                'success' => fn() => $request->session()->get('success'),
+                'error' => fn() => $request->session()->get('error'),
             ],
         ];
     }

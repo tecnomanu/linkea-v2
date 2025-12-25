@@ -15,7 +15,7 @@ import { CookieConsent } from "@/Components/Shared/CookieConsent";
 import { LandingContent, SocialLink } from "@/Components/Shared/LandingContent";
 import { landingFullJsonLd } from "@/Components/Shared/SEOHead";
 import { BlockType, LinkBlock, UserProfile } from "@/types";
-import { Head } from "@inertiajs/react";
+import { Head, usePage } from "@inertiajs/react";
 import { useEffect, useMemo } from "react";
 
 interface SocialLinkData {
@@ -38,6 +38,7 @@ export default function LandingView({
     socialLinks: serverSocialLinks = [],
     storageUrl = "",
 }: LandingViewProps) {
+    const { appUrl } = usePage<{ appUrl: string }>().props;
     // Transform social links to common format
     const socialLinks: SocialLink[] = serverSocialLinks
         .filter((s) => s.state)
@@ -159,15 +160,16 @@ export default function LandingView({
         `Links de ${user.name} - Creado con Linkea`;
     const seoImage = user.avatar?.startsWith("http")
         ? user.avatar
-        : `https://linkea.ar${user.avatar}`;
-    const canonicalUrl = `https://linkea.ar/${user.handle}`;
+        : `${appUrl}${user.avatar}`;
+    const canonicalUrl = `${appUrl}/${user.handle}`;
 
     // JSON-LD structured data for this profile (includes breadcrumbs)
     const profileJsonLd = landingFullJsonLd(
         user.name,
         user.handle,
         user.bio,
-        seoImage
+        seoImage,
+        appUrl
     );
 
     // Tracking IDs (support both new and legacy field names)

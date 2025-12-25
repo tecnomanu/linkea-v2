@@ -1,3 +1,4 @@
+import { usePage } from "@inertiajs/react";
 import { Check, Copy, ExternalLink, Globe, Share2 } from "lucide-react";
 import React, { useState } from "react";
 
@@ -7,9 +8,10 @@ interface LinkBarProps {
 }
 
 export const LinkBar: React.FC<LinkBarProps> = ({ landing, user }) => {
+    const { appUrl } = usePage<{ appUrl: string }>().props;
     const [copied, setCopied] = useState(false);
     const domain = landing?.domain_name || landing?.slug || "your-link";
-    const publicUrl = `https://linkea.ar/${domain}`;
+    const publicUrl = `${appUrl}/${domain}`;
 
     const handleCopy = async () => {
         try {

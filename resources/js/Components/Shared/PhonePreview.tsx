@@ -6,6 +6,7 @@
  */
 
 import { LinkBlock, UserProfile } from "@/types";
+import { usePage } from "@inertiajs/react";
 import { Battery, Globe, Signal, Wifi } from "lucide-react";
 import React from "react";
 import { DeviceMode, LandingContent, SocialLink } from "./LandingContent";
@@ -35,8 +36,10 @@ export const PhonePreview: React.FC<PhonePreviewProps> = ({
     scale = 1,
     isPreview = true,
 }) => {
+    const { appUrl } = usePage<{ appUrl: string }>().props;
+    const displayDomain = appUrl.replace(/^https?:\/\//, '');
     const cleanHandle = user.handle.replace("@", "");
-    const publicUrl = `linkea.ar/${cleanHandle}`;
+    const publicUrl = `${displayDomain}/${cleanHandle}`;
 
     if (device === "mobile") {
         return (

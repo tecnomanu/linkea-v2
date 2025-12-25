@@ -24,9 +24,12 @@ interface SEOHeadProps {
     jsonLd?: object;
     /** Custom favicon URL (defaults to Linkea favicon) */
     favicon?: string;
+    /** Base URL for the site (defaults to APP_URL from Inertia props) */
+    baseUrl?: string;
 }
 
-const BASE_URL = "https://linkea.ar";
+// Fallback only - prefer using appUrl from Inertia props
+const DEFAULT_BASE_URL = "https://linkea.ar";
 const DEFAULT_IMAGE = "/assets/images/meta_tag_image.jpg";
 const DEFAULT_FAVICON = "/favicon-32x32.png";
 const DEFAULT_APPLE_ICON = "/apple-touch-icon.png";
@@ -42,9 +45,10 @@ export default function SEOHead({
     noIndex = false,
     jsonLd,
     favicon,
+    baseUrl = DEFAULT_BASE_URL,
 }: SEOHeadProps) {
-    const fullImage = image.startsWith("http") ? image : `${BASE_URL}${image}`;
-    const canonicalUrl = canonical ? `${BASE_URL}${canonical}` : undefined;
+    const fullImage = image.startsWith("http") ? image : `${baseUrl}${image}`;
+    const canonicalUrl = canonical ? `${baseUrl}${canonical}` : undefined;
 
     // Use custom favicon if provided, otherwise defaults
     const faviconUrl = favicon || DEFAULT_FAVICON;
@@ -98,28 +102,30 @@ export default function SEOHead({
 }
 
 /**
- * Default JSON-LD for the main website (Home page)
+ * Generate JSON-LD for the main website (Home page)
  */
-export const websiteJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    name: "Linkea",
-    url: "https://linkea.ar",
-    description:
-        "Plataforma argentina de link in bio. Crea tu pagina de links personalizada gratis.",
-    applicationCategory: "SocialNetworkingApplication",
-    operatingSystem: "Web",
-    offers: {
-        "@type": "Offer",
-        price: "0",
-        priceCurrency: "ARS",
-    },
-    author: {
-        "@type": "Organization",
+export function websiteJsonLd(baseUrl: string = DEFAULT_BASE_URL) {
+    return {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
         name: "Linkea",
-        url: "https://linkea.ar",
-    },
-};
+        url: baseUrl,
+        description:
+            "Plataforma argentina de link in bio. Crea tu pagina de links personalizada gratis.",
+        applicationCategory: "SocialNetworkingApplication",
+        operatingSystem: "Web",
+        offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "ARS",
+        },
+        author: {
+            "@type": "Organization",
+            name: "Linkea",
+            url: baseUrl,
+        },
+    };
+}
 
 /**
  * Generate JSON-LD for a user's landing page
@@ -128,7 +134,8 @@ export function landingJsonLd(
     name: string,
     handle: string,
     bio?: string,
-    avatar?: string
+    avatar?: string,
+    baseUrl: string = DEFAULT_BASE_URL
 ) {
     return {
         "@context": "https://schema.org",
@@ -136,7 +143,7 @@ export function landingJsonLd(
         mainEntity: {
             "@type": "Person",
             name: name,
-            url: `https://linkea.ar/${handle}`,
+            url: `${baseUrl}/${handle}`,
             ...(bio && { description: bio }),
             ...(avatar && { image: avatar }),
         },
@@ -148,7 +155,7 @@ export function landingJsonLd(
  * Useful for pages with hierarchical structure (e.g., blog posts, categories)
  * NOT needed for flat onepage landings
  */
-export function breadcrumbJsonLd(items: { name: string; url: string }[]) {
+export function breadcrumbJsonLd(items: { name: string; url: string }[], baseUrl: string = DEFAULT_BASE_URL) {
     return {
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
@@ -158,7 +165,7 @@ export function breadcrumbJsonLd(items: { name: string; url: string }[]) {
             name: item.name,
             item: item.url.startsWith("http")
                 ? item.url
-                : `https://linkea.ar${item.url}`,
+                : `${baseUrl}${item.url}`,
         })),
     };
 }
@@ -171,8 +178,9 @@ export function landingFullJsonLd(
     name: string,
     handle: string,
     bio?: string,
-    avatar?: string
+    avatar?: string,
+    baseUrl: string = DEFAULT_BASE_URL
 ) {
     // Only ProfilePage - breadcrumbs don't add value for onepage landings
-    return landingJsonLd(name, handle, bio, avatar);
+    return landingJsonLd(name, handle, bio, avatar, baseUrl);
 }

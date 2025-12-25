@@ -1,3 +1,4 @@
+import { usePage } from "@inertiajs/react";
 import React from "react";
 import SEOHead, { websiteJsonLd } from "../Components/Shared/SEOHead";
 import Footer from "../Components/Web/Home/Footer";
@@ -18,8 +19,11 @@ export default function WebLayout({
     description,
     image,
     canonical,
-    jsonLd = websiteJsonLd,
+    jsonLd,
 }: WebLayoutProps) {
+    const { appUrl } = usePage<{ appUrl: string }>().props;
+    const finalJsonLd = jsonLd || websiteJsonLd(appUrl);
+    
     return (
         <div className="min-h-screen bg-white font-sans antialiased text-gray-900 selection:bg-primary-500 selection:text-white">
             <SEOHead
@@ -27,7 +31,8 @@ export default function WebLayout({
                 description={description}
                 image={image}
                 canonical={canonical}
-                jsonLd={jsonLd}
+                jsonLd={finalJsonLd}
+                baseUrl={appUrl}
             />
 
             <Header />
