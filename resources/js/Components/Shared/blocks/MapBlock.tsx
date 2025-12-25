@@ -1,92 +1,120 @@
 /**
- * MapBlock - Public landing page renderer for Map/Location blocks
+ * MapBlock - Google Maps location block
  *
- * Renders as either:
- * - button: Opens Google Maps in new tab
- * - inline: Embeds Google Maps iframe
- *
- * Related files:
- * - types.ts: LinkBlock.mapAddress, mapQuery, mapZoom, mapDisplayMode
- * - configs/MapConfig.tsx: Panel configuration UI
+ * Modes:
+ * - Button only: Link to Google Maps
+ * - Button + Preview: Header button with embedded map
  */
 
+import { BlockDesign } from "@/hooks/useBlockStyles";
 import { LinkBlock, UserProfile } from "@/types";
-import { ExternalLink, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import React from "react";
+import {
+    BlockButton,
+    BlockContainer,
+    BlockPreview,
+    renderBlockIcon,
+} from "./partial";
 
 interface MapBlockProps {
     link: LinkBlock;
     design: UserProfile["customDesign"];
-    buttonClassName: string;
-    buttonStyle: React.CSSProperties;
+    buttonClassName: string; // Legacy prop - not used
+    buttonStyle: React.CSSProperties; // Legacy prop - not used
     isPreview?: boolean;
     onClick?: (e: React.MouseEvent) => void;
     animationDelay?: number;
-    roundingClass?: string;
 }
 
 /**
- * Builds Google Maps URL for external link or embed
+ * Build Google Maps URL for external link
  */
 const buildMapsUrl = (address?: string, query?: string): string => {
     const searchTerm = address || query;
     if (!searchTerm) return "https://maps.google.com";
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(searchTerm)}`;
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        searchTerm
+    )}`;
 };
 
 /**
- * Builds Google Maps embed URL
+ * Build Google Maps embed URL
  */
-const buildEmbedUrl = (address?: string, query?: string, zoom: number = 15): string => {
+const buildEmbedUrl = (
+    address?: string,
+    query?: string,
+    zoom: number = 15
+): string => {
     const searchTerm = address || query;
     if (!searchTerm) return "";
-    // Using the embed API without key (limited but works for basic embeds)
-    return `https://www.google.com/maps?q=${encodeURIComponent(searchTerm)}&z=${zoom}&output=embed`;
+    return `https://www.google.com/maps?q=${encodeURIComponent(
+        searchTerm
+    )}&z=${zoom}&output=embed`;
 };
 
 export const MapBlock: React.FC<MapBlockProps> = ({
     link,
     design,
-    buttonClassName,
-    buttonStyle,
     isPreview = false,
     onClick,
     animationDelay = 0,
-    roundingClass = "rounded-[20px]",
 }) => {
     const displayMode = link.mapDisplayMode || "button";
     const mapsUrl = buildMapsUrl(link.mapAddress, link.mapQuery);
-    const embedUrl = buildEmbedUrl(link.mapAddress, link.mapQuery, link.mapZoom);
+    const embedUrl = buildEmbedUrl(
+        link.mapAddress,
+        link.mapQuery,
+        link.mapZoom
+    );
 
-    // Inline embed mode
-    if (displayMode === "inline" && (link.mapAddress || link.mapQuery)) {
+    // Convert design to BlockDesign format
+    const blockDesign: BlockDesign = {
+        buttonColor: design.buttonColor,
+        buttonTextColor: design.buttonTextColor,
+        buttonStyle: design.buttonStyle,
+        buttonShape: design.buttonShape,
+        showButtonIcons: design.showButtonIcons,
+        showLinkSubtext: design.showLinkSubtext,
+    };
+
+    // Render icon: user custom icon takes priority, else fallback to MapPin
+    const icon = renderBlockIcon({
+        linkIcon: link.icon,
+        fallbackIcon: (
+            <MapPin size={22} style={{ color: design.buttonTextColor }} />
+        ),
+        size: 22,
+        color: design.buttonTextColor,
+    });
+
+    // Show address if global showLinkSubtext is on OR mapShowAddress is true
+    const shouldShowAddress = design.showLinkSubtext || link.mapShowAddress;
+    const locationText = link.mapAddress || link.mapQuery;
+
+    // Button + Preview mode (inline display)
+    if (displayMode === "inline" && locationText) {
         return (
-            <div
-                className={`w-full overflow-hidden mb-4 animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards ${roundingClass}`}
-                style={{ animationDelay: `${animationDelay}ms` }}
-            >
-                {/* Header with title */}
+            <BlockContainer animationDelay={animationDelay}>
+                {/* Header button */}
                 {link.title && (
-                    <div
-                        className={`p-4 ${roundingClass} mb-2`}
-                        style={{
-                            backgroundColor: design.buttonColor,
-                            color: design.buttonTextColor,
-                        }}
-                    >
-                        <div className="flex items-center gap-3">
-                            <MapPin size={20} />
-                            <span className="font-bold">{link.title}</span>
-                        </div>
-                    </div>
+                    <BlockButton
+                        href={mapsUrl}
+                        title={link.title}
+                        subtitle={shouldShowAddress ? locationText : undefined}
+                        design={blockDesign}
+                        position="top"
+                        icon={icon}
+                        isPreview={isPreview}
+                        onClick={onClick}
+                    />
                 )}
 
-                {/* Map Embed */}
-                <div
-                    className={`bg-white overflow-hidden ${roundingClass}`}
-                    style={{
-                        border: `2px solid ${design.buttonColor}20`,
-                    }}
+                {/* Map embed */}
+                <BlockPreview
+                    design={blockDesign}
+                    hasButton={!!link.title}
+                    backgroundColor="white"
                 >
                     <iframe
                         src={embedUrl}
@@ -99,75 +127,26 @@ export const MapBlock: React.FC<MapBlockProps> = ({
                         className="w-full"
                         style={{ border: 0 }}
                     />
-                </div>
-
-                {/* Link to open in Google Maps */}
-                <a
-                    href={mapsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 mt-2 text-xs opacity-60 hover:opacity-100 transition-opacity"
-                    style={{ color: design.buttonColor }}
-                    onClick={(e) => {
-                        if (isPreview) e.preventDefault();
-                    }}
-                >
-                    <span>Abrir en Google Maps</span>
-                    <ExternalLink size={12} />
-                </a>
-            </div>
+                </BlockPreview>
+            </BlockContainer>
         );
     }
 
-    // Button mode (default)
+    // Button only mode (default)
     return (
-        <a
+        <BlockButton
             href={mapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => {
-                if (isPreview) {
-                    e.preventDefault();
-                    return;
-                }
-                onClick?.(e);
-            }}
-            className={`${buttonClassName} animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards`}
-            style={{
-                ...buttonStyle,
-                animationDelay: `${animationDelay}ms`,
-            }}
-        >
-            <div className="flex items-center p-3">
-                {/* Icon */}
-                {design.showButtonIcons !== false && (
-                    <div
-                        className={`w-11 h-11 flex items-center justify-center mr-4 shrink-0 ${roundingClass} ${
-                            design.buttonStyle === "outline" ? "" : "bg-white/20"
-                        }`}
-                        style={
-                            design.buttonStyle === "outline"
-                                ? { backgroundColor: `${design.buttonColor}15` }
-                                : {}
-                        }
-                    >
-                        <MapPin size={22} style={{ color: design.buttonTextColor }} />
-                    </div>
-                )}
-
-                {/* Text content */}
-                <div className="flex-1 min-w-0 text-left">
-                    <h3 className="text-base font-bold truncate">{link.title}</h3>
-                    {design.showLinkSubtext && (link.mapAddress || link.mapQuery) && (
-                        <p className="text-xs truncate opacity-70">
-                            {link.mapAddress || link.mapQuery}
-                        </p>
-                    )}
-                </div>
-            </div>
-        </a>
+            title={link.title}
+            subtitle={shouldShowAddress ? locationText : undefined}
+            design={blockDesign}
+            position="full"
+            icon={icon}
+            isPreview={isPreview}
+            onClick={onClick}
+            animationDelay={animationDelay}
+            className="mb-4"
+        />
     );
 };
 
 export default MapBlock;
-

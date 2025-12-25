@@ -119,6 +119,18 @@ export default function Dashboard({
             ? landing.template_config.subtitle
             : landing?.options?.bio ?? "";
 
+    // Determine if background image should be enabled (default true if image exists)
+    const bgImage = landing?.template_config?.background?.backgroundImage;
+    const hasBackgroundImage =
+        bgImage &&
+        typeof bgImage === "string" &&
+        (bgImage.includes("http") ||
+            bgImage.includes("data:image") ||
+            bgImage.startsWith("url("));
+    const backgroundEnabled =
+        landing?.template_config?.background?.backgroundEnabled ??
+        hasBackgroundImage;
+
     const initialUser: UserProfile = {
         name: displayName,
         handle: landing?.slug || auth.user.username,
@@ -136,6 +148,7 @@ export default function Dashboard({
             backgroundImage:
                 landing?.template_config?.background?.backgroundImage ||
                 undefined,
+            backgroundEnabled: backgroundEnabled,
             backgroundSize:
                 landing?.template_config?.background?.backgroundSize ||
                 undefined,
@@ -164,12 +177,21 @@ export default function Dashboard({
                 landing?.template_config?.buttons?.showIcons ?? true,
             buttonIconAlignment:
                 landing?.template_config?.buttons?.iconAlignment || "left",
+            // Show URL/link text under button titles
+            showLinkSubtext: landing?.template_config?.showLinkSubtext ?? false,
             fontPair: landing?.template_config?.fontPair || "modern",
             // Text color for landing content (auto-calculated if not set)
             textColor: landing?.template_config?.textColor || undefined,
             roundedAvatar:
                 landing?.template_config?.header?.roundedAvatar ?? true,
         },
+
+        // Saved custom themes (max 2)
+        savedCustomThemes: landing?.template_config?.savedCustomThemes || [],
+
+        // Last custom design backup
+        lastCustomDesign:
+            landing?.template_config?.lastCustomDesign || undefined,
 
         // SEO Defaults
         seoTitle: landing?.options?.title || "",
@@ -288,6 +310,8 @@ export default function Dashboard({
     }, [landing?.id, setLandingId]);
 
     // Transform links to API format for saving
+    // IMPORTANT: All block-specific config fields must be included here
+    // See: .cursor/rules/block-development.mdc for full list
     const linksPayload = useMemo(
         () => ({
             links: links.map((link, index) => ({
@@ -298,13 +322,29 @@ export default function Dashboard({
                 isEnabled: link.isEnabled,
                 order: index,
                 icon: link.icon,
+                // Header
                 headerSize: link.headerSize,
+                // Video embeds (YouTube, Spotify, Vimeo, etc.)
                 showInlinePlayer: link.showInlinePlayer,
                 autoPlay: link.autoPlay,
                 startMuted: link.startMuted,
                 playerSize: link.playerSize,
+                // WhatsApp
                 phoneNumber: link.phoneNumber,
                 predefinedMessage: link.predefinedMessage,
+                // Calendar
+                calendarProvider: link.calendarProvider,
+                calendarDisplayMode: link.calendarDisplayMode,
+                // Email
+                emailAddress: link.emailAddress,
+                emailSubject: link.emailSubject,
+                emailBody: link.emailBody,
+                // Map
+                mapAddress: link.mapAddress,
+                mapQuery: link.mapQuery,
+                mapZoom: link.mapZoom,
+                mapDisplayMode: link.mapDisplayMode,
+                mapShowAddress: link.mapShowAddress,
             })),
         }),
         [links]
@@ -337,8 +377,18 @@ export default function Dashboard({
                 ...user.customDesign,
                 roundedAvatar: user.customDesign.roundedAvatar ?? true,
             },
+            savedCustomThemes: user.savedCustomThemes,
+            lastCustomDesign: user.lastCustomDesign,
         }),
-        [user.name, user.bio, user.avatar, user.theme, user.customDesign]
+        [
+            user.name,
+            user.bio,
+            user.avatar,
+            user.theme,
+            user.customDesign,
+            user.savedCustomThemes,
+            user.lastCustomDesign,
+        ]
     );
 
     // Transform settings data to API format
@@ -556,8 +606,9 @@ export default function Dashboard({
                     )}
                 </div>
 
-                {/* Sticky LinkBar - Shows public URL (visible on all tabs except profile) */}
-                {activeTab !== "profile" && (
+                {/* Sticky LinkBar - Shows public URL (visible on all tabs except profile and links) */}
+                {/* Note: Links tab has its own sticky container that includes LinkBar */}
+                {activeTab !== "profile" && activeTab !== "links" && (
                     <div className="sticky top-0 md:top-20 z-30 bg-slate-50/95 dark:bg-neutral-950/95 backdrop-blur-xl -mx-4 px-4 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12 py-4">
                         <LinkBar landing={landing} user={auth.user} />
                     </div>
@@ -576,6 +627,8 @@ export default function Dashboard({
                         onUpdateSocialLinks={setSocialLinks}
                         currentLinkType={currentLinkType}
                         onChangeLinkType={setCurrentLinkType}
+                        landing={landing}
+                        user={auth.user}
                     />
                 )}
 

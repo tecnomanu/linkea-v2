@@ -1,31 +1,28 @@
 /**
- * EmailBlock - Public landing page renderer for Email mailto links
+ * EmailBlock - Email mailto link block
  *
- * Renders a button that opens the user's email client with
- * predefined recipient, subject, and body
- *
- * Related files:
- * - types.ts: LinkBlock.emailAddress, emailSubject, emailBody
- * - configs/EmailConfig.tsx: Panel configuration UI
+ * Opens the user's email client with predefined recipient, subject, and body.
+ * Button only - no preview mode.
  */
 
+import { BlockDesign } from "@/hooks/useBlockStyles";
 import { LinkBlock, UserProfile } from "@/types";
 import { Mail } from "lucide-react";
 import React from "react";
+import { BlockButton, renderBlockIcon } from "./partial";
 
 interface EmailBlockProps {
     link: LinkBlock;
     design: UserProfile["customDesign"];
-    buttonClassName: string;
-    buttonStyle: React.CSSProperties;
+    buttonClassName: string; // Legacy prop - not used
+    buttonStyle: React.CSSProperties; // Legacy prop - not used
     isPreview?: boolean;
     onClick?: (e: React.MouseEvent) => void;
     animationDelay?: number;
-    roundingClass?: string;
 }
 
 /**
- * Builds the mailto: URL with optional subject and body
+ * Build mailto: URL with optional subject and body
  */
 const buildMailtoUrl = (
     email: string,
@@ -37,16 +34,10 @@ const buildMailtoUrl = (
     let url = `mailto:${email}`;
     const params: string[] = [];
 
-    if (subject) {
-        params.push(`subject=${encodeURIComponent(subject)}`);
-    }
-    if (body) {
-        params.push(`body=${encodeURIComponent(body)}`);
-    }
+    if (subject) params.push(`subject=${encodeURIComponent(subject)}`);
+    if (body) params.push(`body=${encodeURIComponent(body)}`);
 
-    if (params.length > 0) {
-        url += `?${params.join("&")}`;
-    }
+    if (params.length > 0) url += `?${params.join("&")}`;
 
     return url;
 };
@@ -54,12 +45,9 @@ const buildMailtoUrl = (
 export const EmailBlock: React.FC<EmailBlockProps> = ({
     link,
     design,
-    buttonClassName,
-    buttonStyle,
     isPreview = false,
     onClick,
     animationDelay = 0,
-    roundingClass = "rounded-[20px]",
 }) => {
     const mailtoUrl = buildMailtoUrl(
         link.emailAddress || "",
@@ -67,52 +55,46 @@ export const EmailBlock: React.FC<EmailBlockProps> = ({
         link.emailBody
     );
 
-    return (
-        <a
-            href={mailtoUrl}
-            onClick={(e) => {
-                if (isPreview) {
-                    e.preventDefault();
-                    return;
-                }
-                onClick?.(e);
-            }}
-            className={`${buttonClassName} animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards`}
-            style={{
-                ...buttonStyle,
-                animationDelay: `${animationDelay}ms`,
-            }}
-        >
-            <div className="flex items-center p-3">
-                {/* Icon */}
-                {design.showButtonIcons !== false && (
-                    <div
-                        className={`w-11 h-11 flex items-center justify-center mr-4 shrink-0 ${roundingClass} ${
-                            design.buttonStyle === "outline" ? "" : "bg-white/20"
-                        }`}
-                        style={
-                            design.buttonStyle === "outline"
-                                ? { backgroundColor: `${design.buttonColor}15` }
-                                : {}
-                        }
-                    >
-                        <Mail size={22} style={{ color: design.buttonTextColor }} />
-                    </div>
-                )}
+    // Convert design to BlockDesign format
+    const blockDesign: BlockDesign = {
+        buttonColor: design.buttonColor,
+        buttonTextColor: design.buttonTextColor,
+        buttonStyle: design.buttonStyle,
+        buttonShape: design.buttonShape,
+        showButtonIcons: design.showButtonIcons,
+        showLinkSubtext: design.showLinkSubtext,
+    };
 
-                {/* Text content */}
-                <div className="flex-1 min-w-0 text-left">
-                    <h3 className="text-base font-bold truncate">{link.title}</h3>
-                    {design.showLinkSubtext && link.emailAddress && (
-                        <p className="text-xs truncate opacity-70">
-                            {link.emailAddress}
-                        </p>
-                    )}
-                </div>
-            </div>
-        </a>
+    // Render icon: user custom icon takes priority, else fallback to Mail
+    const icon = renderBlockIcon({
+        linkIcon: link.icon,
+        fallbackIcon: (
+            <Mail size={22} style={{ color: design.buttonTextColor }} />
+        ),
+        size: 22,
+        color: design.buttonTextColor,
+    });
+
+    // Show email as subtitle if showLinkSubtext is enabled
+    const subtitle =
+        design.showLinkSubtext && link.emailAddress
+            ? link.emailAddress
+            : undefined;
+
+    return (
+        <BlockButton
+            href={mailtoUrl}
+            title={link.title}
+            subtitle={subtitle}
+            design={blockDesign}
+            position="full"
+            icon={icon}
+            isPreview={isPreview}
+            onClick={onClick}
+            animationDelay={animationDelay}
+            className="mb-4"
+        />
     );
 };
 
 export default EmailBlock;
-

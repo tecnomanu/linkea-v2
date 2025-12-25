@@ -4,11 +4,12 @@
  * Embeds Google Maps or links to map location
  *
  * Related files:
- * - types.ts: LinkBlock.mapAddress, mapQuery, mapZoom, mapDisplayMode
+ * - types.ts: LinkBlock.mapAddress, mapQuery, mapZoom, mapDisplayMode, mapShowAddress
  * - blocks/MapBlock.tsx: Renderer for LandingContent
  */
 
 import { SegmentedSelect } from "@/Components/ui/SegmentedSelect";
+import { Toggle } from "@/Components/ui/Toggle";
 import { LinkBlock } from "@/types";
 import { ExternalLink, Layout, MapPin } from "lucide-react";
 import React from "react";
@@ -20,13 +21,20 @@ interface MapConfigProps {
 
 export const MapConfig: React.FC<MapConfigProps> = ({ link, onUpdate }) => {
     const displayMode = link.mapDisplayMode || "button";
+    // Use mapAddress as primary, fallback to mapQuery for backwards compat
+    const locationValue = link.mapAddress || link.mapQuery || "";
+
+    const handleLocationChange = (value: string) => {
+        // Store in mapAddress for simplicity
+        onUpdate(link.id, { mapAddress: value, mapQuery: undefined });
+    };
 
     return (
         <div className="space-y-5">
-            {/* Address */}
+            {/* Location (unified input) */}
             <div className="space-y-1.5">
                 <label className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                    Direccion
+                    Ubicacion
                 </label>
                 <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -37,32 +45,26 @@ export const MapConfig: React.FC<MapConfigProps> = ({ link, onUpdate }) => {
                     </div>
                     <input
                         type="text"
-                        value={link.mapAddress || ""}
-                        onChange={(e) =>
-                            onUpdate(link.id, { mapAddress: e.target.value })
-                        }
+                        value={locationValue}
+                        onChange={(e) => handleLocationChange(e.target.value)}
                         className="w-full bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl pl-10 pr-4 py-3 text-sm text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all"
-                        placeholder="Av. Corrientes 1234, CABA"
+                        placeholder="Ej: Av. Corrientes 1234, CABA o Obelisco"
                     />
                 </div>
                 <p className="text-xs text-neutral-400">
-                    Ingresa la direccion completa para mejor precision
+                    Ingresa una direccion o el nombre del lugar
                 </p>
             </div>
 
-            {/* Search Query (alternative) */}
-            <div className="space-y-1.5">
-                <label className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                    O buscar por nombre
-                </label>
-                <input
-                    type="text"
-                    value={link.mapQuery || ""}
-                    onChange={(e) =>
-                        onUpdate(link.id, { mapQuery: e.target.value })
+            {/* Show Address Toggle */}
+            <div className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700">
+                <Toggle
+                    label="Mostrar direccion en el boton"
+                    checked={link.mapShowAddress ?? false}
+                    onChange={(val) =>
+                        onUpdate(link.id, { mapShowAddress: val })
                     }
-                    className="w-full bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl px-4 py-3 text-sm text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all"
-                    placeholder="Ej: Obelisco Buenos Aires"
+                    labelPosition="left"
                 />
             </div>
 
@@ -162,4 +164,3 @@ export const MapConfig: React.FC<MapConfigProps> = ({ link, onUpdate }) => {
         </div>
     );
 };
-

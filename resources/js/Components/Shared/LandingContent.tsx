@@ -276,7 +276,7 @@ export const LandingContent: React.FC<LandingContentProps> = ({
     // Layout Width Control based on device
     const contentWidthClass = device === "mobile" ? "max-w-md" : "max-w-2xl";
 
-    // Button Generators
+    // Button rounding helper - used for buttons and icon containers
     const getRounding = () => {
         switch (design.buttonShape) {
             case "sharp":
@@ -286,18 +286,6 @@ export const LandingContent: React.FC<LandingContentProps> = ({
             case "rounded":
             default:
                 return "rounded-[20px]";
-        }
-    };
-
-    // Block rounding - more subtle than buttons for embed containers
-    const getBlockRounding = () => {
-        switch (design.buttonShape) {
-            case "sharp":
-                return "rounded-none";
-            case "pill":
-            case "rounded":
-            default:
-                return "rounded-2xl"; // Subtle rounding for blocks
         }
     };
 
@@ -533,7 +521,6 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                                 isPreview={isPreview}
                                 onClick={(e) => handleLinkClick(e, link.id)}
                                 animationDelay={delay}
-                                roundingClass={getBlockRounding()}
                             />
                         );
                     }
@@ -550,7 +537,6 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                                 isPreview={isPreview}
                                 onClick={(e) => handleLinkClick(e, link.id)}
                                 animationDelay={delay}
-                                roundingClass={getRounding()}
                             />
                         );
                     }
@@ -567,7 +553,6 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                                 isPreview={isPreview}
                                 onClick={(e) => handleLinkClick(e, link.id)}
                                 animationDelay={delay}
-                                roundingClass={getRounding()}
                             />
                         );
                     }
@@ -584,7 +569,6 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                                 isPreview={isPreview}
                                 onClick={(e) => handleLinkClick(e, link.id)}
                                 animationDelay={delay}
-                                roundingClass={getRounding()}
                             />
                         );
                     }
@@ -601,7 +585,6 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                                 isPreview={isPreview}
                                 onClick={(e) => handleLinkClick(e, link.id)}
                                 animationDelay={delay}
-                                roundingClass={getRounding()}
                             />
                         );
                     }
@@ -618,7 +601,6 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                                 isPreview={isPreview}
                                 onClick={(e) => handleLinkClick(e, link.id)}
                                 animationDelay={delay}
-                                roundingClass={getRounding()}
                             />
                         );
                     }
@@ -635,7 +617,6 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                                 isPreview={isPreview}
                                 onClick={(e) => handleLinkClick(e, link.id)}
                                 animationDelay={delay}
-                                roundingClass={getRounding()}
                             />
                         );
                     }

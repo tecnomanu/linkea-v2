@@ -15,6 +15,10 @@
  * - types.ts: Type definitions
  */
 
+// Re-export partials for blocks that need them
+export { BlockButton, BlockContainer, BlockPreview } from "./partial";
+
+// Block type renderers
 export { CalendarBlock } from "./CalendarBlock";
 export { EmailBlock } from "./EmailBlock";
 export { MapBlock } from "./MapBlock";
@@ -25,4 +29,3 @@ export { VimeoBlock } from "./VimeoBlock";
 
 // Future blocks:
 // export { ContactBlock } from "./ContactBlock";
-

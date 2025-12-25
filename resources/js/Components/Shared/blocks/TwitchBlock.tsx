@@ -1,37 +1,46 @@
 /**
- * TwitchBlock - Public landing page renderer for Twitch channel blocks
+ * TwitchBlock - Twitch channel/stream block
  *
- * Renders as a button that links to the Twitch channel.
- * Can optionally show inline embed with chat.
+ * Modes:
+ * - Button only: Link to Twitch channel
+ * - Button + Preview: Header button with embedded stream player
  *
- * Related files:
- * - types.ts: LinkBlock.url, showInlinePlayer
- * - configs/VideoEmbedConfig.tsx: Panel configuration UI
+ * TODO: Implement Twitch API integration to detect live status
+ * - Create TwitchService.php to query Twitch Helix API
+ * - Endpoint: GET https://api.twitch.tv/helix/streams?user_login={channel}
+ * - Requires TWITCH_CLIENT_ID and TWITCH_CLIENT_SECRET in .env
+ * - Cache result for 2 minutes to avoid rate limits
+ * - When live: show LiveBadge + Radio icon pulsing
+ * - When offline: show user's custom icon
  */
 
+import { BlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
 import { LinkBlock, UserProfile } from "@/types";
-import { Radio, Video } from "lucide-react";
+import { Video } from "lucide-react";
 import React from "react";
+import {
+    BlockButton,
+    BlockContainer,
+    BlockPreview,
+    renderBlockIcon,
+} from "./partial";
 
 interface TwitchBlockProps {
     link: LinkBlock;
     design: UserProfile["customDesign"];
-    buttonClassName: string;
-    buttonStyle: React.CSSProperties;
+    buttonClassName: string; // Legacy prop - not used with new components
+    buttonStyle: React.CSSProperties; // Legacy prop - not used
     isPreview?: boolean;
     onClick?: (e: React.MouseEvent) => void;
     animationDelay?: number;
-    roundingClass?: string;
 }
 
 /**
- * Extracts Twitch channel name from URL or returns the input if it's just a name
+ * Extract Twitch channel name from URL or return input if it's just a name
  */
 const extractTwitchChannel = (url: string): string | null => {
     if (!url) return null;
-    // If it's just a channel name (no slashes or dots)
     if (!/[./]/.test(url)) return url;
-    // Extract from URL
     const match = url.match(/twitch\.tv\/([^/?]+)/i);
     return match ? match[1] : null;
 };
@@ -39,56 +48,86 @@ const extractTwitchChannel = (url: string): string | null => {
 export const TwitchBlock: React.FC<TwitchBlockProps> = ({
     link,
     design,
-    buttonClassName,
-    buttonStyle,
     isPreview = false,
     onClick,
     animationDelay = 0,
-    roundingClass = "rounded-[20px]",
 }) => {
     const channel = extractTwitchChannel(link.url);
     const twitchUrl = channel ? `https://www.twitch.tv/${channel}` : link.url;
     const embedUrl = channel
-        ? `https://player.twitch.tv/?channel=${channel}&parent=${typeof window !== 'undefined' ? window.location.hostname : 'localhost'}&muted=true`
+        ? `https://player.twitch.tv/?channel=${channel}&parent=${
+              typeof window !== "undefined"
+                  ? window.location.hostname
+                  : "localhost"
+          }&muted=true`
         : null;
 
-    // Inline embed mode (with chat)
+    // Convert design to BlockDesign format
+    const blockDesign: BlockDesign = {
+        buttonColor: design.buttonColor,
+        buttonTextColor: design.buttonTextColor,
+        buttonStyle: design.buttonStyle,
+        buttonShape: design.buttonShape,
+        showButtonIcons: design.showButtonIcons,
+        showLinkSubtext: design.showLinkSubtext,
+    };
+
+    // Get subtitle based on showLinkSubtext setting
+    const subtitle = getBlockSubtitle(blockDesign, "Twitch", link.url);
+
+    // TODO: Enable when Twitch API integration is implemented
+    // const isLive = false; // Will come from API
+    //
+    // const LiveBadge = () => (
+    //     <div className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded animate-pulse">
+    //         EN VIVO
+    //     </div>
+    // );
+    //
+    // const getLiveIcon = () => (
+    //     <Radio
+    //         size={22}
+    //         className="animate-pulse"
+    //         style={{ color: design.buttonTextColor }}
+    //     />
+    // );
+
+    // Always use user's custom icon or fallback to Video icon
+    const icon = renderBlockIcon({
+        linkIcon: link.icon,
+        fallbackIcon: (
+            <Video size={22} style={{ color: design.buttonTextColor }} />
+        ),
+        size: 22,
+        color: design.buttonTextColor,
+    });
+
+    // Button + Preview mode (inline player enabled)
     if (link.showInlinePlayer && channel) {
         return (
-            <div
-                className={`w-full overflow-hidden mb-4 animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards ${roundingClass}`}
-                style={{ animationDelay: `${animationDelay}ms` }}
-            >
-                {/* Header with title */}
+            <BlockContainer animationDelay={animationDelay}>
+                {/* Header button */}
                 {link.title && (
-                    <a
+                    <BlockButton
                         href={twitchUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`block p-4 ${roundingClass} mb-2 hover:opacity-90 transition-opacity`}
-                        style={{
-                            backgroundColor: design.buttonColor,
-                            color: design.buttonTextColor,
-                        }}
-                        onClick={(e) => {
-                            if (isPreview) e.preventDefault();
-                        }}
-                    >
-                        <div className="flex items-center gap-3">
-                            <Radio size={20} className="animate-pulse" />
-                            <span className="font-bold">{link.title}</span>
-                            <span className="ml-auto text-xs opacity-70">EN VIVO</span>
-                        </div>
-                    </a>
+                        title={link.title}
+                        subtitle={subtitle}
+                        design={blockDesign}
+                        position="top"
+                        icon={icon}
+                        // TODO: Add when live detection is implemented
+                        // rightContent={isLive ? <LiveBadge /> : undefined}
+                        isPreview={isPreview}
+                        onClick={onClick}
+                    />
                 )}
 
-                {/* Stream Embed */}
-                <div
-                    className={`bg-black overflow-hidden ${roundingClass}`}
-                    style={{
-                        border: `2px solid ${design.buttonColor}20`,
-                        aspectRatio: "16/9",
-                    }}
+                {/* Stream embed */}
+                <BlockPreview
+                    design={blockDesign}
+                    hasButton={!!link.title}
+                    aspectRatio="16/9"
+                    backgroundColor="black"
                 >
                     {embedUrl && (
                         <iframe
@@ -101,56 +140,26 @@ export const TwitchBlock: React.FC<TwitchBlockProps> = ({
                             loading="lazy"
                         />
                     )}
-                </div>
-            </div>
+                </BlockPreview>
+            </BlockContainer>
         );
     }
 
-    // Button mode (default)
+    // Button only mode (default)
     return (
-        <a
+        <BlockButton
             href={twitchUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => {
-                if (isPreview) {
-                    e.preventDefault();
-                    return;
-                }
-                onClick?.(e);
-            }}
-            className={`${buttonClassName} animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards`}
-            style={{
-                ...buttonStyle,
-                animationDelay: `${animationDelay}ms`,
-            }}
-        >
-            <div className="flex items-center p-3">
-                {/* Icon */}
-                {design.showButtonIcons !== false && (
-                    <div
-                        className={`w-11 h-11 flex items-center justify-center mr-4 shrink-0 ${roundingClass} ${
-                            design.buttonStyle === "outline" ? "" : "bg-white/20"
-                        }`}
-                        style={
-                            design.buttonStyle === "outline"
-                                ? { backgroundColor: `${design.buttonColor}15` }
-                                : {}
-                        }
-                    >
-                        <Video size={22} style={{ color: design.buttonTextColor }} />
-                    </div>
-                )}
-
-                {/* Text content */}
-                <div className="flex-1 min-w-0 text-left">
-                    <h3 className="text-base font-bold truncate">{link.title}</h3>
-                    <p className="text-xs truncate opacity-70">Twitch</p>
-                </div>
-            </div>
-        </a>
+            title={link.title}
+            subtitle={subtitle}
+            design={blockDesign}
+            position="full"
+            icon={icon}
+            isPreview={isPreview}
+            onClick={onClick}
+            animationDelay={animationDelay}
+            className="mb-4"
+        />
     );
 };
 
 export default TwitchBlock;
-

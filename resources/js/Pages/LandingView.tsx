@@ -79,6 +79,7 @@ export default function LandingView({
         mapQuery: link.config?.map_query,
         mapZoom: link.config?.map_zoom,
         mapDisplayMode: link.config?.map_display_mode,
+        mapShowAddress: link.config?.map_show_address,
     }));
 
     // Resolve background image - can be string (CSS/SVG) or object {image: 'path'}
@@ -113,6 +114,8 @@ export default function LandingView({
             backgroundImage: resolveBackgroundImageUrl(
                 bgConfig?.backgroundImage
             ),
+            // Background enabled switch (defaults to true if has image)
+            backgroundEnabled: bgConfig?.backgroundEnabled ?? true,
             backgroundSize:
                 bgConfig?.backgroundSize || bgConfig?.props?.size || "cover",
             backgroundPosition:

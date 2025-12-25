@@ -79,19 +79,6 @@ export const EmailConfig: React.FC<EmailConfigProps> = ({ link, onUpdate }) => {
                 />
             </div>
 
-            {/* Preview */}
-            {link.emailAddress && (
-                <div className="p-4 bg-sky-50 dark:bg-sky-900/20 rounded-xl border border-sky-100 dark:border-sky-800">
-                    <h4 className="font-semibold text-sky-700 dark:text-sky-300 text-sm mb-1">
-                        Vista previa del enlace
-                    </h4>
-                    <p className="text-xs text-sky-600 dark:text-sky-400 font-mono break-all">
-                        mailto:{link.emailAddress}
-                        {link.emailSubject && `?subject=${encodeURIComponent(link.emailSubject)}`}
-                        {link.emailBody && `${link.emailSubject ? '&' : '?'}body=${encodeURIComponent(link.emailBody)}`}
-                    </p>
-                </div>
-            )}
         </div>
     );
 };

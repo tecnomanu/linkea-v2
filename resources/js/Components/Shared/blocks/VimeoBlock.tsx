@@ -1,33 +1,29 @@
 /**
- * VimeoBlock - Public landing page renderer for Vimeo video blocks
+ * VimeoBlock - Vimeo video block
  *
- * Renders as either:
- * - button: Opens video in new tab
- * - inline: Embeds Vimeo player
- *
- * Related files:
- * - types.ts: LinkBlock.url, showInlinePlayer
- * - configs/VideoEmbedConfig.tsx: Panel configuration UI
+ * Modes:
+ * - Button only: Link to Vimeo video
+ * - Button + Preview: Header button with embedded player
  */
 
+import { BlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
 import { LinkBlock, UserProfile } from "@/types";
 import { Play, Video } from "lucide-react";
 import React from "react";
+import { BlockButton, BlockContainer, BlockPreview, renderBlockIcon } from "./partial";
 
 interface VimeoBlockProps {
     link: LinkBlock;
     design: UserProfile["customDesign"];
-    buttonClassName: string;
-    buttonStyle: React.CSSProperties;
+    buttonClassName: string; // Legacy prop - not used
+    buttonStyle: React.CSSProperties; // Legacy prop - not used
     isPreview?: boolean;
     onClick?: (e: React.MouseEvent) => void;
     animationDelay?: number;
-    roundingClass?: string;
 }
 
 /**
- * Extracts Vimeo video ID from URL
- * Supports: vimeo.com/123456789, vimeo.com/channels/xxx/123456789, player.vimeo.com/video/123456789
+ * Extract Vimeo video ID from URL
  */
 const extractVimeoId = (url: string): string | null => {
     if (!url) return null;
@@ -46,46 +42,63 @@ const extractVimeoId = (url: string): string | null => {
 export const VimeoBlock: React.FC<VimeoBlockProps> = ({
     link,
     design,
-    buttonClassName,
-    buttonStyle,
     isPreview = false,
     onClick,
     animationDelay = 0,
-    roundingClass = "rounded-[20px]",
 }) => {
     const videoId = extractVimeoId(link.url);
     const embedUrl = videoId ? `https://player.vimeo.com/video/${videoId}?dnt=1` : null;
 
-    // Inline embed mode
+    // Convert design to BlockDesign format
+    const blockDesign: BlockDesign = {
+        buttonColor: design.buttonColor,
+        buttonTextColor: design.buttonTextColor,
+        buttonStyle: design.buttonStyle,
+        buttonShape: design.buttonShape,
+        showButtonIcons: design.showButtonIcons,
+        showLinkSubtext: design.showLinkSubtext,
+    };
+
+    // Get subtitle based on showLinkSubtext setting
+    const subtitle = getBlockSubtitle(blockDesign, "Vimeo", link.url);
+
+    // Render icon: user custom icon takes priority, else fallback
+    const getIcon = (withPlayer = false) =>
+        renderBlockIcon({
+            linkIcon: link.icon,
+            fallbackIcon: withPlayer ? (
+                <Video size={22} style={{ color: design.buttonTextColor }} />
+            ) : (
+                <Play size={22} style={{ color: design.buttonTextColor }} />
+            ),
+            size: 22,
+            color: design.buttonTextColor,
+        });
+
+    // Button + Preview mode (inline player enabled)
     if (link.showInlinePlayer && embedUrl) {
         return (
-            <div
-                className={`w-full overflow-hidden mb-4 animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards ${roundingClass}`}
-                style={{ animationDelay: `${animationDelay}ms` }}
-            >
-                {/* Header with title */}
+            <BlockContainer animationDelay={animationDelay}>
+                {/* Header button */}
                 {link.title && (
-                    <div
-                        className={`p-4 ${roundingClass} mb-2`}
-                        style={{
-                            backgroundColor: design.buttonColor,
-                            color: design.buttonTextColor,
-                        }}
-                    >
-                        <div className="flex items-center gap-3">
-                            <Video size={20} />
-                            <span className="font-bold">{link.title}</span>
-                        </div>
-                    </div>
+                    <BlockButton
+                        href={link.url}
+                        title={link.title}
+                        subtitle={subtitle}
+                        design={blockDesign}
+                        position="top"
+                        icon={getIcon(true)}
+                        isPreview={isPreview}
+                        onClick={onClick}
+                    />
                 )}
 
-                {/* Video Embed */}
-                <div
-                    className={`bg-black overflow-hidden ${roundingClass}`}
-                    style={{
-                        border: `2px solid ${design.buttonColor}20`,
-                        aspectRatio: "16/9",
-                    }}
+                {/* Video embed */}
+                <BlockPreview
+                    design={blockDesign}
+                    hasButton={!!link.title}
+                    aspectRatio="16/9"
+                    backgroundColor="black"
                 >
                     <iframe
                         src={embedUrl}
@@ -97,56 +110,26 @@ export const VimeoBlock: React.FC<VimeoBlockProps> = ({
                         allowFullScreen
                         loading="lazy"
                     />
-                </div>
-            </div>
+                </BlockPreview>
+            </BlockContainer>
         );
     }
 
-    // Button mode (default)
+    // Button only mode (default)
     return (
-        <a
+        <BlockButton
             href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => {
-                if (isPreview) {
-                    e.preventDefault();
-                    return;
-                }
-                onClick?.(e);
-            }}
-            className={`${buttonClassName} animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards`}
-            style={{
-                ...buttonStyle,
-                animationDelay: `${animationDelay}ms`,
-            }}
-        >
-            <div className="flex items-center p-3">
-                {/* Icon */}
-                {design.showButtonIcons !== false && (
-                    <div
-                        className={`w-11 h-11 flex items-center justify-center mr-4 shrink-0 ${roundingClass} ${
-                            design.buttonStyle === "outline" ? "" : "bg-white/20"
-                        }`}
-                        style={
-                            design.buttonStyle === "outline"
-                                ? { backgroundColor: `${design.buttonColor}15` }
-                                : {}
-                        }
-                    >
-                        <Play size={22} style={{ color: design.buttonTextColor }} />
-                    </div>
-                )}
-
-                {/* Text content */}
-                <div className="flex-1 min-w-0 text-left">
-                    <h3 className="text-base font-bold truncate">{link.title}</h3>
-                    <p className="text-xs truncate opacity-70">Vimeo</p>
-                </div>
-            </div>
-        </a>
+            title={link.title}
+            subtitle={subtitle}
+            design={blockDesign}
+            position="full"
+            icon={getIcon(false)}
+            isPreview={isPreview}
+            onClick={onClick}
+            animationDelay={animationDelay}
+            className="mb-4"
+        />
     );
 };
 
 export default VimeoBlock;
-

@@ -1,87 +1,77 @@
 /**
- * TikTokBlock - Public landing page renderer for TikTok video blocks
+ * TikTokBlock - TikTok video link block
  *
- * TikTok does not support direct embeds on external sites easily,
+ * TikTok does not support easy external embeds,
  * so this renders as a button that opens TikTok in a new tab.
- *
- * Related files:
- * - types.ts: LinkBlock.url
- * - configs/VideoEmbedConfig.tsx: Panel configuration UI
+ * Button only - no preview mode.
  */
 
+import { BlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
 import { LinkBlock, UserProfile } from "@/types";
 import { ExternalLink, Play } from "lucide-react";
 import React from "react";
+import { BlockButton, renderBlockIcon } from "./partial";
 
 interface TikTokBlockProps {
     link: LinkBlock;
     design: UserProfile["customDesign"];
-    buttonClassName: string;
-    buttonStyle: React.CSSProperties;
+    buttonClassName: string; // Legacy prop - not used
+    buttonStyle: React.CSSProperties; // Legacy prop - not used
     isPreview?: boolean;
     onClick?: (e: React.MouseEvent) => void;
     animationDelay?: number;
-    roundingClass?: string;
 }
 
 export const TikTokBlock: React.FC<TikTokBlockProps> = ({
     link,
     design,
-    buttonClassName,
-    buttonStyle,
     isPreview = false,
     onClick,
     animationDelay = 0,
-    roundingClass = "rounded-[20px]",
 }) => {
-    return (
-        <a
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => {
-                if (isPreview) {
-                    e.preventDefault();
-                    return;
-                }
-                onClick?.(e);
-            }}
-            className={`${buttonClassName} animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards`}
-            style={{
-                ...buttonStyle,
-                animationDelay: `${animationDelay}ms`,
-            }}
-        >
-            <div className="flex items-center p-3">
-                {/* TikTok Icon */}
-                {design.showButtonIcons !== false && (
-                    <div
-                        className={`w-11 h-11 flex items-center justify-center mr-4 shrink-0 ${roundingClass} ${
-                            design.buttonStyle === "outline" ? "" : "bg-white/20"
-                        }`}
-                        style={
-                            design.buttonStyle === "outline"
-                                ? { backgroundColor: `${design.buttonColor}15` }
-                                : {}
-                        }
-                    >
-                        {/* TikTok-style icon using Play */}
-                        <Play size={22} style={{ color: design.buttonTextColor }} />
-                    </div>
-                )}
+    // Convert design to BlockDesign format
+    const blockDesign: BlockDesign = {
+        buttonColor: design.buttonColor,
+        buttonTextColor: design.buttonTextColor,
+        buttonStyle: design.buttonStyle,
+        buttonShape: design.buttonShape,
+        showButtonIcons: design.showButtonIcons,
+        showLinkSubtext: design.showLinkSubtext,
+    };
 
-                {/* Text content */}
-                <div className="flex-1 min-w-0 text-left">
-                    <h3 className="text-base font-bold truncate">{link.title}</h3>
-                    <p className="text-xs truncate opacity-70 flex items-center gap-1">
-                        <span>TikTok</span>
-                        <ExternalLink size={10} />
-                    </p>
-                </div>
-            </div>
-        </a>
+    // Render icon: user custom icon takes priority, else fallback to Play
+    const icon = renderBlockIcon({
+        linkIcon: link.icon,
+        fallbackIcon: <Play size={22} style={{ color: design.buttonTextColor }} />,
+        size: 22,
+        color: design.buttonTextColor,
+    });
+
+    // Get subtitle based on showLinkSubtext setting
+    const subtitleText = getBlockSubtitle(blockDesign, "TikTok", link.url);
+
+    // Subtitle with external link icon
+    const SubtitleContent = () => (
+        <span className="flex items-center gap-1">
+            <span>{subtitleText}</span>
+            <ExternalLink size={10} />
+        </span>
+    );
+
+    return (
+        <BlockButton
+            href={link.url}
+            title={link.title}
+            subtitle={<SubtitleContent />}
+            design={blockDesign}
+            position="full"
+            icon={icon}
+            isPreview={isPreview}
+            onClick={onClick}
+            animationDelay={animationDelay}
+            className="mb-4"
+        />
     );
 };
 
 export default TikTokBlock;
-

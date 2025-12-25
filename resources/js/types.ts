@@ -38,6 +38,48 @@ export type ButtonStyle = 'solid' | 'outline' | 'soft' | 'hard';
 export type ButtonShape = 'sharp' | 'rounded' | 'pill';
 export type FontPair = 'modern' | 'elegant' | 'mono';
 
+// Saved custom theme slot (max 2 allowed)
+export interface SavedCustomTheme {
+    id: string;
+    name: string;
+    customDesign: CustomDesignConfig;
+    createdAt: string;
+}
+
+// Extracted CustomDesign interface for reuse
+export interface CustomDesignConfig {
+    backgroundColor: string;
+    backgroundImage?: string | { image?: string };
+    backgroundEnabled?: boolean; // Switch to show/hide background image without deleting it
+    backgroundAttachment?: 'fixed' | 'scroll';
+    backgroundSize?: string;
+    backgroundPosition?: string;
+    backgroundRepeat?: string;
+    
+    // Legacy background editor props (kept for migration but hidden in UI)
+    backgroundProps?: Record<string, string | number>;
+    backgroundControls?: {
+        hideBgColor?: boolean;
+        colors?: string[];
+        scale?: { min: number; max: number; default: number; aspectRatio?: boolean };
+        opacity?: { default: number };
+        rotationBg?: { min: number; max: number; default: number };
+    };
+    
+    buttonStyle: ButtonStyle;
+    buttonShape: ButtonShape;
+    buttonColor: string;
+    buttonTextColor: string;
+    
+    showButtonIcons?: boolean;
+    buttonIconAlignment?: 'left' | 'inline' | 'right';
+    showLinkSubtext?: boolean;
+    
+    fontPair: FontPair;
+    textColor?: string;
+    roundedAvatar?: boolean;
+}
+
 export interface LinkBlock {
   id: string;
   title: string;
@@ -76,6 +118,7 @@ export interface LinkBlock {
   mapQuery?: string;
   mapZoom?: number;
   mapDisplayMode?: 'button' | 'inline';
+  mapShowAddress?: boolean; // Show address even when global showLinkSubtext is off
   
   // Video embeds (Vimeo, TikTok, Twitch)
   videoId?: string;
@@ -91,47 +134,17 @@ export interface UserProfile {
   bio: string;
   
   // Design Configuration
-  theme: 'custom' | 'white' | 'sunset' | 'ocean' | 'midnight' | 'forest' | 'candy';
+  // Can be preset ID or 'custom' or saved theme ID (saved_1, saved_2)
+  theme: string;
   
-  // Custom Design Properties
-  customDesign: {
-      backgroundColor: string;
-      backgroundImage?: string | { image?: string }; // CSS string or {image: 'path'}
-      backgroundAttachment?: 'fixed' | 'scroll'; // scroll for preview, can be fixed for public
-      backgroundSize?: string;
-      backgroundPosition?: string;
-      backgroundRepeat?: string;
-      
-      // Legacy background editor props
-      backgroundProps?: Record<string, string | number>; // color1, color2, opacity, scale, etc.
-      backgroundControls?: {
-          hideBgColor?: boolean;
-          colors?: string[];
-          scale?: { min: number; max: number; default: number; aspectRatio?: boolean };
-          opacity?: { default: number };
-          rotationBg?: { min: number; max: number; default: number };
-      };
-      
-      buttonStyle: ButtonStyle;
-      buttonShape: ButtonShape;
-      buttonColor: string;
-      buttonTextColor: string;
-      
-      // Button icon options
-      showButtonIcons?: boolean; // true = show icons in buttons (default: true)
-      buttonIconAlignment?: 'left' | 'inline' | 'right'; // left = separate column, inline = with text, right = absolute right
-      
-      // Link subtext (URL/description) display
-      showLinkSubtext?: boolean; // false = hide URL/subtext under link title (default: false)
-      
-      fontPair: FontPair;
-      
-      // Text color for the landing page content (headings, bio, etc.)
-      // If not set, will be auto-calculated based on background contrast
-      textColor?: string;
-      
-      roundedAvatar?: boolean; // true = round, false = square (default: true)
-  };
+  // Custom Design Properties - uses extracted interface
+  customDesign: CustomDesignConfig;
+  
+  // Saved custom themes (max 2) - allows user to save and restore custom designs
+  savedCustomThemes?: SavedCustomTheme[];
+  
+  // Last custom design backup - restored when switching back to 'custom' from a preset
+  lastCustomDesign?: CustomDesignConfig;
 
   // SEO & Analytics
   seoTitle?: string;

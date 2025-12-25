@@ -72,6 +72,7 @@ class SaveLinksRequest extends FormRequest
             'links.*.mapQuery' => 'nullable|string|max:500',
             'links.*.mapZoom' => 'nullable|integer|min:1|max:21',
             'links.*.mapDisplayMode' => 'nullable|string|in:button,inline',
+            'links.*.mapShowAddress' => 'nullable|boolean',
             // Video embeds
             'links.*.videoId' => 'nullable|string|max:255',
             // SoundCloud
@@ -131,6 +132,7 @@ class SaveLinksRequest extends FormRequest
             'map_query' => $link['mapQuery'] ?? null,
             'map_zoom' => $link['mapZoom'] ?? null,
             'map_display_mode' => $link['mapDisplayMode'] ?? null,
+            'map_show_address' => $link['mapShowAddress'] ?? null,
             // Video embeds
             'video_id' => $link['videoId'] ?? null,
             // SoundCloud

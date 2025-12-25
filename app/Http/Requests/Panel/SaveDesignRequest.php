@@ -22,11 +22,12 @@ class SaveDesignRequest extends FormRequest
             // Background properties
             'customDesign.backgroundColor' => 'nullable|string|max:50',
             'customDesign.backgroundImage' => 'nullable|string', // SVG data URL can be very large
+            'customDesign.backgroundEnabled' => 'nullable|boolean', // Switch to show/hide bg image
             'customDesign.backgroundSize' => 'nullable|string|max:50',
             'customDesign.backgroundPosition' => 'nullable|string|max:50',
             'customDesign.backgroundRepeat' => 'nullable|string|max:50',
             'customDesign.backgroundAttachment' => 'nullable|string|in:fixed,scroll',
-            'customDesign.backgroundProps' => 'nullable|array', // Legacy bg editor props (colors, opacity, scale)
+            'customDesign.backgroundProps' => 'nullable|array', // Legacy bg editor props (kept for migration)
             'customDesign.backgroundControls' => 'nullable|array', // Legacy bg editor controls config
             // Button properties
             'customDesign.buttonStyle' => 'nullable|string|in:solid,outline,soft,hard',
@@ -35,11 +36,22 @@ class SaveDesignRequest extends FormRequest
             'customDesign.buttonTextColor' => 'nullable|string|max:50',
             'customDesign.showButtonIcons' => 'nullable|boolean',
             'customDesign.buttonIconAlignment' => 'nullable|string|in:left,inline,right',
+            'customDesign.showLinkSubtext' => 'nullable|boolean',
             // Typography
             'customDesign.fontPair' => 'nullable|string|in:modern,elegant,mono',
             // Text color for page content (auto-calculated if not set)
             'customDesign.textColor' => 'nullable|string|max:50',
             'customDesign.roundedAvatar' => 'nullable|boolean',
+            
+            // Saved custom themes (max 2)
+            'savedCustomThemes' => 'nullable|array|max:2',
+            'savedCustomThemes.*.id' => 'required|string|max:50',
+            'savedCustomThemes.*.name' => 'required|string|max:50',
+            'savedCustomThemes.*.customDesign' => 'required|array',
+            'savedCustomThemes.*.createdAt' => 'required|string',
+            
+            // Last custom design backup (for restore when switching back from preset)
+            'lastCustomDesign' => 'nullable|array',
         ];
     }
 
@@ -58,6 +70,7 @@ class SaveDesignRequest extends FormRequest
         ];
         
         // Include backgroundImage if provided (SVG patterns, gradients, etc.)
+        // Image is always stored, backgroundEnabled controls visibility
         if (isset($customDesign['backgroundImage']) && $customDesign['backgroundImage']) {
             $backgroundConfig['backgroundImage'] = $customDesign['backgroundImage'];
             // Use provided values or defaults
@@ -66,8 +79,13 @@ class SaveDesignRequest extends FormRequest
             $backgroundConfig['backgroundRepeat'] = $customDesign['backgroundRepeat'] ?? 'no-repeat';
             $backgroundConfig['backgroundAttachment'] = $customDesign['backgroundAttachment'] ?? 'scroll';
         }
+        
+        // Background enabled switch (defaults to true if image exists)
+        if (isset($customDesign['backgroundEnabled'])) {
+            $backgroundConfig['backgroundEnabled'] = $customDesign['backgroundEnabled'];
+        }
 
-        // Include legacy background editor props and controls
+        // Include legacy background editor props and controls (kept for migration)
         if (isset($customDesign['backgroundProps']) && is_array($customDesign['backgroundProps'])) {
             $backgroundConfig['props'] = $customDesign['backgroundProps'];
         }
@@ -102,9 +120,15 @@ class SaveDesignRequest extends FormRequest
                 'fontPair' => $customDesign['fontPair'] ?? 'modern',
                 // Text color for page content (legacy support)
                 'textColor' => $customDesign['textColor'] ?? null,
+                // Show link URLs/subtexts under button titles
+                'showLinkSubtext' => $customDesign['showLinkSubtext'] ?? false,
                 'header' => [
                     'roundedAvatar' => $customDesign['roundedAvatar'] ?? true,
                 ],
+                // Saved custom themes (max 2 slots)
+                'savedCustomThemes' => $data['savedCustomThemes'] ?? null,
+                // Last custom design backup for restore
+                'lastCustomDesign' => $data['lastCustomDesign'] ?? null,
             ],
         ];
 

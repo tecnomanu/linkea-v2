@@ -4,25 +4,27 @@ import { Input } from "@/Components/ui/Input";
 import { PositionSelector } from "@/Components/ui/PositionSelector";
 import { Textarea } from "@/Components/ui/Textarea";
 import { Toggle } from "@/Components/ui/Toggle";
+import { getThemePreset, THEME_PRESETS } from "@/constants/themePresets";
 import {
-    getLegacyBackgroundStyles,
-    LEGACY_BACKGROUNDS,
-    LegacyBackground,
-} from "@/constants/legacyBackgrounds";
-import { getThemePreset, isPresetTheme, THEME_PRESETS } from "@/constants/themePresets";
-import { ButtonShape, ButtonStyle, FontPair, UserProfile } from "@/types";
+    ButtonShape,
+    ButtonStyle,
+    CustomDesignConfig,
+    FontPair,
+    SavedCustomTheme,
+    UserProfile,
+} from "@/types";
 import {
     AlignCenter,
     AlignLeft,
     AlignRight,
-    Archive,
     Grid,
     Image,
     LayoutTemplate,
     Palette,
-    Sliders,
+    Save,
     Sparkles,
     Trash2,
+    X,
 } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 
@@ -41,7 +43,8 @@ const BUTTON_STYLES: {
     {
         id: "outline",
         label: "Contorno",
-        previewClass: "border-2 border-neutral-900 text-neutral-900 bg-transparent",
+        previewClass:
+            "border-2 border-neutral-900 text-neutral-900 bg-transparent",
     },
     {
         id: "soft",
@@ -51,7 +54,8 @@ const BUTTON_STYLES: {
     {
         id: "hard",
         label: "Brutal",
-        previewClass: "bg-white border-2 border-neutral-900 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]",
+        previewClass:
+            "bg-white border-2 border-neutral-900 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]",
     },
 ];
 
@@ -70,7 +74,11 @@ const FONTS: { id: FontPair; label: string; fontClass: string }[] = [
 ];
 
 // Icon alignment options
-const ICON_ALIGNMENTS: { id: 'left' | 'inline' | 'right'; label: string; icon: React.ReactNode }[] = [
+const ICON_ALIGNMENTS: {
+    id: "left" | "inline" | "right";
+    label: string;
+    icon: React.ReactNode;
+}[] = [
     { id: "left", label: "Izquierda", icon: <AlignLeft size={16} /> },
     { id: "inline", label: "En linea", icon: <AlignCenter size={16} /> },
     { id: "right", label: "Derecha", icon: <AlignRight size={16} /> },
@@ -97,140 +105,223 @@ const BG_ATTACHMENT_OPTIONS = [
     { value: "fixed", label: "Fijo" },
 ];
 
+// Max saved custom themes
+const MAX_SAVED_THEMES = 2;
+
 export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
-    const [showLegacyBackgrounds, setShowLegacyBackgrounds] = useState(false);
-    const [selectedLegacyBg, setSelectedLegacyBg] = useState<LegacyBackground | null>(null);
+    const [saveThemeName, setSaveThemeName] = useState("");
+    const [showSaveDialog, setShowSaveDialog] = useState(false);
 
-    // Check if current theme is a preset
-    const isCurrentThemePreset = isPresetTheme(user.theme);
+    // Check if current theme is a saved custom theme
+    const currentSavedTheme = useMemo(() => {
+        return user.savedCustomThemes?.find((t) => t.id === user.theme);
+    }, [user.savedCustomThemes, user.theme]);
 
-    // Handle theme selection - applies ALL preset values
-    const handleThemeSelect = useCallback((themeId: string) => {
-        const preset = getThemePreset(themeId);
-        if (preset) {
-            onUpdateUser({
-                theme: themeId as any,
-                customDesign: {
-                    ...user.customDesign,
-                    backgroundColor: preset.backgroundColor,
-                    backgroundImage: preset.backgroundImage,
-                    buttonStyle: preset.buttonStyle,
-                    buttonShape: preset.buttonShape,
-                    buttonColor: preset.buttonColor,
-                    buttonTextColor: preset.buttonTextColor,
-                    fontPair: preset.fontPair,
-                    // Clear legacy background when selecting a preset theme
-                    backgroundProps: undefined,
-                    backgroundControls: undefined,
-                },
-            });
-            setSelectedLegacyBg(null);
-        }
-    }, [user.customDesign, onUpdateUser]);
-
-    // Handle custom design changes - switches to custom theme
-    const handleCustomChange = useCallback((
-        key: keyof UserProfile["customDesign"],
-        value: any
-    ) => {
-        onUpdateUser({
-            theme: "custom",
-            customDesign: { ...user.customDesign, [key]: value },
-        });
-    }, [user.customDesign, onUpdateUser]);
-
-    // Find the currently selected legacy background based on backgroundImage
-    const currentSelectedLegacyBg = useMemo(() => {
-        const currentBgImage =
-            typeof user.customDesign.backgroundImage === "string"
-                ? user.customDesign.backgroundImage
-                : undefined;
-        if (!currentBgImage) return null;
-
-        const normalizeForCompare = (s: string) =>
-            s.replace(/\\\//g, "/").replace(/\\"/g, '"').substring(0, 200);
-
+    // Check if user has a custom background image
+    const hasBackgroundImage = useMemo(() => {
+        const bgImage = user.customDesign.backgroundImage;
+        if (!bgImage || typeof bgImage !== "string") return false;
         return (
-            LEGACY_BACKGROUNDS.find((bg) => {
-                const styles = getLegacyBackgroundStyles(bg);
-                return (
-                    styles.backgroundImage &&
-                    normalizeForCompare(currentBgImage) ===
-                        normalizeForCompare(styles.backgroundImage as string)
-                );
-            }) || null
+            bgImage.includes("http") ||
+            bgImage.includes("data:image") ||
+            bgImage.startsWith("url(")
         );
     }, [user.customDesign.backgroundImage]);
 
-    // Handle legacy background selection
-    const handleLegacyBackgroundSelect = useCallback((backgroundId: string) => {
-        const background = LEGACY_BACKGROUNDS.find((bg) => bg.id === backgroundId);
-        if (background) {
-            const styles = getLegacyBackgroundStyles(background);
-            setSelectedLegacyBg(background);
-            onUpdateUser({
-                theme: "custom",
-                customDesign: {
-                    ...user.customDesign,
-                    backgroundColor: background.backgroundColor,
-                    backgroundImage: (styles.backgroundImage || styles.background) as string,
-                    backgroundProps: background.props ? { ...background.props } : undefined,
-                    backgroundControls: background.controls ? { ...background.controls } : undefined,
-                },
-            });
-        }
-    }, [user.customDesign, onUpdateUser]);
+    // Check if current design has meaningful customizations (not just defaults)
+    const hasCustomChanges = useMemo(() => {
+        const cd = user.customDesign;
+        // Consider it customized if it has non-default values
+        return (
+            cd.backgroundColor !== "#ffffff" ||
+            hasBackgroundImage ||
+            cd.buttonStyle !== "solid" ||
+            cd.buttonShape !== "rounded" ||
+            cd.buttonColor !== "#000000" ||
+            cd.buttonTextColor !== "#ffffff" ||
+            cd.fontPair !== "modern" ||
+            cd.textColor !== undefined
+        );
+    }, [user.customDesign, hasBackgroundImage]);
 
-    // Handle background property changes (colors, opacity, scale, rotation)
-    const handleBackgroundPropChange = useCallback(
-        (propName: string, value: string | number) => {
-            const currentBg = selectedLegacyBg || currentSelectedLegacyBg;
-            if (!currentBg) return;
-
-            const newProps = {
-                ...(user.customDesign.backgroundProps || currentBg.props || {}),
-                [propName]: value,
-            };
-
-            // For gradient, regenerate the background
-            if (currentBg.id === "gradient") {
-                const rotation = propName === "rotationBg" ? value : newProps.rotationBg ?? 90;
-                const color1 = propName === "color1" ? value : newProps.color1 ?? "#FE6A16";
-                const color2 = propName === "color2" ? value : newProps.color2 ?? "#ff528e";
-                const newBackground = `linear-gradient(${rotation}deg, ${color1} 0%, ${color2} 100%)`;
-
+    // Handle theme selection - applies ALL preset values but preserves background image
+    const handleThemeSelect = useCallback(
+        (themeId: string) => {
+            // If selecting a saved custom theme
+            const savedTheme = user.savedCustomThemes?.find(
+                (t) => t.id === themeId
+            );
+            if (savedTheme) {
                 onUpdateUser({
-                    theme: "custom",
+                    theme: themeId,
                     customDesign: {
-                        ...user.customDesign,
-                        backgroundImage: newBackground,
-                        backgroundProps: newProps,
+                        ...savedTheme.customDesign,
+                        // Preserve current background image but disable it if saved theme didn't have one
+                        backgroundImage: user.customDesign.backgroundImage,
+                        backgroundEnabled:
+                            savedTheme.customDesign.backgroundEnabled ?? false,
                     },
                 });
-            } else {
+                return;
+            }
+
+            // If selecting a preset theme
+            const preset = getThemePreset(themeId);
+            if (preset) {
+                // Before switching to preset, save current custom design as backup
+                // Always save if we're coming from custom (so user can return to it)
+                if (user.theme === "custom") {
+                    onUpdateUser({
+                        lastCustomDesign: { ...user.customDesign },
+                    });
+                }
+
                 onUpdateUser({
-                    theme: "custom",
+                    theme: themeId as any,
                     customDesign: {
                         ...user.customDesign,
-                        backgroundProps: newProps,
+                        backgroundColor: preset.backgroundColor,
+                        backgroundImage: user.customDesign.backgroundImage, // Keep image!
+                        backgroundEnabled: false, // Disable bg image when selecting preset
+                        buttonStyle: preset.buttonStyle,
+                        buttonShape: preset.buttonShape,
+                        buttonColor: preset.buttonColor,
+                        buttonTextColor: preset.buttonTextColor,
+                        fontPair: preset.fontPair,
                     },
                 });
             }
         },
-        [selectedLegacyBg, currentSelectedLegacyBg, user.customDesign, onUpdateUser]
+        [user.customDesign, user.theme, user.savedCustomThemes, onUpdateUser]
     );
 
-    // Check if current background is a custom image (not legacy pattern)
-    const hasCustomBackgroundImage = useMemo(() => {
-        const bgImage = user.customDesign.backgroundImage;
-        if (!bgImage || typeof bgImage !== "string") return false;
-        return bgImage.includes("http") || bgImage.includes("data:image");
-    }, [user.customDesign.backgroundImage]);
+    // Handle selecting the "custom" theme - restores last custom design if available
+    const handleSelectCustom = useCallback(() => {
+        if (user.lastCustomDesign) {
+            onUpdateUser({
+                theme: "custom",
+                customDesign: {
+                    ...user.lastCustomDesign,
+                    // Keep current background image
+                    backgroundImage: user.customDesign.backgroundImage,
+                    backgroundEnabled:
+                        user.lastCustomDesign.backgroundEnabled ??
+                        hasBackgroundImage,
+                },
+            });
+        } else {
+            onUpdateUser({ theme: "custom" });
+        }
+    }, [
+        user.lastCustomDesign,
+        user.customDesign.backgroundImage,
+        hasBackgroundImage,
+        onUpdateUser,
+    ]);
 
-    // Get the active background for editing
-    const activeLegacyBg = selectedLegacyBg || currentSelectedLegacyBg;
-    const bgControls = activeLegacyBg?.controls;
-    const bgProps = user.customDesign.backgroundProps || activeLegacyBg?.props || {};
+    // Handle custom design changes - switches to custom theme and updates lastCustomDesign
+    const handleCustomChange = useCallback(
+        (key: keyof CustomDesignConfig, value: any) => {
+            const newCustomDesign = { ...user.customDesign, [key]: value };
+
+            // If we're editing a saved theme, update it automatically
+            if (currentSavedTheme) {
+                const updatedSavedThemes = user.savedCustomThemes?.map((t) =>
+                    t.id === currentSavedTheme.id
+                        ? { ...t, customDesign: newCustomDesign }
+                        : t
+                );
+                onUpdateUser({
+                    customDesign: newCustomDesign,
+                    savedCustomThemes: updatedSavedThemes,
+                });
+            } else {
+                // Switch to custom theme and update
+                onUpdateUser({
+                    theme: "custom",
+                    customDesign: newCustomDesign,
+                    lastCustomDesign: newCustomDesign, // Update backup
+                });
+            }
+        },
+        [
+            user.customDesign,
+            user.savedCustomThemes,
+            currentSavedTheme,
+            onUpdateUser,
+        ]
+    );
+
+    // Handle saving current theme as custom
+    const handleSaveCustomTheme = useCallback(() => {
+        if (!saveThemeName.trim()) return;
+
+        const currentThemes = user.savedCustomThemes || [];
+
+        // Check if we have room
+        if (currentThemes.length >= MAX_SAVED_THEMES) {
+            // Replace the oldest one (last in array)
+            const newTheme: SavedCustomTheme = {
+                id: `saved_${Date.now()}`,
+                name: saveThemeName.trim(),
+                customDesign: { ...user.customDesign },
+                createdAt: new Date().toISOString(),
+            };
+
+            const updatedThemes = [newTheme, currentThemes[0]];
+            onUpdateUser({
+                savedCustomThemes: updatedThemes,
+                theme: newTheme.id,
+            });
+        } else {
+            const newTheme: SavedCustomTheme = {
+                id: `saved_${Date.now()}`,
+                name: saveThemeName.trim(),
+                customDesign: { ...user.customDesign },
+                createdAt: new Date().toISOString(),
+            };
+
+            onUpdateUser({
+                savedCustomThemes: [...currentThemes, newTheme],
+                theme: newTheme.id,
+            });
+        }
+
+        setSaveThemeName("");
+        setShowSaveDialog(false);
+    }, [
+        saveThemeName,
+        user.customDesign,
+        user.savedCustomThemes,
+        onUpdateUser,
+    ]);
+
+    // Handle deleting a saved theme
+    const handleDeleteSavedTheme = useCallback(
+        (themeId: string) => {
+            const updatedThemes =
+                user.savedCustomThemes?.filter((t) => t.id !== themeId) || [];
+
+            // If we're deleting the current theme, switch to custom
+            if (user.theme === themeId) {
+                onUpdateUser({
+                    savedCustomThemes: updatedThemes,
+                    theme: "custom",
+                });
+            } else {
+                onUpdateUser({ savedCustomThemes: updatedThemes });
+            }
+        },
+        [user.savedCustomThemes, user.theme, onUpdateUser]
+    );
+
+    // Handle background image toggle
+    const handleBackgroundToggle = useCallback(
+        (enabled: boolean) => {
+            handleCustomChange("backgroundEnabled", enabled);
+        },
+        [handleCustomChange]
+    );
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
@@ -252,7 +343,9 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                             if (imageData) {
                                 onUpdateUser({ avatar: imageData.base64 });
                             } else {
-                                onUpdateUser({ avatar: "/images/logo_only.png" });
+                                onUpdateUser({
+                                    avatar: "/images/logo_only.png",
+                                });
                             }
                         }}
                         rounded={user.customDesign.roundedAvatar !== false}
@@ -269,8 +362,12 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                         {/* Round Avatar Toggle */}
                         <div className="flex items-center justify-between py-2">
                             <Toggle
-                                checked={user.customDesign.roundedAvatar !== false}
-                                onChange={(checked) => handleCustomChange("roundedAvatar", checked)}
+                                checked={
+                                    user.customDesign.roundedAvatar !== false
+                                }
+                                onChange={(checked) =>
+                                    handleCustomChange("roundedAvatar", checked)
+                                }
                                 label="Redondear imagen"
                                 labelPosition="left"
                                 size="md"
@@ -282,7 +379,9 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                             id="landing-name"
                             type="text"
                             value={user.name}
-                            onChange={(e) => onUpdateUser({ name: e.target.value })}
+                            onChange={(e) =>
+                                onUpdateUser({ name: e.target.value })
+                            }
                             placeholder="Titulo de tu landing"
                             className="font-bold"
                         />
@@ -291,7 +390,9 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                         <Textarea
                             id="landing-bio"
                             value={user.bio}
-                            onChange={(e) => onUpdateUser({ bio: e.target.value })}
+                            onChange={(e) =>
+                                onUpdateUser({ bio: e.target.value })
+                            }
                             rows={2}
                             placeholder="Subtitulo o descripcion breve"
                         />
@@ -299,22 +400,88 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                 </div>
             </section>
 
-            {/* 2. Themes - Complete presets */}
+            {/* 2. Themes - Complete presets + Saved Custom Themes */}
             <section className="bg-white dark:bg-neutral-900 rounded-[32px] p-6 md:p-8 border border-neutral-100 dark:border-neutral-800 shadow-soft-xl">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-xl text-purple-600 dark:text-purple-400">
-                        <Grid size={24} />
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-xl text-purple-600 dark:text-purple-400">
+                            <Grid size={24} />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-neutral-900 dark:text-white">
+                                Temas
+                            </h2>
+                            <p className="text-sm text-neutral-400 dark:text-neutral-500">
+                                Estilos predefinidos. Tu imagen de fondo se
+                                conserva al cambiar de tema.
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="text-xl font-bold text-neutral-900 dark:text-white">
-                            Temas
-                        </h2>
-                        <p className="text-sm text-neutral-400 dark:text-neutral-500">
-                            Estilos predefinidos completos. Selecciona uno para aplicar fondo, colores y tipografia.
-                        </p>
-                    </div>
+
+                    {/* Save Theme Button */}
+                    {(user.theme === "custom" || currentSavedTheme) &&
+                        hasCustomChanges && (
+                            <button
+                                onClick={() => setShowSaveDialog(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-semibold text-sm transition-all"
+                            >
+                                <Save size={16} />
+                                <span className="hidden sm:inline">
+                                    Guardar tema
+                                </span>
+                            </button>
+                        )}
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+
+                {/* Save Theme Dialog */}
+                {showSaveDialog && (
+                    <div className="mb-6 p-4 bg-brand-50 dark:bg-brand-900/20 rounded-2xl border border-brand-200 dark:border-brand-800">
+                        <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-bold text-neutral-800 dark:text-white">
+                                Guardar tema personalizado
+                            </h4>
+                            <button
+                                onClick={() => setShowSaveDialog(false)}
+                                className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-3">
+                            Podes guardar hasta {MAX_SAVED_THEMES} temas
+                            personalizados.
+                            {(user.savedCustomThemes?.length || 0) >=
+                                MAX_SAVED_THEMES && (
+                                <span className="text-amber-600">
+                                    {" "}
+                                    Se reemplazara el mas antiguo.
+                                </span>
+                            )}
+                        </p>
+                        <div className="flex gap-2">
+                            <Input
+                                id="save-theme-name"
+                                value={saveThemeName}
+                                onChange={(e) =>
+                                    setSaveThemeName(e.target.value)
+                                }
+                                placeholder="Nombre del tema..."
+                                className="flex-1"
+                            />
+                            <button
+                                onClick={handleSaveCustomTheme}
+                                disabled={!saveThemeName.trim()}
+                                className="px-4 py-2 bg-brand-500 hover:bg-brand-600 disabled:bg-neutral-300 text-white rounded-xl font-semibold text-sm transition-all"
+                            >
+                                Guardar
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Theme Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+                    {/* Preset Themes */}
                     {THEME_PRESETS.map((theme) => (
                         <button
                             key={theme.id}
@@ -325,18 +492,28 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                                     : "border-transparent hover:border-neutral-200 dark:hover:border-neutral-700 hover:scale-102"
                             }`}
                         >
-                            <div className={`absolute inset-0 ${theme.previewBg}`}></div>
+                            <div
+                                className={`absolute inset-0 ${theme.previewBg}`}
+                            ></div>
                             {/* Theme preview button inside */}
                             <div className="absolute inset-x-2 bottom-8 top-auto">
-                                <div 
+                                <div
                                     className={`h-4 w-full ${
-                                        theme.buttonShape === 'pill' ? 'rounded-full' : 
-                                        theme.buttonShape === 'sharp' ? 'rounded-none' : 'rounded-md'
+                                        theme.buttonShape === "pill"
+                                            ? "rounded-full"
+                                            : theme.buttonShape === "sharp"
+                                            ? "rounded-none"
+                                            : "rounded-md"
                                     } ${
-                                        theme.buttonStyle === 'outline' ? 'border-2' : ''
+                                        theme.buttonStyle === "outline"
+                                            ? "border-2"
+                                            : ""
                                     }`}
                                     style={{
-                                        backgroundColor: theme.buttonStyle === 'outline' ? 'transparent' : theme.buttonColor,
+                                        backgroundColor:
+                                            theme.buttonStyle === "outline"
+                                                ? "transparent"
+                                                : theme.buttonColor,
                                         borderColor: theme.buttonColor,
                                     }}
                                 />
@@ -344,94 +521,239 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                             <span className="absolute bottom-1.5 left-1 right-1 text-center text-[10px] font-bold px-1 py-0.5 rounded-md backdrop-blur-md bg-white/70 dark:bg-black/50 text-neutral-900 dark:text-white truncate">
                                 {theme.name}
                             </span>
-                            {/* Custom indicator */}
-                            {user.theme === "custom" && theme.id === "custom" && (
-                                <div className="absolute top-1 right-1">
-                                    <Sparkles size={12} className="text-amber-500" />
-                                </div>
-                            )}
                         </button>
                     ))}
+
+                    {/* Saved Custom Themes */}
+                    {user.savedCustomThemes?.map((saved) => (
+                        <div
+                            key={saved.id}
+                            className={`relative aspect-[3/4] rounded-xl border-2 transition-all duration-300 overflow-hidden group ${
+                                user.theme === saved.id
+                                    ? "border-amber-500 ring-2 ring-amber-500/20 scale-105 z-10"
+                                    : "border-amber-200 dark:border-amber-800 hover:border-amber-400 hover:scale-102"
+                            }`}
+                        >
+                            <button
+                                onClick={() => handleThemeSelect(saved.id)}
+                                className="absolute inset-0"
+                                style={{
+                                    backgroundColor:
+                                        saved.customDesign.backgroundColor,
+                                }}
+                            >
+                                {/* Button preview */}
+                                <div className="absolute inset-x-2 bottom-8 top-auto">
+                                    <div
+                                        className={`h-4 w-full ${
+                                            saved.customDesign.buttonShape ===
+                                            "pill"
+                                                ? "rounded-full"
+                                                : saved.customDesign
+                                                      .buttonShape === "sharp"
+                                                ? "rounded-none"
+                                                : "rounded-md"
+                                        } ${
+                                            saved.customDesign.buttonStyle ===
+                                            "outline"
+                                                ? "border-2"
+                                                : ""
+                                        }`}
+                                        style={{
+                                            backgroundColor:
+                                                saved.customDesign
+                                                    .buttonStyle === "outline"
+                                                    ? "transparent"
+                                                    : saved.customDesign
+                                                          .buttonColor,
+                                            borderColor:
+                                                saved.customDesign.buttonColor,
+                                        }}
+                                    />
+                                </div>
+                            </button>
+                            {/* Delete button */}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteSavedTheme(saved.id);
+                                }}
+                                className="absolute top-1 right-1 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                title="Eliminar tema guardado"
+                            >
+                                <Trash2 size={12} />
+                            </button>
+                            <span className="absolute bottom-1.5 left-1 right-1 text-center text-[10px] font-bold px-1 py-0.5 rounded-md backdrop-blur-md bg-amber-100/90 dark:bg-amber-900/70 text-amber-800 dark:text-amber-200 truncate pointer-events-none">
+                                {saved.name}
+                            </span>
+                        </div>
+                    ))}
+
                     {/* Custom theme slot */}
                     <button
-                        onClick={() => onUpdateUser({ theme: "custom" })}
+                        onClick={handleSelectCustom}
                         className={`relative aspect-[3/4] rounded-xl border-2 transition-all duration-300 overflow-hidden group ${
                             user.theme === "custom"
                                 ? "border-brand-500 ring-2 ring-brand-500/20 scale-105 z-10"
                                 : "border-dashed border-neutral-300 dark:border-neutral-600 hover:border-neutral-400"
                         }`}
                     >
-                        <div 
+                        <div
                             className="absolute inset-0"
-                            style={{ backgroundColor: user.customDesign.backgroundColor }}
+                            style={{
+                                backgroundColor:
+                                    user.theme === "custom"
+                                        ? user.customDesign.backgroundColor
+                                        : user.lastCustomDesign
+                                              ?.backgroundColor || "#f5f5f5",
+                            }}
                         />
                         <div className="absolute inset-0 flex items-center justify-center">
                             <Sparkles size={24} className="text-neutral-400" />
                         </div>
+                        {user.lastCustomDesign && user.theme !== "custom" && (
+                            <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-green-500 text-white text-[8px] font-bold rounded">
+                                Guardado
+                            </div>
+                        )}
                         <span className="absolute bottom-1.5 left-1 right-1 text-center text-[10px] font-bold px-1 py-0.5 rounded-md backdrop-blur-md bg-white/70 dark:bg-black/50 text-neutral-900 dark:text-white truncate">
                             Personalizado
                         </span>
                     </button>
                 </div>
-                {!isCurrentThemePreset && user.theme === "custom" && (
-                    <p className="mt-3 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+
+                {/* Custom theme info */}
+                {user.theme === "custom" && (
+                    <p className="mt-3 text-xs text-brand-600 dark:text-brand-400 flex items-center gap-1">
                         <Sparkles size={12} />
-                        Estas usando un tema personalizado. Los cambios en Apariencia se guardaran aqui.
+                        Tema personalizado activo. Los cambios se guardan
+                        automaticamente.
+                    </p>
+                )}
+                {currentSavedTheme && (
+                    <p className="mt-3 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                        <Save size={12} />
+                        Editando tema guardado: "{currentSavedTheme.name}". Los
+                        cambios se guardan automaticamente.
                     </p>
                 )}
             </section>
 
-            {/* 3. Custom Background Image */}
+            {/* 3. Background Image Section */}
             <section className="bg-white dark:bg-neutral-900 rounded-[32px] p-6 md:p-8 border border-neutral-100 dark:border-neutral-800 shadow-soft-xl">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl text-emerald-600 dark:text-emerald-400">
-                        <Image size={24} />
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl text-emerald-600 dark:text-emerald-400">
+                            <Image size={24} />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-neutral-900 dark:text-white">
+                                Imagen de Fondo
+                            </h2>
+                            <p className="text-sm text-neutral-400 dark:text-neutral-500">
+                                Tu imagen se conserva al cambiar temas
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="text-xl font-bold text-neutral-900 dark:text-white">
-                            Imagen de Fondo
-                        </h2>
-                        <p className="text-sm text-neutral-400 dark:text-neutral-500">
-                            Sube tu propia imagen como fondo
-                        </p>
-                    </div>
+
+                    {/* Background Toggle - Only show if has image */}
+                    {hasBackgroundImage && (
+                        <Toggle
+                            checked={
+                                user.customDesign.backgroundEnabled !== false
+                            }
+                            onChange={handleBackgroundToggle}
+                            label="Mostrar"
+                            labelPosition="left"
+                            size="md"
+                        />
+                    )}
                 </div>
 
-                <div className="space-y-4">
-                    {/* Combined upload zone with preview */}
-                    <div className="relative">
-                        {/* Background preview / Upload zone */}
+                {/* Main layout: Image 3/4 + Controls 1/4 on desktop, stacked on mobile */}
+                <div
+                    className={`flex flex-col ${
+                        hasBackgroundImage &&
+                        user.customDesign.backgroundEnabled !== false
+                            ? "md:flex-row md:min-h-[280px]"
+                            : ""
+                    } gap-4`}
+                >
+                    {/* Image preview / Upload zone - Full on mobile, 3/4 on desktop when controls visible */}
+                    <div
+                        className={`relative ${
+                            hasBackgroundImage &&
+                            user.customDesign.backgroundEnabled !== false
+                                ? "md:w-3/4 md:h-full"
+                                : "w-full"
+                        }`}
+                    >
                         <div
                             className={`
-                                relative w-full h-48 rounded-2xl border-2 border-dashed transition-all duration-300
-                                ${hasCustomBackgroundImage 
-                                    ? "border-transparent" 
-                                    : "border-neutral-300 dark:border-neutral-600 hover:border-brand-400 dark:hover:border-brand-500"
+                                relative w-full h-48 md:h-full md:min-h-[280px] rounded-2xl border-2 border-dashed transition-all duration-300
+                                ${
+                                    hasBackgroundImage
+                                        ? "border-transparent"
+                                        : "border-neutral-300 dark:border-neutral-600 hover:border-brand-400 dark:hover:border-brand-500"
+                                }
+                                ${
+                                    hasBackgroundImage &&
+                                    !user.customDesign.backgroundEnabled
+                                        ? "opacity-50"
+                                        : ""
                                 }
                             `}
-                            style={hasCustomBackgroundImage ? {
-                                backgroundImage: user.customDesign.backgroundImage?.startsWith("url(")
-                                    ? user.customDesign.backgroundImage
-                                    : `url("${user.customDesign.backgroundImage}")`,
-                                backgroundSize: user.customDesign.backgroundSize || "cover",
-                                backgroundPosition: user.customDesign.backgroundPosition || "center",
-                                backgroundRepeat: user.customDesign.backgroundRepeat || "no-repeat",
-                            } : {
-                                backgroundColor: user.customDesign.backgroundColor,
-                            }}
+                            style={
+                                hasBackgroundImage
+                                    ? {
+                                          backgroundImage:
+                                              user.customDesign.backgroundImage
+                                                  ?.toString()
+                                                  .startsWith("url(")
+                                                  ? user.customDesign.backgroundImage?.toString()
+                                                  : `url("${user.customDesign.backgroundImage}")`,
+                                          backgroundSize:
+                                              user.customDesign
+                                                  .backgroundSize || "cover",
+                                          backgroundPosition:
+                                              user.customDesign
+                                                  .backgroundPosition ||
+                                              "center",
+                                          backgroundRepeat:
+                                              user.customDesign
+                                                  .backgroundRepeat ||
+                                              "no-repeat",
+                                          backgroundColor:
+                                              user.customDesign.backgroundColor,
+                                      }
+                                    : {
+                                          backgroundColor:
+                                              user.customDesign.backgroundColor,
+                                      }
+                            }
                         >
+                            {/* Disabled overlay */}
+                            {hasBackgroundImage &&
+                                !user.customDesign.backgroundEnabled && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl">
+                                        <span className="px-3 py-1.5 bg-neutral-900/80 text-white text-sm font-medium rounded-lg">
+                                            Imagen desactivada
+                                        </span>
+                                    </div>
+                                )}
+
                             {/* Delete button for existing image */}
-                            {hasCustomBackgroundImage && (
+                            {hasBackgroundImage && (
                                 <button
                                     onClick={() => {
-                                        onUpdateUser({
-                                            theme: "custom",
-                                            customDesign: {
-                                                ...user.customDesign,
-                                                backgroundImage: undefined,
-                                            },
-                                        });
-                                        setSelectedLegacyBg(null);
+                                        handleCustomChange(
+                                            "backgroundImage",
+                                            undefined
+                                        );
+                                        handleCustomChange(
+                                            "backgroundEnabled",
+                                            false
+                                        );
                                     }}
                                     className="absolute top-3 right-3 p-2 bg-red-500 hover:bg-red-600 text-white rounded-xl shadow-lg transition-colors z-10"
                                     title="Eliminar imagen de fondo"
@@ -441,303 +763,185 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                             )}
 
                             {/* Upload overlay/zone */}
-                            <div className={`
+                            <div
+                                className={`
                                 absolute inset-0 flex flex-col items-center justify-center rounded-2xl
-                                ${hasCustomBackgroundImage 
-                                    ? "bg-black/40 opacity-0 hover:opacity-100 transition-opacity" 
-                                    : ""
+                                ${
+                                    hasBackgroundImage
+                                        ? "bg-black/40 opacity-0 hover:opacity-100 transition-opacity"
+                                        : ""
                                 }
-                            `}>
+                            `}
+                            >
                                 <ImageUploader
                                     value={undefined}
                                     onChange={(imageData) => {
                                         if (imageData) {
-                                            onUpdateUser({
-                                                theme: "custom",
-                                                customDesign: {
-                                                    ...user.customDesign,
-                                                    backgroundImage: `url("${imageData.base64}")`,
-                                                    backgroundSize: "cover",
-                                                    backgroundPosition: "center",
-                                                    backgroundRepeat: "no-repeat",
-                                                },
-                                            });
-                                            setSelectedLegacyBg(null);
+                                            handleCustomChange(
+                                                "backgroundImage",
+                                                `url("${imageData.base64}")`
+                                            );
+                                            handleCustomChange(
+                                                "backgroundEnabled",
+                                                true
+                                            );
+                                            handleCustomChange(
+                                                "backgroundSize",
+                                                "cover"
+                                            );
+                                            handleCustomChange(
+                                                "backgroundPosition",
+                                                "center"
+                                            );
+                                            handleCustomChange(
+                                                "backgroundRepeat",
+                                                "no-repeat"
+                                            );
                                         }
                                     }}
                                     rounded={false}
                                     size={80}
-                                    aspectRatio={16 / 9}
-                                    label={hasCustomBackgroundImage ? "Cambiar imagen" : "Subir imagen de fondo"}
+                                    aspectRatio={16 / 10}
+                                    label={
+                                        hasBackgroundImage
+                                            ? "Cambiar imagen"
+                                            : "Subir imagen de fondo"
+                                    }
                                     outputFormat="webp"
+                                    outputQuality={0.82}
                                     resizeWidth={1920}
-                                    maxSizeKB={500}
-                                    className={hasCustomBackgroundImage ? "opacity-90" : ""}
+                                    maxSizeKB={8000}
+                                    className={
+                                        hasBackgroundImage ? "opacity-90" : ""
+                                    }
                                 />
                             </div>
                         </div>
-                        <p className="mt-2 text-xs text-neutral-400 text-center">
-                            Recomendado: 1920x1080px o mayor. Formato WebP para mejor rendimiento.
-                        </p>
                     </div>
 
-                    {/* Background options when image is set */}
-                    {hasCustomBackgroundImage && (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-neutral-100 dark:border-neutral-800">
-                            {/* Size */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
-                                    Tamanio
-                                </label>
-                                <div className="flex gap-1 bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl">
-                                    {BG_SIZE_OPTIONS.map((opt) => (
-                                        <button
-                                            key={opt.value}
-                                            onClick={() => handleCustomChange("backgroundSize", opt.value)}
-                                            className={`flex-1 px-2 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                                                (user.customDesign.backgroundSize || "cover") === opt.value
-                                                    ? "bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-white"
-                                                    : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
-                                            }`}
+                    {/* Background options - 1/4 on desktop, stacked on mobile */}
+                    {hasBackgroundImage &&
+                        user.customDesign.backgroundEnabled !== false && (
+                            <div className="md:w-1/4 flex flex-col gap-4">
+                                {/* Position selector - Top */}
+                                <div className="flex justify-center md:justify-start">
+                                    <PositionSelector
+                                        value={
+                                            user.customDesign
+                                                .backgroundPosition || "center"
+                                        }
+                                        onChange={(pos) =>
+                                            handleCustomChange(
+                                                "backgroundPosition",
+                                                pos
+                                            )
+                                        }
+                                        label="Posicion"
+                                    />
+                                </div>
+
+                                {/* Other controls in column */}
+                                <div className="grid grid-cols-3 md:grid-cols-1 gap-3">
+                                    {/* Size */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                                            Tamanio
+                                        </label>
+                                        <div className="flex gap-0.5 bg-neutral-100 dark:bg-neutral-800 p-1 rounded-lg">
+                                            {BG_SIZE_OPTIONS.map((opt) => (
+                                                <button
+                                                    key={opt.value}
+                                                    onClick={() =>
+                                                        handleCustomChange(
+                                                            "backgroundSize",
+                                                            opt.value
+                                                        )
+                                                    }
+                                                    className={`flex-1 px-1.5 py-1 text-[10px] font-medium rounded-md transition-all ${
+                                                        (user.customDesign
+                                                            .backgroundSize ||
+                                                            "cover") ===
+                                                        opt.value
+                                                            ? "bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-white"
+                                                            : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                                                    }`}
+                                                >
+                                                    {opt.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Repeat */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                                            Repetir
+                                        </label>
+                                        <select
+                                            value={
+                                                user.customDesign
+                                                    .backgroundRepeat ||
+                                                "no-repeat"
+                                            }
+                                            onChange={(e) =>
+                                                handleCustomChange(
+                                                    "backgroundRepeat",
+                                                    e.target.value
+                                                )
+                                            }
+                                            className="w-full px-2 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                                         >
-                                            {opt.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                                            {BG_REPEAT_OPTIONS.map((opt) => (
+                                                <option
+                                                    key={opt.value}
+                                                    value={opt.value}
+                                                >
+                                                    {opt.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
 
-                            {/* Position - Visual selector */}
-                            <div className="space-y-2">
-                                <PositionSelector
-                                    value={user.customDesign.backgroundPosition || "center"}
-                                    onChange={(pos) => handleCustomChange("backgroundPosition", pos)}
-                                    label="Posicion"
-                                />
-                            </div>
-
-                            {/* Repeat */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
-                                    Repetir
-                                </label>
-                                <select
-                                    value={user.customDesign.backgroundRepeat || "no-repeat"}
-                                    onChange={(e) => handleCustomChange("backgroundRepeat", e.target.value)}
-                                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                                >
-                                    {BG_REPEAT_OPTIONS.map((opt) => (
-                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Attachment */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
-                                    Fijacion
-                                </label>
-                                <div className="flex gap-1 bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl">
-                                    {BG_ATTACHMENT_OPTIONS.map((opt) => (
-                                        <button
-                                            key={opt.value}
-                                            onClick={() => handleCustomChange("backgroundAttachment", opt.value as 'fixed' | 'scroll')}
-                                            className={`flex-1 px-2 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                                                (user.customDesign.backgroundAttachment || "scroll") === opt.value
-                                                    ? "bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-white"
-                                                    : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
-                                            }`}
-                                        >
-                                            {opt.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </section>
-
-            {/* 4. Legacy Backgrounds (Collapsible) */}
-            <section className="bg-white dark:bg-neutral-900 rounded-[32px] p-6 md:p-8 border border-neutral-100 dark:border-neutral-800 shadow-soft-xl">
-                <button
-                    onClick={() => setShowLegacyBackgrounds(!showLegacyBackgrounds)}
-                    className="w-full flex items-center justify-between"
-                >
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-amber-50 dark:bg-amber-900/30 rounded-xl text-amber-600 dark:text-amber-400">
-                            <Archive size={24} />
-                        </div>
-                        <div className="text-left">
-                            <h2 className="text-xl font-bold text-neutral-900 dark:text-white">
-                                Fondos Legacy
-                            </h2>
-                            <p className="text-sm text-neutral-400 dark:text-neutral-500">
-                                Fondos clasicos de versiones anteriores
-                            </p>
-                        </div>
-                    </div>
-                    <div
-                        className={`p-2 rounded-full bg-neutral-100 dark:bg-neutral-800 transition-transform duration-300 ${
-                            showLegacyBackgrounds ? "rotate-180" : ""
-                        }`}
-                    >
-                        <svg className="w-5 h-5 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </div>
-                </button>
-
-                {showLegacyBackgrounds && (
-                    <div className="mt-6 pt-6 border-t border-neutral-100 dark:border-neutral-800">
-                        <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
-                            <p className="text-sm text-amber-700 dark:text-amber-300">
-                                Estos fondos son de versiones anteriores de Linkea. Se recomienda usar los Temas modernos para nuevas landings.
-                            </p>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                            {LEGACY_BACKGROUNDS.map((bg) => {
-                                const styles = getLegacyBackgroundStyles(bg);
-                                const normalizeForCompare = (s: string) =>
-                                    s.replace(/\\\//g, "/").replace(/\\"/g, '"').substring(0, 200);
-                                const currentBgImage =
-                                    typeof user.customDesign.backgroundImage === "string"
-                                        ? user.customDesign.backgroundImage
-                                        : undefined;
-                                const isSelected =
-                                    currentBgImage &&
-                                    styles.backgroundImage &&
-                                    normalizeForCompare(currentBgImage) ===
-                                        normalizeForCompare(styles.backgroundImage as string);
-
-                                return (
-                                    <button
-                                        key={bg.id}
-                                        onClick={() => handleLegacyBackgroundSelect(bg.id)}
-                                        className={`relative aspect-[3/4] rounded-xl border-2 transition-all duration-300 overflow-hidden group hover:scale-105 ${
-                                            isSelected
-                                                ? "border-brand-500 ring-2 ring-brand-500/30"
-                                                : "border-transparent hover:border-amber-400 dark:hover:border-amber-600"
-                                        }`}
-                                    >
-                                        <div className="absolute inset-0" style={styles} />
-                                        {isSelected && (
-                                            <div className="absolute top-2 right-2 w-6 h-6 bg-brand-500 rounded-full flex items-center justify-center shadow-lg">
-                                                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                </svg>
-                                            </div>
-                                        )}
-                                        <span className="absolute bottom-2 left-2 right-2 text-center text-xs font-bold px-1 py-1 rounded-lg backdrop-blur-md bg-white/70 dark:bg-black/50 text-neutral-900 dark:text-white truncate">
-                                            {bg.name}
-                                        </span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        {/* Background Editor Panel */}
-                        {activeLegacyBg && bgControls && (
-                            <div className="mt-6 p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-2xl border border-neutral-200 dark:border-neutral-700">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <Sliders size={18} className="text-amber-600" />
-                                    <h4 className="font-bold text-neutral-800 dark:text-white">
-                                        Editar: {activeLegacyBg.name}
-                                    </h4>
-                                </div>
-
-                                <div className="space-y-4">
-                                    {/* Opacity Slider */}
-                                    {bgControls.opacity && (
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
-                                                Opacidad
-                                            </label>
-                                            <div className="flex items-center gap-3">
-                                                <input
-                                                    type="range"
-                                                    min={0}
-                                                    max={100}
-                                                    value={bgProps.opacity ?? bgControls.opacity.default ?? 100}
-                                                    onChange={(e) => handleBackgroundPropChange("opacity", parseInt(e.target.value))}
-                                                    className="flex-1 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-brand-500"
-                                                />
-                                                <span className="text-sm text-neutral-500 w-12 text-right">
-                                                    {bgProps.opacity ?? bgControls.opacity.default ?? 100}%
-                                                </span>
-                                            </div>
+                                    {/* Attachment */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                                            Fijacion
+                                        </label>
+                                        <div className="flex gap-0.5 bg-neutral-100 dark:bg-neutral-800 p-1 rounded-lg">
+                                            {BG_ATTACHMENT_OPTIONS.map(
+                                                (opt) => (
+                                                    <button
+                                                        key={opt.value}
+                                                        onClick={() =>
+                                                            handleCustomChange(
+                                                                "backgroundAttachment",
+                                                                opt.value as
+                                                                    | "fixed"
+                                                                    | "scroll"
+                                                            )
+                                                        }
+                                                        className={`flex-1 px-1.5 py-1 text-[10px] font-medium rounded-md transition-all ${
+                                                            (user.customDesign
+                                                                .backgroundAttachment ||
+                                                                "scroll") ===
+                                                            opt.value
+                                                                ? "bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-white"
+                                                                : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                                                        }`}
+                                                    >
+                                                        {opt.label}
+                                                    </button>
+                                                )
+                                            )}
                                         </div>
-                                    )}
-
-                                    {/* Scale Slider */}
-                                    {bgControls.scale && (
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
-                                                Escala
-                                            </label>
-                                            <div className="flex items-center gap-3">
-                                                <input
-                                                    type="range"
-                                                    min={bgControls.scale.min}
-                                                    max={bgControls.scale.max}
-                                                    value={bgProps.scale ?? bgControls.scale.default}
-                                                    onChange={(e) => handleBackgroundPropChange("scale", parseInt(e.target.value))}
-                                                    className="flex-1 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-brand-500"
-                                                />
-                                                <span className="text-sm text-neutral-500 w-16 text-right">
-                                                    {bgProps.scale ?? bgControls.scale.default} px
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Rotation Slider */}
-                                    {bgControls.rotationBg && (
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
-                                                Rotacion
-                                            </label>
-                                            <div className="flex items-center gap-3">
-                                                <input
-                                                    type="range"
-                                                    min={bgControls.rotationBg.min}
-                                                    max={bgControls.rotationBg.max}
-                                                    value={bgProps.rotationBg ?? bgControls.rotationBg.default}
-                                                    onChange={(e) => handleBackgroundPropChange("rotationBg", parseInt(e.target.value))}
-                                                    className="flex-1 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-brand-500"
-                                                />
-                                                <span className="text-sm text-neutral-500 w-12 text-right">
-                                                    {bgProps.rotationBg ?? bgControls.rotationBg.default}°
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Background Color */}
-                                    {!bgControls.hideBgColor && (
-                                        <ColorPicker
-                                            value={user.customDesign.backgroundColor}
-                                            onChange={(color) => handleCustomChange("backgroundColor", color)}
-                                            label="Color de Fondo"
-                                        />
-                                    )}
-
-                                    {/* Dynamic Color Pickers */}
-                                    {bgControls.colors?.map((colorName, idx) => (
-                                        <ColorPicker
-                                            key={colorName}
-                                            value={String(bgProps[colorName] ?? "#000000")}
-                                            onChange={(color) => handleBackgroundPropChange(colorName, color)}
-                                            label={`Color ${idx + 1}`}
-                                        />
-                                    ))}
+                                    </div>
                                 </div>
                             </div>
                         )}
-                    </div>
-                )}
+                </div>
             </section>
 
-            {/* 5. Appearance - Granular Customization */}
+            {/* 4. Appearance - Granular Customization */}
             <section className="bg-white dark:bg-neutral-900 rounded-[32px] overflow-hidden border border-neutral-100 dark:border-neutral-800 shadow-soft-xl">
                 <div className="p-6 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/50">
                     <div className="flex items-center gap-3">
@@ -749,7 +953,7 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                                 Apariencia
                             </h2>
                             <p className="text-sm text-neutral-400 dark:text-neutral-500">
-                                Personaliza colores, formas y tipografia. Cambiar estas opciones creara un tema personalizado.
+                                Personaliza colores, formas y tipografia.
                             </p>
                         </div>
                     </div>
@@ -769,21 +973,28 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                         <div className="flex gap-8 flex-wrap">
                             <ColorPicker
                                 value={user.customDesign.backgroundColor}
-                                onChange={(color) => handleCustomChange("backgroundColor", color)}
+                                onChange={(color) =>
+                                    handleCustomChange("backgroundColor", color)
+                                }
                                 label="Fondo"
                                 size="md"
                                 showHex
                             />
                             <ColorPicker
                                 value={user.customDesign.textColor || "#ffffff"}
-                                onChange={(color) => handleCustomChange("textColor", color)}
+                                onChange={(color) =>
+                                    handleCustomChange("textColor", color)
+                                }
                                 label="Texto"
                                 size="md"
                             />
                         </div>
                         <div className="md:col-span-2">
                             <p className="text-xs text-neutral-400 dark:text-neutral-500">
-                                El color de texto se aplica a titulos, subtitulos y encabezados. Si no lo configuras, se calculara automaticamente segun el contraste del fondo.
+                                El color de texto se aplica a titulos,
+                                subtitulos y encabezados. Si no lo configuras,
+                                se calculara automaticamente segun el contraste
+                                del fondo.
                             </p>
                         </div>
                     </div>
@@ -804,13 +1015,20 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                             {BUTTON_STYLES.map((style) => (
                                 <button
                                     key={style.id}
-                                    onClick={() => handleCustomChange("buttonStyle", style.id)}
+                                    onClick={() =>
+                                        handleCustomChange(
+                                            "buttonStyle",
+                                            style.id
+                                        )
+                                    }
                                     className={`
                                         h-12 rounded-xl text-sm font-bold transition-all
                                         ${style.previewClass}
-                                        ${user.customDesign.buttonStyle === style.id
-                                            ? "ring-2 ring-brand-500 ring-offset-2"
-                                            : "hover:opacity-80"
+                                        ${
+                                            user.customDesign.buttonStyle ===
+                                            style.id
+                                                ? "ring-2 ring-brand-500 ring-offset-2"
+                                                : "hover:opacity-80"
                                         }
                                     `}
                                 >
@@ -831,13 +1049,20 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                             {BUTTON_SHAPES.map((shape) => (
                                 <button
                                     key={shape.id}
-                                    onClick={() => handleCustomChange("buttonShape", shape.id)}
+                                    onClick={() =>
+                                        handleCustomChange(
+                                            "buttonShape",
+                                            shape.id
+                                        )
+                                    }
                                     className={`
                                         w-12 h-10 flex items-center justify-center transition-all shadow-sm
                                         ${shape.class}
-                                        ${user.customDesign.buttonShape === shape.id
-                                            ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-md"
-                                            : "bg-transparent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                                        ${
+                                            user.customDesign.buttonShape ===
+                                            shape.id
+                                                ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-md"
+                                                : "bg-transparent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
                                         }
                                     `}
                                 >
@@ -863,13 +1088,17 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                         <div className="flex gap-8">
                             <ColorPicker
                                 value={user.customDesign.buttonColor}
-                                onChange={(color) => handleCustomChange("buttonColor", color)}
+                                onChange={(color) =>
+                                    handleCustomChange("buttonColor", color)
+                                }
                                 label="Fondo / Borde"
                                 size="md"
                             />
                             <ColorPicker
                                 value={user.customDesign.buttonTextColor}
-                                onChange={(color) => handleCustomChange("buttonTextColor", color)}
+                                onChange={(color) =>
+                                    handleCustomChange("buttonTextColor", color)
+                                }
                                 label="Texto / Icono"
                                 size="md"
                             />
@@ -890,35 +1119,72 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                         </div>
                         <div className="space-y-4">
                             <Toggle
-                                checked={user.customDesign.showButtonIcons !== false}
-                                onChange={(checked) => handleCustomChange("showButtonIcons", checked)}
+                                checked={
+                                    user.customDesign.showButtonIcons !== false
+                                }
+                                onChange={(checked) =>
+                                    handleCustomChange(
+                                        "showButtonIcons",
+                                        checked
+                                    )
+                                }
                                 label="Mostrar iconos"
                                 size="md"
                             />
-                            
+
                             {/* Icon Alignment - Only show if icons are enabled */}
                             {user.customDesign.showButtonIcons !== false && (
                                 <div className="flex gap-2 bg-neutral-100 dark:bg-neutral-800 p-1.5 rounded-xl w-fit">
                                     {ICON_ALIGNMENTS.map((align) => (
                                         <button
                                             key={align.id}
-                                            onClick={() => handleCustomChange("buttonIconAlignment", align.id)}
+                                            onClick={() =>
+                                                handleCustomChange(
+                                                    "buttonIconAlignment",
+                                                    align.id
+                                                )
+                                            }
                                             className={`
                                                 px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all
-                                                ${(user.customDesign.buttonIconAlignment || "left") === align.id
-                                                    ? "bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-white"
-                                                    : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                                                ${
+                                                    (user.customDesign
+                                                        .buttonIconAlignment ||
+                                                        "left") === align.id
+                                                        ? "bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-white"
+                                                        : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
                                                 }
                                             `}
                                             title={align.label}
                                         >
                                             {align.icon}
-                                            <span className="hidden sm:inline">{align.label}</span>
+                                            <span className="hidden sm:inline">
+                                                {align.label}
+                                            </span>
                                         </button>
                                     ))}
                                 </div>
                             )}
                         </div>
+                    </div>
+
+                    {/* Show Link Subtexts Toggle */}
+                    <div className="grid md:grid-cols-[200px_1fr] gap-6 items-start">
+                        <div className="pt-2">
+                            <label className="font-semibold text-neutral-800 dark:text-neutral-200 block">
+                                Mostrar URLs
+                            </label>
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                                Muestra la URL debajo del titulo
+                            </p>
+                        </div>
+                        <Toggle
+                            checked={user.customDesign.showLinkSubtext === true}
+                            onChange={(checked) =>
+                                handleCustomChange("showLinkSubtext", checked)
+                            }
+                            label="Mostrar enlaces"
+                            size="md"
+                        />
                     </div>
 
                     <hr className="border-neutral-100 dark:border-neutral-800" />
@@ -937,16 +1203,22 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                             {FONTS.map((font) => (
                                 <button
                                     key={font.id}
-                                    onClick={() => handleCustomChange("fontPair", font.id)}
+                                    onClick={() =>
+                                        handleCustomChange("fontPair", font.id)
+                                    }
                                     className={`
                                         p-4 rounded-xl border text-left transition-all
-                                        ${user.customDesign.fontPair === font.id
-                                            ? "border-brand-500 bg-brand-50/20 dark:bg-brand-900/20"
-                                            : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                                        ${
+                                            user.customDesign.fontPair ===
+                                            font.id
+                                                ? "border-brand-500 bg-brand-50/20 dark:bg-brand-900/20"
+                                                : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
                                         }
                                     `}
                                 >
-                                    <span className={`block text-lg font-bold text-neutral-900 dark:text-white ${font.fontClass}`}>
+                                    <span
+                                        className={`block text-lg font-bold text-neutral-900 dark:text-white ${font.fontClass}`}
+                                    >
                                         Aa
                                     </span>
                                     <span className="text-sm text-neutral-500 dark:text-neutral-400">

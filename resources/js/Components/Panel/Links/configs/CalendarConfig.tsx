@@ -206,11 +206,8 @@ export const CalendarConfig: React.FC<CalendarConfigProps> = ({
             </div>
 
             {/* Info Box */}
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
-                <h4 className="font-semibold text-blue-700 dark:text-blue-300 text-sm mb-1">
-                    Como obtener tu URL
-                </h4>
-                <p className="text-xs text-blue-600 dark:text-blue-400 leading-relaxed">
+            <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700">
+                <p className="text-xs text-neutral-500 leading-relaxed">
                     {currentProvider === "calendly" &&
                         "En Calendly, ve a tu perfil y copia la URL de tu pagina de reservas (ej: calendly.com/tu-usuario)"}
                     {currentProvider === "cal" &&
