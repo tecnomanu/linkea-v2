@@ -17,8 +17,8 @@ export const INITIAL_USER: UserProfile = {
       fontPair: 'modern'
   },
 
-  seoTitle: "Linkea Official | All our links",
-  seoDescription: "Welcome to the official Linkea page.",
+  seoTitle: "Linkea Oficial | Todos nuestros enlaces",
+  seoDescription: "Bienvenido a la pagina oficial de Linkea.",
   googleAnalyticsId: "",
   facebookPixelId: ""
 };

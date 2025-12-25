@@ -517,7 +517,7 @@ export default function Dashboard({
                             </div>
                             <h1 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white tracking-tight capitalize">
                                 {activeTab === "dashboard"
-                                    ? "My Links"
+                                    ? "Mis enlaces"
                                     : activeTab}
                             </h1>
                         </div>
@@ -542,7 +542,7 @@ export default function Dashboard({
                                             : "bg-linear-to-r from-brand-100/60 to-pink-100/60 dark:from-brand-900/20 dark:to-pink-900/20 text-brand-600 dark:text-brand-400"
                                     }`}
                                 >
-                                    SOCIAL
+                                    REDES
                                 </button>
                             </div>
                         )}
@@ -556,7 +556,7 @@ export default function Dashboard({
                             className="xl:hidden flex items-center gap-2 px-4 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-semibold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all"
                         >
                             <Eye size={16} />
-                            <span>Preview</span>
+                            <span>Vista previa</span>
                         </button>
                         <ManualSaveButton onClick={handleManualSave} />
                     </div>
@@ -566,12 +566,12 @@ export default function Dashboard({
                 <div className="md:hidden mb-4">
                     <div className="flex justify-between items-center">
                         <h1 className="text-2xl font-bold text-neutral-900 dark:text-white capitalize">
-                            {activeTab === "dashboard" ? "Overview" : activeTab}
+                            {activeTab === "dashboard" ? "Resumen" : activeTab}
                         </h1>
                         <button
                             onClick={() => openPreview("mobile")}
                             className="p-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all"
-                            aria-label="Preview"
+                            aria-label="Vista previa"
                         >
                             <Eye size={18} />
                         </button>
@@ -600,7 +600,7 @@ export default function Dashboard({
                                         : "bg-gradient-to-r from-brand-200/50 to-pink-200/50 dark:from-brand-900/30 dark:to-pink-900/30 text-brand-600 dark:text-brand-400"
                                 }`}
                             >
-                                SOCIAL
+                                REDES
                             </button>
                         </div>
                     )}
@@ -647,7 +647,7 @@ export default function Dashboard({
             <div className="w-[440px] hidden xl:flex flex-col items-center justify-center gap-4 py-6 sticky top-0 h-screen bg-white/50 dark:bg-neutral-900/50 backdrop-blur-xl border-l border-neutral-200/50 dark:border-neutral-800/50">
                 {/* Live Preview Badge */}
                 <span className="text-[10px] font-bold tracking-[0.2em] text-neutral-400 uppercase bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full shrink-0">
-                    Live Preview
+                    Vista previa
                 </span>
 
                 {/* Phone Component Container - Scales based on available height */}
@@ -668,7 +668,7 @@ export default function Dashboard({
                     className="flex items-center gap-2 px-5 py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-full font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all shrink-0"
                 >
                     <Maximize2 size={16} />
-                    <span>Expanded Preview</span>
+                    <span>Vista expandida</span>
                 </button>
             </div>
 

@@ -5,9 +5,6 @@
 #   ./vendor/bin/sail up -d
 #   ./vendor/bin/sail artisan migrate
 #   ./vendor/bin/sail artisan db:seed
-#
-# Aliases (add to ~/.zshrc or ~/.bashrc):
-#   alias sail='[ -f sail ] && sh sail || sh vendor/bin/sail'
 # =============================================================================
 
 services:
@@ -39,43 +36,9 @@ services:
     depends_on:
       - mysql
       - redis
-
-  # =========================================================================
-  # Horizon & Scheduler (Queue Worker + Cron)
-  # =========================================================================
-  horizon:
-    build:
-      context: ./vendor/laravel/sail/runtimes/8.4
-      dockerfile: Dockerfile
-      args:
-        WWWGROUP: "${WWWGROUP}"
-    image: sail-8.4/app
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    environment:
-      WWWUSER: "${WWWUSER}"
-      LARAVEL_SAIL: 1
-    volumes:
-      - ".:/var/www/html"
-    networks:
-      - sail
-    depends_on:
-      - mysql
-      - redis
-      - laravel.test
     command: >
-      bash -c "
-          echo 'Starting Horizon and Scheduler...' &&
-          (while true; do php /var/www/html/artisan schedule:run --verbose --no-interaction; sleep 60; done) &
-          php /var/www/html/artisan horizon
-      "
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "php", "/var/www/html/artisan", "horizon:status"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+      sh -c "php artisan serve --host=0.0.0.0 --port=80 & 
+        php artisan horizon"
 
   # =========================================================================
   # MySQL Database

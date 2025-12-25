@@ -371,7 +371,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({
                             variant="ghost"
                             size="icon"
                             onClick={() => setShowConfig(true)}
-                            title="Configure"
+                            title="Configurar"
                         >
                             <Settings size={18} />
                         </Button>
@@ -380,7 +380,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({
                             size="icon"
                             onClick={() => setShowDeleteConfirm(true)}
                             className="hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                            title="Delete"
+                            title="Eliminar"
                         >
                             <Trash2 size={18} />
                         </Button>

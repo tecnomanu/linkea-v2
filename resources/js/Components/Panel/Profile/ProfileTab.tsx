@@ -50,7 +50,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ user }) => {
                         <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white dark:border-neutral-700 shadow-lg">
                             <img
                                 src={avatarPreview}
-                                alt="Profile"
+                                alt="Perfil"
                                 className="w-full h-full object-cover"
                             />
                         </div>

@@ -31,12 +31,12 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                     icon={<AtSign size={24} />}
                     iconBg="bg-orange-50 dark:bg-orange-900/30"
                     iconColor="text-orange-600 dark:text-orange-400"
-                    title="My Linkea Name"
-                    subtitle="Claim your unique URL handle."
+                    title="Mi nombre de Linkea"
+                    subtitle="Reclama tu URL unica."
                 />
                 <CardBody className="space-y-6">
                     <div className="space-y-2">
-                        <Label htmlFor="username">Username</Label>
+                        <Label htmlFor="username">Nombre de usuario</Label>
                         <div className="relative">
                             {/* Validation icon inside input */}
                             <div className="absolute top-1/2 -translate-y-1/2 left-4 text-green-500">
@@ -64,7 +64,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                                 </span>
                             </p>
                             <p className="text-xs font-bold text-green-600 dark:text-green-400 flex items-center gap-1">
-                                Available
+                                Disponible
                             </p>
                         </div>
                     </div>
@@ -77,14 +77,14 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                     icon={<Globe size={24} />}
                     iconBg="bg-blue-50 dark:bg-blue-900/30"
                     iconColor="text-blue-600 dark:text-blue-400"
-                    title="General Options"
-                    subtitle="Manage how your page appears in browsers."
+                    title="Opciones generales"
+                    subtitle="Configura como se ve tu pagina en navegadores."
                 />
 
                 <CardBody className="space-y-6">
                     <div className="space-y-2">
                         <Label htmlFor="seo-title" hint="(SEO)">
-                            Landing Page Title
+                            Titulo de la pagina
                         </Label>
                         <div className="relative">
                             <Search
@@ -99,23 +99,23 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                                     onUpdateUser({ seoTitle: e.target.value })
                                 }
                                 className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl pl-11 pr-4 py-3 font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all placeholder:text-neutral-400"
-                                placeholder="e.g. My Official Links"
+                                placeholder="Ej: Mis enlaces oficiales"
                             />
                         </div>
                         <p className="text-xs text-neutral-400 dark:text-neutral-500">
-                            This is what appears on the Google search tab.
+                            Esto aparece en la pestaña de busqueda de Google.
                         </p>
                     </div>
 
                     <Textarea
                         id="seo-description"
-                        label="Meta Description"
+                        label="Meta descripcion"
                         value={user.seoDescription || ""}
                         onChange={(e) =>
                             onUpdateUser({ seoDescription: e.target.value })
                         }
                         rows={2}
-                        placeholder="A brief description of your page for search engines..."
+                        placeholder="Una breve descripcion de tu pagina para buscadores..."
                     />
                 </CardBody>
             </Card>
@@ -126,8 +126,8 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                     icon={<BarChart3 size={24} />}
                     iconBg="bg-green-50 dark:bg-green-900/30"
                     iconColor="text-green-600 dark:text-green-400"
-                    title="Analytics & Pixels"
-                    subtitle="Track your visitors with external tools."
+                    title="Analiticas y Pixels"
+                    subtitle="Rastrea tus visitantes con herramientas externas."
                 />
 
                 <CardBody className="space-y-6">
@@ -170,10 +170,10 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                     </div>
                     <div>
                         <h3 className="font-bold text-red-900 dark:text-red-300">
-                            Private Profile
+                            Perfil privado
                         </h3>
                         <p className="text-xs text-red-700/60 dark:text-red-400/60">
-                            Hide your profile from search engines.
+                            Oculta tu perfil de los buscadores.
                         </p>
                     </div>
                 </div>
@@ -182,7 +182,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                     size="sm"
                     className="border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                 >
-                    Configure
+                    Configurar
                 </Button>
             </div>
         </div>
