@@ -137,13 +137,15 @@ class SaveDesignRequest extends FormRequest
         ];
 
         // Add title & subtitle to template_config (only if provided)
+        // Note: Laravel's ConvertEmptyStringsToNull middleware converts "" to null,
+        // so we use empty string as the value when null is received (user cleared the field)
         if (array_key_exists('title', $data)) {
-            $templateConfig['title'] = $data['title'];
+            $templateConfig['title'] = $data['title'] ?? '';
         }
         if (array_key_exists('subtitle', $data)) {
-            $templateConfig['subtitle'] = $data['subtitle'];
+            $templateConfig['subtitle'] = $data['subtitle'] ?? '';
         }
-        
+
         // Add visibility toggles to template_config
         if (array_key_exists('showTitle', $data)) {
             $templateConfig['showTitle'] = (bool) $data['showTitle'];

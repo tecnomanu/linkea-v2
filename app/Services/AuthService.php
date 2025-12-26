@@ -327,9 +327,9 @@ class AuthService
         // Check collision with existing landing slugs (excluding current user's landings)
         $landingQuery = Landing::where(function ($q) use ($normalizedUsername) {
             $q->where('slug', $normalizedUsername)
-              ->orWhere('domain_name', $normalizedUsername);
+                ->orWhere('domain_name', $normalizedUsername);
         });
-        
+
         if ($currentUser) {
             $landingQuery->where('user_id', '!=', $currentUser->id);
         }
