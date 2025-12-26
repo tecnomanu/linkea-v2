@@ -50,8 +50,21 @@ class AppServiceProvider extends ServiceProvider
             $this->app->environment(['production', 'staging']) ||
             $this->isRunningBehindHttpsProxy()
         ) {
-            $this->app['request']->server->set('HTTPS', true);
+            // Set HTTPS flag on the request
+            if ($this->app->bound('request')) {
+                $this->app['request']->server->set('HTTPS', 'on');
+            }
+
+            // Force URL scheme to HTTPS
             URL::forceScheme('https');
+
+            // Also force root URL if APP_URL doesn't have https
+            $appUrl = config('app.url');
+            if ($appUrl && !str_starts_with($appUrl, 'https://')) {
+                $httpsUrl = str_replace('http://', 'https://', $appUrl);
+                URL::forceRootUrl($httpsUrl);
+                config(['app.url' => $httpsUrl]);
+            }
         }
     }
 
