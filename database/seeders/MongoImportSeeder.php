@@ -192,14 +192,18 @@ class MongoImportSeeder extends Seeder
             }
 
             try {
-                $company = Company::create([
-                    'name' => $companyData['name'] ?? 'Sin nombre',
-                    'slug' => $this->sanitizeSlug($companyData['slug'] ?? Str::slug($companyData['name'] ?? 'company')),
-                    'owner_id' => $ownerId,
-                    'mongo_id' => $mongoId,
-                    'created_at' => $this->parseDate($companyData['created_at'] ?? null),
-                    'updated_at' => $this->parseDate($companyData['updated_at'] ?? null),
-                ]);
+                $slug = $this->sanitizeSlug($companyData['slug'] ?? Str::slug($companyData['name'] ?? 'company'));
+                
+                $company = Company::updateOrCreate(
+                    ['slug' => $slug],
+                    [
+                        'name' => $companyData['name'] ?? 'Sin nombre',
+                        'owner_id' => $ownerId,
+                        'mongo_id' => $mongoId,
+                        'created_at' => $this->parseDate($companyData['created_at'] ?? null),
+                        'updated_at' => $this->parseDate($companyData['updated_at'] ?? null),
+                    ]
+                );
 
                 $this->idMap['companies'][$mongoId] = $company->id;
                 $count++;
