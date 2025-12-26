@@ -22,7 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Trust all proxies (Cloudflare, Traefik, etc.) for proper HTTPS detection
-        $middleware->trustProxies(at: '*');
+        $middleware->trustProxies(at: [
+            \App\Http\Middleware\TrustProxies::class,
+        ]);
 
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,

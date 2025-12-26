@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -35,6 +36,40 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Configure HTTPS and URL scheme
+        $this->configureHttpsAndUrls();
+    }
+
+    /**
+     * Configure HTTPS and URL generation for the application.
+     */
+    private function configureHttpsAndUrls(): void
+    {
+        // Force HTTPS in production/staging or when behind HTTPS proxy
+        if (
+            $this->app->environment(['production', 'staging']) ||
+            $this->isRunningBehindHttpsProxy()
+        ) {
+            $this->app['request']->server->set('HTTPS', true);
+            URL::forceScheme('https');
+        }
+    }
+
+    /**
+     * Determine if the application is running behind an HTTPS proxy.
+     */
+    private function isRunningBehindHttpsProxy(): bool
+    {
+        $request = request();
+
+        if (!$request) {
+            return false;
+        }
+
+        // Check HTTPS proxy headers
+        return $request->header('X-Forwarded-Proto') === 'https' ||
+            $request->header('X-Forwarded-SSL') === 'on' ||
+            $request->header('CloudFront-Forwarded-Proto') === 'https' ||
+            $request->server('HTTPS') === 'on';
     }
 }
