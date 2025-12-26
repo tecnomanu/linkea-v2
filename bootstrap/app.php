@@ -14,13 +14,16 @@ return Application::configure(basePath: dirname(__DIR__))
             // Load auth routes BEFORE web.php to prevent catch-all from intercepting them
             Route::middleware('web')
                 ->group(base_path('routes/auth.php'));
-            
+
             // Load web routes last (contains catch-all for landing pages)
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trust all proxies (Cloudflare, Traefik, etc.) for proper HTTPS detection
+        $middleware->trustProxies(at: '*');
+
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
@@ -32,7 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Configure auth middleware to redirect to /auth/login
         $middleware->redirectGuestsTo('/auth/login');
-        
+
         // Configure guest middleware to redirect authenticated users to /panel
         $middleware->redirectUsersTo('/panel');
     })
