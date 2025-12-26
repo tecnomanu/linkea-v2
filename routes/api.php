@@ -21,10 +21,12 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\NotificationsController;
 use App\Http\Controllers\Api\StatisticsController;
-use App\Http\Controllers\Api\UsersController;
-use App\Http\Controllers\Api\CompaniesController;
-use App\Http\Controllers\Api\RolesController;
-use App\Http\Controllers\Api\MembershipsController;
+
+// Admin Controllers
+use App\Http\Controllers\Api\Admin\UsersController;
+use App\Http\Controllers\Api\Admin\CompaniesController;
+use App\Http\Controllers\Api\Admin\RolesController;
+use App\Http\Controllers\Api\Admin\MembershipsController;
 use App\Http\Controllers\Api\Admin\NewslettersController;
 
 // Panel Controllers (new Inertia/React panel)
@@ -242,9 +244,12 @@ Route::get('csrf-token', function () {
     return response()->json(['token' => csrf_token()]);
 })->middleware('web')->name('api.csrf-token');
 
-// Statistics - Public endpoint for tracking link clicks (no auth, no CSRF)
+// Statistics - Public endpoints for tracking (no auth, no CSRF)
 Route::post('/statistics/link/click/{id}', [StatisticsController::class, 'trace'])
     ->name('api.statistics.click');
+
+Route::post('/statistics/landing/view/{landingId}', [StatisticsController::class, 'trackView'])
+    ->name('api.statistics.view');
 
 // Newsletter Pixel Tracking
 Route::get('pixel/{id}/{userId}/px.png', [NewslettersController::class, 'setPixel'])

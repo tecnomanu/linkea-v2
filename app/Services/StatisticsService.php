@@ -2,13 +2,15 @@
 
 namespace App\Services;
 
+use App\Models\Landing;
+use App\Models\LandingStatistic;
 use App\Models\Link;
 use App\Models\LinkStatistic;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 /**
- * Service for handling link click statistics and analytics.
+ * Service for handling link click statistics and landing view analytics.
  */
 class StatisticsService
 {
@@ -172,32 +174,55 @@ class StatisticsService
      * Get comprehensive dashboard stats for a landing.
      * 
      * @return array{
+     *     totalViews: int,
      *     totalClicks: int,
      *     totalLinks: int,
      *     activeLinks: int,
+     *     viewsToday: int,
+     *     viewsThisWeek: int,
+     *     viewsThisMonth: int,
      *     clicksToday: int,
      *     clicksThisWeek: int,
      *     clicksThisMonth: int,
      *     weeklyChange: float,
      *     dailyAverage: float,
      *     chartData: array,
+     *     viewChartData: array,
      *     topLinks: array,
      *     linksByType: array
      * }
      */
     public function getLandingDashboardStats(string $landingId, int $chartDays = 30): array
     {
+        // Get landing for views
+        $landing = Landing::find($landingId);
+
         // Explicitly exclude soft deleted links
         $links = Link::where('landing_id', $landingId)
             ->whereNull('deleted_at')
             ->get();
         $linkIds = $links->pluck('id')->toArray();
-        
+
         $today = Carbon::today();
         $startOfWeek = Carbon::now()->startOfWeek();
         $startOfMonth = Carbon::now()->startOfMonth();
         $startOfLastWeek = Carbon::now()->subWeek()->startOfWeek();
         $endOfLastWeek = Carbon::now()->subWeek()->endOfWeek();
+
+        // VIEWS STATS
+        $totalViews = $landing?->views ?? 0;
+
+        $viewsToday = LandingStatistic::where('landing_id', $landingId)
+            ->where('date', $today)
+            ->sum('views');
+
+        $viewsThisWeek = LandingStatistic::where('landing_id', $landingId)
+            ->where('date', '>=', $startOfWeek)
+            ->sum('views');
+
+        $viewsThisMonth = LandingStatistic::where('landing_id', $landingId)
+            ->where('date', '>=', $startOfMonth)
+            ->sum('views');
 
         // Total clicks (all time)
         $totalClicks = $links->sum('visited');
@@ -223,7 +248,7 @@ class StatisticsService
             ->sum('visits');
 
         // Weekly change percentage
-        $weeklyChange = $clicksLastWeek > 0 
+        $weeklyChange = $clicksLastWeek > 0
             ? round((($clicksThisWeek - $clicksLastWeek) / $clicksLastWeek) * 100, 1)
             : ($clicksThisWeek > 0 ? 100 : 0);
 
@@ -235,6 +260,9 @@ class StatisticsService
 
         // Chart data (clicks per day)
         $chartData = $this->getAggregatedChartData($linkIds, $chartDays);
+
+        // View chart data
+        $viewChartData = $this->getViewChartData($landingId, $chartDays);
 
         // Top performing links (by clicks)
         $topLinks = $links
@@ -271,18 +299,117 @@ class StatisticsService
             ->toArray();
 
         return [
+            'totalViews' => $totalViews,
             'totalClicks' => $totalClicks,
             'totalLinks' => $links->count(),
             'activeLinks' => $links->where('state', true)->count(),
+            'viewsToday' => $viewsToday,
+            'viewsThisWeek' => $viewsThisWeek,
+            'viewsThisMonth' => $viewsThisMonth,
             'clicksToday' => $clicksToday,
             'clicksThisWeek' => $clicksThisWeek,
             'clicksThisMonth' => $clicksThisMonth,
             'weeklyChange' => $weeklyChange,
             'dailyAverage' => $dailyAverage,
             'chartData' => $chartData,
+            'viewChartData' => $viewChartData,
             'topLinks' => $topLinks,
             'linksByType' => $linksByType,
         ];
+    }
+
+    // =======================================================================
+    // LANDING VIEWS TRACKING
+    // =======================================================================
+
+    /**
+     * Record a landing page view.
+     * Should only be called for human visitors (use BotDetector first).
+     */
+    public function recordLandingView(Landing $landing): void
+    {
+        // Increment total views count
+        $landing->increment('views');
+
+        // Record daily statistic
+        $this->recordDailyLandingStatistic($landing->id);
+    }
+
+    /**
+     * Record daily statistic for a landing view.
+     * Uses upsert to avoid race conditions and unique constraint violations.
+     */
+    protected function recordDailyLandingStatistic(string $landingId): void
+    {
+        $today = Carbon::today();
+
+        $existing = LandingStatistic::where('landing_id', $landingId)
+            ->where('date', $today)
+            ->first();
+
+        if ($existing) {
+            $existing->increment('views');
+        } else {
+            try {
+                LandingStatistic::create([
+                    'landing_id' => $landingId,
+                    'date' => $today,
+                    'views' => 1,
+                ]);
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                // Race condition: another request created the record
+                LandingStatistic::where('landing_id', $landingId)
+                    ->where('date', $today)
+                    ->increment('views');
+            }
+        }
+    }
+
+    /**
+     * Get total views for a landing.
+     */
+    public function getTotalViewsForLanding(string $landingId): int
+    {
+        return Landing::where('id', $landingId)->value('views') ?? 0;
+    }
+
+    /**
+     * Get views for a time period.
+     */
+    public function getViewsForPeriod(string $landingId, int $days = 30): int
+    {
+        $startDate = Carbon::today()->subDays($days - 1);
+
+        return LandingStatistic::where('landing_id', $landingId)
+            ->where('date', '>=', $startDate)
+            ->sum('views');
+    }
+
+    /**
+     * Get view chart data for a landing.
+     */
+    public function getViewChartData(string $landingId, int $days = 30): array
+    {
+        $startDate = Carbon::today()->subDays($days - 1);
+
+        $statistics = LandingStatistic::where('landing_id', $landingId)
+            ->where('date', '>=', $startDate)
+            ->orderBy('date', 'asc')
+            ->get()
+            ->keyBy(fn($stat) => Carbon::parse($stat->date)->format('Y-m-d'));
+
+        $chartData = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $date = Carbon::today()->subDays($i);
+            $dateKey = $date->format('Y-m-d');
+            $chartData[] = [
+                'date' => $date->format('d M'),
+                'fullDate' => $dateKey,
+                'views' => (int) ($statistics->get($dateKey)?->views ?? 0),
+            ];
+        }
+
+        return $chartData;
     }
 
     /**

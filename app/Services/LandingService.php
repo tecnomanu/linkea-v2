@@ -8,6 +8,7 @@ use App\Models\Landing;
 use App\Models\Link;
 use App\Repositories\Contracts\LandingRepository;
 use App\Support\Helpers\ArrayHelper;
+use App\Support\Helpers\StorageHelper;
 use Illuminate\Support\Str;
 
 /**
@@ -34,6 +35,33 @@ class LandingService
     public function getByDomain(string $domain): ?Landing
     {
         return $this->landingRepository->findByDomain($domain);
+    }
+
+    /**
+     * Find landing by slug or domain name with active links and socials.
+     * Used for public landing page view.
+     */
+    public function findBySlugOrDomainWithLinks(string $path): ?Landing
+    {
+        return Landing::where('domain_name', $path)
+            ->orWhere('slug', $path)
+            ->with([
+                'links' => function ($query) {
+                    $query->where('state', true)->orderBy('order');
+                },
+                'socials' => function ($query) {
+                    $query->where('state', true)->orderBy('order');
+                },
+            ])
+            ->first();
+    }
+
+    /**
+     * Get all verified landings (for sitemap).
+     */
+    public function getAllVerified()
+    {
+        return Landing::where('verify', true)->get();
     }
 
     /**
@@ -267,14 +295,15 @@ class LandingService
      */
     protected function transformLandingForDisplay(Landing $landing): array
     {
+        // Resolve avatar URL using StorageHelper
         $logo = $landing->logo;
-        $avatar = '';
-        
+        $avatarPath = '';
         if (is_array($logo)) {
-            $avatar = $logo['image'] ?? $logo['thumb'] ?? '';
+            $avatarPath = $logo['image'] ?? $logo['thumb'] ?? '';
         } elseif (is_string($logo)) {
-            $avatar = $logo;
+            $avatarPath = $logo;
         }
+        $avatar = StorageHelper::url($avatarPath) ?: '';
 
         $templateConfig = $landing->template_config ?? [];
         $options = $landing->options ?? [];
@@ -282,31 +311,28 @@ class LandingService
         // Map bgName to theme - 'static' means custom solid color
         $bgName = $templateConfig['background']['bgName'] ?? 'custom';
         $theme = ($bgName === 'static') ? 'custom' : $bgName;
-        
+
         // Get background color
-        $bgColor = $templateConfig['background']['backgroundColor'] 
-            ?? $templateConfig['background']['color'] 
+        $bgColor = $templateConfig['background']['backgroundColor']
+            ?? $templateConfig['background']['color']
             ?? '#ffffff';
-        
+
         // Get button styling
         $buttons = $templateConfig['buttons'] ?? [];
         $buttonColor = $buttons['backgroundColor'] ?? $buttons['color'] ?? '#3b82f6';
         $buttonTextColor = $buttons['textColor'] ?? '#ffffff';
-        
+
         // Determine button style
         $buttonStyle = 'solid';
         if (isset($buttons['borderShow']) && $buttons['borderShow']) {
             $buttonStyle = 'outline';
         }
-        
-        // Get background image
-        $backgroundImage = null;
-        $bgImage = $templateConfig['background']['backgroundImage'] ?? null;
-        if (is_array($bgImage) && isset($bgImage['image'])) {
-            $backgroundImage = env('AWS_URL') . $bgImage['image'];
-        } elseif (is_string($bgImage) && !empty($bgImage)) {
-            $backgroundImage = $bgImage;
-        }
+
+        // Get background image - resolve to CSS url("...") format using StorageHelper
+        $backgroundImage = $this->resolveBackgroundImage($templateConfig['background']['backgroundImage'] ?? null);
+
+        // Background enabled - default to true if there's an image
+        $backgroundEnabled = $templateConfig['background']['backgroundEnabled'] ?? ($backgroundImage !== null);
 
         return [
             'id' => $landing->id,
@@ -326,6 +352,9 @@ class LandingService
                     'fontPair' => $templateConfig['fontPair'] ?? 'modern',
                     'roundedAvatar' => $templateConfig['image_rounded'] ?? true,
                     'backgroundImage' => $backgroundImage,
+                    'backgroundEnabled' => $backgroundEnabled,
+                    'backgroundSize' => $templateConfig['background']['backgroundSize'] ?? 'cover',
+                    'backgroundPosition' => $templateConfig['background']['backgroundPosition'] ?? 'center',
                 ],
             ],
             'links' => $landing->links->map(function ($link) {
@@ -345,5 +374,47 @@ class LandingService
                 ];
             })->values()->toArray(),
         ];
+    }
+
+    /**
+     * Resolve background image to CSS url("...") format.
+     * Handles: object {image: 'path'}, CSS strings, gradients, full URLs.
+     */
+    protected function resolveBackgroundImage($bgImage): ?string
+    {
+        if (empty($bgImage)) {
+            return null;
+        }
+
+        // Object format {image: 'path', thumb: 'path'}
+        if (is_array($bgImage) && isset($bgImage['image'])) {
+            $imagePath = $bgImage['image'];
+            $url = StorageHelper::url($imagePath);
+            return $url ? 'url("' . $url . '")' : null;
+        }
+
+        // String format
+        if (is_string($bgImage)) {
+            // Already CSS formatted (url(...), linear-gradient, data:, SVG patterns)
+            if (
+                str_starts_with($bgImage, 'url(') ||
+                str_starts_with($bgImage, 'linear-gradient') ||
+                str_starts_with($bgImage, 'radial-gradient') ||
+                str_starts_with($bgImage, 'data:')
+            ) {
+                return $bgImage;
+            }
+
+            // Full URL - wrap in url()
+            if (str_starts_with($bgImage, 'http://') || str_starts_with($bgImage, 'https://')) {
+                return 'url("' . $bgImage . '")';
+            }
+
+            // Relative path - resolve via StorageHelper
+            $url = StorageHelper::url($bgImage);
+            return $url ? 'url("' . $url . '")' : null;
+        }
+
+        return null;
     }
 }

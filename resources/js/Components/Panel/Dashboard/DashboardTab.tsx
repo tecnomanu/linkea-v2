@@ -4,7 +4,6 @@ import {
     ArrowUpRight,
     BarChart3,
     Calendar,
-    ExternalLink,
     Link as LinkIcon,
     MousePointer2,
     TrendingUp,
@@ -15,8 +14,6 @@ import React, { useState } from "react";
 import {
     Area,
     AreaChart,
-    Bar,
-    BarChart,
     Line,
     LineChart,
     ResponsiveContainer,
@@ -26,16 +23,49 @@ import {
 } from "recharts";
 
 // Block type icons and colors mapping
-const BLOCK_TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
+const BLOCK_TYPE_CONFIG: Record<
+    string,
+    { icon: React.ElementType; color: string; label: string }
+> = {
     link: { icon: LinkIcon, color: "#3b82f6", label: "Enlace" },
-    youtube: { icon: () => <span className="text-red-500 font-bold text-xs">YT</span>, color: "#ef4444", label: "YouTube" },
-    spotify: { icon: () => <span className="text-green-500 font-bold text-xs">SP</span>, color: "#22c55e", label: "Spotify" },
-    whatsapp: { icon: () => <span className="text-emerald-500 font-bold text-xs">WA</span>, color: "#10b981", label: "WhatsApp" },
+    youtube: {
+        icon: () => <span className="text-red-500 font-bold text-xs">YT</span>,
+        color: "#ef4444",
+        label: "YouTube",
+    },
+    spotify: {
+        icon: () => (
+            <span className="text-green-500 font-bold text-xs">SP</span>
+        ),
+        color: "#22c55e",
+        label: "Spotify",
+    },
+    whatsapp: {
+        icon: () => (
+            <span className="text-emerald-500 font-bold text-xs">WA</span>
+        ),
+        color: "#10b981",
+        label: "WhatsApp",
+    },
     social: { icon: Users, color: "#8b5cf6", label: "Social" },
     calendar: { icon: Calendar, color: "#f59e0b", label: "Calendario" },
-    header: { icon: () => <span className="text-neutral-400 font-bold text-xs">H</span>, color: "#6b7280", label: "Encabezado" },
-    email: { icon: () => <span className="text-blue-500 font-bold text-xs">@</span>, color: "#3b82f6", label: "Email" },
-    map: { icon: () => <span className="text-rose-500 font-bold text-xs">M</span>, color: "#f43f5e", label: "Mapa" },
+    header: {
+        icon: () => (
+            <span className="text-neutral-400 font-bold text-xs">H</span>
+        ),
+        color: "#6b7280",
+        label: "Encabezado",
+    },
+    email: {
+        icon: () => <span className="text-blue-500 font-bold text-xs">@</span>,
+        color: "#3b82f6",
+        label: "Email",
+    },
+    map: {
+        icon: () => <span className="text-rose-500 font-bold text-xs">M</span>,
+        color: "#f43f5e",
+        label: "Mapa",
+    },
 };
 
 const PERIOD_OPTIONS = [
@@ -47,24 +77,29 @@ const PERIOD_OPTIONS = [
 // Format large numbers like 24500 -> "24.5k"
 const formatNumber = (num: number): string => {
     if (num >= 1000000) {
-        return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+        return (num / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
     }
     if (num >= 1000) {
-        return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+        return (num / 1000).toFixed(1).replace(/\.0$/, "") + "k";
     }
     return num.toString();
 };
 
 interface DashboardStats {
+    totalViews: number;
     totalClicks: number;
     totalLinks: number;
     activeLinks: number;
+    viewsToday: number;
+    viewsThisWeek: number;
+    viewsThisMonth: number;
     clicksToday: number;
     clicksThisWeek: number;
     clicksThisMonth: number;
     weeklyChange: number;
     dailyAverage: number;
     chartData: { date: string; fullDate: string; clicks: number }[];
+    viewChartData: { date: string; fullDate: string; views: number }[];
     topLinks: {
         id: string;
         title: string;
@@ -95,22 +130,36 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ stats }) => {
                         <div className="absolute top-0 right-0 p-32 bg-neutral-800/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                         <div className="relative z-10 flex justify-between items-start mb-8">
                             <div className="p-2 bg-neutral-800 rounded-xl">
-                                <MousePointer2 size={20} className="text-brand-500" />
+                                <MousePointer2
+                                    size={20}
+                                    className="text-brand-500"
+                                />
                             </div>
                         </div>
                         <div className="relative z-10">
-                            <h3 className="text-3xl font-bold tracking-tight mb-1">--</h3>
-                            <p className="text-sm text-neutral-400">Total Clicks</p>
+                            <h3 className="text-3xl font-bold tracking-tight mb-1">
+                                --
+                            </h3>
+                            <p className="text-sm text-neutral-400">
+                                Total Clicks
+                            </p>
                         </div>
                     </div>
                     <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800">
                         <div className="flex justify-between items-start mb-8">
                             <div className="p-2 bg-brand-50 dark:bg-brand-900/30 rounded-xl">
-                                <TrendingUp size={20} className="text-brand-500" />
+                                <TrendingUp
+                                    size={20}
+                                    className="text-brand-500"
+                                />
                             </div>
                         </div>
-                        <h3 className="text-3xl font-bold text-neutral-900 dark:text-white tracking-tight mb-1">--</h3>
-                        <p className="text-sm text-neutral-500">Clicks semanales</p>
+                        <h3 className="text-3xl font-bold text-neutral-900 dark:text-white tracking-tight mb-1">
+                            --
+                        </h3>
+                        <p className="text-sm text-neutral-500">
+                            Clicks semanales
+                        </p>
                     </div>
                     <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 relative overflow-hidden">
                         <div className="absolute -right-4 -bottom-4 opacity-10 text-brand-500">
@@ -121,8 +170,12 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ stats }) => {
                                 <Zap size={20} className="text-amber-500" />
                             </div>
                         </div>
-                        <h3 className="text-3xl font-bold text-neutral-900 dark:text-white tracking-tight mb-1">0</h3>
-                        <p className="text-sm text-neutral-500">Enlaces activos</p>
+                        <h3 className="text-3xl font-bold text-neutral-900 dark:text-white tracking-tight mb-1">
+                            0
+                        </h3>
+                        <p className="text-sm text-neutral-500">
+                            Enlaces activos
+                        </p>
                     </div>
                 </div>
 
@@ -135,9 +188,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ stats }) => {
                         Tus estadisticas apareceran aqui
                     </h3>
                     <p className="text-neutral-600 dark:text-neutral-400 max-w-md mx-auto mb-6">
-                        Una vez que agregues enlaces y empieces a recibir visitas, podras ver metricas detalladas de rendimiento.
+                        Una vez que agregues enlaces y empieces a recibir
+                        visitas, podras ver metricas detalladas de rendimiento.
                     </p>
-                    <a 
+                    <a
                         href="/panel/links"
                         className="inline-flex items-center gap-2 px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-semibold transition-all hover:shadow-lg hover:-translate-y-0.5"
                     >
@@ -156,27 +210,24 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ stats }) => {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6 pb-8 xl:pb-32">
             {/* Primary Stats Bento Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Total Views - Dark Card */}
+                {/* Total Views - Dark Card (Real views from landing visits) */}
                 <div className="bg-neutral-900 text-white p-6 rounded-3xl relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-32 bg-neutral-800/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                    
+
                     <div className="relative z-10 flex justify-between items-start mb-8">
                         <div className="p-2 bg-neutral-800 rounded-xl">
                             <Users size={20} className="text-brand-500" />
                         </div>
-                        <span className={`text-xs font-medium px-2 py-1 rounded-lg flex items-center gap-1 ${
-                            stats.weeklyChange >= 0 
-                                ? "text-green-400 bg-green-900/30" 
-                                : "text-red-400 bg-red-900/30"
-                        }`}>
-                            {stats.weeklyChange >= 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                            {Math.abs(stats.weeklyChange)}%
-                        </span>
+                        {stats.viewsThisWeek > 0 && (
+                            <span className="text-xs font-medium px-2 py-1 rounded-lg flex items-center gap-1 text-purple-400 bg-purple-900/30">
+                                +{formatNumber(stats.viewsThisWeek)} esta semana
+                            </span>
+                        )}
                     </div>
-                    
+
                     <div className="relative z-10">
                         <h3 className="text-3xl font-bold tracking-tight mb-1">
-                            {formatNumber(stats.totalClicks)}
+                            {formatNumber(stats.totalViews)}
                         </h3>
                         <p className="text-sm text-neutral-400">Total Views</p>
                     </div>
@@ -186,15 +237,24 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ stats }) => {
                 <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-8">
                         <div className="p-2 bg-brand-50 dark:bg-brand-900/30 rounded-xl">
-                            <MousePointer2 size={20} className="text-brand-500" />
+                            <MousePointer2
+                                size={20}
+                                className="text-brand-500"
+                            />
                         </div>
                         {stats.weeklyChange !== 0 && (
-                            <span className={`text-xs font-medium px-2 py-1 rounded-lg flex items-center gap-1 ${
-                                stats.weeklyChange > 0 
-                                    ? "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30" 
-                                    : "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30"
-                            }`}>
-                                {stats.weeklyChange > 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+                            <span
+                                className={`text-xs font-medium px-2 py-1 rounded-lg flex items-center gap-1 ${
+                                    stats.weeklyChange > 0
+                                        ? "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30"
+                                        : "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30"
+                                }`}
+                            >
+                                {stats.weeklyChange > 0 ? (
+                                    <ArrowUpRight size={12} />
+                                ) : (
+                                    <ArrowDownRight size={12} />
+                                )}
                                 {Math.abs(stats.weeklyChange)}%
                             </span>
                         )}
@@ -202,46 +262,58 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ stats }) => {
                     <h3 className="text-3xl font-bold text-neutral-900 dark:text-white tracking-tight mb-1">
                         {formatNumber(stats.totalClicks)}
                     </h3>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Total Clicks</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                        Total Clicks
+                    </p>
                 </div>
 
-                {/* Clicks Semanales */}
+                {/* CTR (Click-Through Rate) */}
                 <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
                     <div className="absolute -right-4 -bottom-4 opacity-10 text-brand-500">
                         <TrendingUp size={120} />
                     </div>
                     <div className="flex justify-between items-start mb-8">
                         <div className="p-2 bg-neutral-100 dark:bg-neutral-800 rounded-xl">
-                            <TrendingUp size={20} className="text-neutral-900 dark:text-white" />
+                            <TrendingUp
+                                size={20}
+                                className="text-neutral-900 dark:text-white"
+                            />
                         </div>
                     </div>
                     <h3 className="text-3xl font-bold text-neutral-900 dark:text-white tracking-tight mb-1">
-                        {formatNumber(stats.clicksThisWeek)}
+                        {stats.totalViews > 0
+                            ? `${(
+                                  (stats.totalClicks / stats.totalViews) *
+                                  100
+                              ).toFixed(1)}%`
+                            : "0%"}
                     </h3>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Clicks semanales</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                        CTR (Clicks/Views)
+                    </p>
                 </div>
             </div>
 
             {/* Secondary Stats Row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <QuickStat 
-                    label="Hoy" 
-                    value={stats.clicksToday} 
+                <QuickStat
+                    label="Views hoy"
+                    value={stats.viewsToday}
+                    icon={<Users size={14} />}
+                />
+                <QuickStat
+                    label="Clicks hoy"
+                    value={stats.clicksToday}
                     icon={<MousePointer2 size={14} />}
                 />
-                <QuickStat 
-                    label="Esta semana" 
-                    value={stats.clicksThisWeek} 
-                    icon={<Calendar size={14} />}
-                />
-                <QuickStat 
-                    label="Enlaces activos" 
-                    value={`${stats.activeLinks}/${stats.totalLinks}`} 
+                <QuickStat
+                    label="Enlaces activos"
+                    value={`${stats.activeLinks}/${stats.totalLinks}`}
                     icon={<Zap size={14} />}
                 />
-                <QuickStat 
-                    label="Promedio/dia" 
-                    value={stats.dailyAverage} 
+                <QuickStat
+                    label="Promedio clicks/dia"
+                    value={stats.dailyAverage}
                     icon={<BarChart3 size={14} />}
                     decimals
                 />
@@ -262,10 +334,18 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ stats }) => {
                         {PERIOD_OPTIONS.map((opt) => (
                             <Button
                                 key={opt.value}
-                                variant={chartPeriod === opt.value ? "primary" : "ghost"}
+                                variant={
+                                    chartPeriod === opt.value
+                                        ? "primary"
+                                        : "ghost"
+                                }
                                 size="sm"
                                 onClick={() => setChartPeriod(opt.value)}
-                                className={chartPeriod === opt.value ? "" : "text-neutral-500"}
+                                className={
+                                    chartPeriod === opt.value
+                                        ? ""
+                                        : "text-neutral-500"
+                                }
                             >
                                 {opt.label}
                             </Button>
@@ -277,9 +357,23 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ stats }) => {
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={filteredChartData}>
                             <defs>
-                                <linearGradient id="colorClicks" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#ef5844" stopOpacity={0.3} />
-                                    <stop offset="95%" stopColor="#ef5844" stopOpacity={0} />
+                                <linearGradient
+                                    id="colorClicks"
+                                    x1="0"
+                                    y1="0"
+                                    x2="0"
+                                    y2="1"
+                                >
+                                    <stop
+                                        offset="5%"
+                                        stopColor="#ef5844"
+                                        stopOpacity={0.3}
+                                    />
+                                    <stop
+                                        offset="95%"
+                                        stopColor="#ef5844"
+                                        stopOpacity={0}
+                                    />
                                 </linearGradient>
                             </defs>
                             <XAxis
@@ -303,9 +397,15 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ stats }) => {
                                     fontSize: "12px",
                                     padding: "8px 12px",
                                 }}
-                                labelStyle={{ color: "#9ca3af", marginBottom: "4px" }}
+                                labelStyle={{
+                                    color: "#9ca3af",
+                                    marginBottom: "4px",
+                                }}
                                 itemStyle={{ color: "#ef5844" }}
-                                formatter={(value: number) => [`${value} clicks`, ""]}
+                                formatter={(value: number) => [
+                                    `${value} clicks`,
+                                    "",
+                                ]}
                             />
                             <Area
                                 type="monotone"
@@ -333,9 +433,9 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ stats }) => {
                     {stats.topLinks.length > 0 ? (
                         <div className="space-y-3">
                             {stats.topLinks.map((link, index) => (
-                                <TopLinkItem 
-                                    key={link.id} 
-                                    link={link} 
+                                <TopLinkItem
+                                    key={link.id}
+                                    link={link}
                                     rank={index + 1}
                                     maxClicks={stats.topLinks[0]?.clicks || 1}
                                 />
@@ -343,7 +443,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ stats }) => {
                         </div>
                     ) : (
                         <div className="text-center py-8 text-neutral-400">
-                            <LinkIcon size={24} className="mx-auto mb-2 opacity-50" />
+                            <LinkIcon
+                                size={24}
+                                className="mx-auto mb-2 opacity-50"
+                            />
                             <p className="text-sm">Sin datos de enlaces aun</p>
                         </div>
                     )}
@@ -361,16 +464,21 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ stats }) => {
                     {stats.linksByType.length > 0 ? (
                         <div className="space-y-3">
                             {stats.linksByType.map((item) => (
-                                <TypeBreakdownItem 
-                                    key={item.type} 
+                                <TypeBreakdownItem
+                                    key={item.type}
                                     item={item}
-                                    maxClicks={stats.linksByType[0]?.clicks || 1}
+                                    maxClicks={
+                                        stats.linksByType[0]?.clicks || 1
+                                    }
                                 />
                             ))}
                         </div>
                     ) : (
                         <div className="text-center py-8 text-neutral-400">
-                            <BarChart3 size={24} className="mx-auto mb-2 opacity-50" />
+                            <BarChart3
+                                size={24}
+                                className="mx-auto mb-2 opacity-50"
+                            />
                             <p className="text-sm">Sin datos de tipos aun</p>
                         </div>
                     )}
@@ -393,13 +501,18 @@ const QuickStat: React.FC<{
             {icon}
             <span className="text-xs font-medium">{label}</span>
         </div>
-        <div className={`text-xl font-bold ${highlight ? "text-green-500" : "text-neutral-900 dark:text-white"}`}>
-            {typeof value === "number" 
-                ? decimals 
-                    ? value.toFixed(1) 
+        <div
+            className={`text-xl font-bold ${
+                highlight
+                    ? "text-green-500"
+                    : "text-neutral-900 dark:text-white"
+            }`}
+        >
+            {typeof value === "number"
+                ? decimals
+                    ? value.toFixed(1)
                     : value.toLocaleString()
-                : value
-            }
+                : value}
         </div>
     </div>
 );
@@ -417,16 +530,18 @@ const TopLinkItem: React.FC<{
     return (
         <div className="group flex items-center gap-3 p-3 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
             {/* Rank */}
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                rank === 1 
-                    ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" 
-                    : "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
-            }`}>
+            <div
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                    rank === 1
+                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                        : "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+                }`}
+            >
                 {rank}
             </div>
 
             {/* Type Icon */}
-            <div 
+            <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center"
                 style={{ backgroundColor: `${config.color}15` }}
             >
@@ -440,11 +555,11 @@ const TopLinkItem: React.FC<{
                 </div>
                 {/* Progress bar */}
                 <div className="mt-1 h-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
-                    <div 
+                    <div
                         className="h-full rounded-full transition-all duration-500"
-                        style={{ 
+                        style={{
                             width: `${percentage}%`,
-                            backgroundColor: config.color 
+                            backgroundColor: config.color,
                         }}
                     />
                 </div>
@@ -481,10 +596,10 @@ const TypeBreakdownItem: React.FC<{
     item: DashboardStats["linksByType"][0];
     maxClicks: number;
 }> = ({ item, maxClicks }) => {
-    const config = BLOCK_TYPE_CONFIG[item.type] || { 
-        icon: LinkIcon, 
-        color: "#6b7280", 
-        label: item.type 
+    const config = BLOCK_TYPE_CONFIG[item.type] || {
+        icon: LinkIcon,
+        color: "#6b7280",
+        label: item.type,
     };
     const percentage = maxClicks > 0 ? (item.clicks / maxClicks) * 100 : 0;
     const IconComponent = config.icon;
@@ -492,7 +607,7 @@ const TypeBreakdownItem: React.FC<{
     return (
         <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
             {/* Type Icon */}
-            <div 
+            <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                 style={{ backgroundColor: `${config.color}15` }}
             >
@@ -511,11 +626,11 @@ const TypeBreakdownItem: React.FC<{
                 </div>
                 {/* Progress bar */}
                 <div className="h-2 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
-                    <div 
+                    <div
                         className="h-full rounded-full transition-all duration-500"
-                        style={{ 
+                        style={{
                             width: `${percentage}%`,
-                            backgroundColor: config.color 
+                            backgroundColor: config.color,
                         }}
                     />
                 </div>
@@ -530,4 +645,3 @@ const TypeBreakdownItem: React.FC<{
         </div>
     );
 };
-

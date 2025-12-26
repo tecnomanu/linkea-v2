@@ -70,7 +70,7 @@ class LandingController extends Controller
     }
 
     /**
-     * Validate username/handle availability.
+     * Validate username/handle availability and format.
      */
     public function validateHandle(Request $request, string $landingId): JsonResponse
     {
@@ -83,6 +83,16 @@ class LandingController extends Controller
             );
         }
 
+        // First validate format (no dots allowed, etc.)
+        $formatValidation = StringHelper::validateHandle($handle);
+        if (!$formatValidation['valid']) {
+            return $this->success([
+                'valid' => false,
+                'message' => $formatValidation['message'],
+            ]);
+        }
+
+        // Then check availability
         $normalizedHandle = StringHelper::normalizeHandle($handle);
         $isAvailable = $this->landingService->isHandleAvailable($normalizedHandle, $landingId);
 

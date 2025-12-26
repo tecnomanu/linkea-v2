@@ -18,152 +18,203 @@ import { BlockType, LinkBlock, UserProfile } from "@/types";
 import { Head, usePage } from "@inertiajs/react";
 import { useEffect, useMemo } from "react";
 
-interface SocialLinkData {
-    id: string;
-    link: string;
-    icon?: { type: string; name: string } | null;
-    state: boolean;
-}
-
+/**
+ * Props from PublicLandingResource
+ */
 interface LandingViewProps {
-    landing: any;
-    links: any[];
-    socialLinks?: SocialLinkData[];
-    storageUrl?: string; // Base URL for S3/storage (e.g., https://linkea.s3.amazonaws.com/)
+    landing: {
+        id: string;
+        name: string;
+        slug: string;
+        domain_name: string | null;
+        verify: boolean;
+        logo: { image: string | null; thumb: string | null } | null;
+        template_config: {
+            title: string;
+            subtitle: string;
+            background: {
+                bgName: string;
+                backgroundColor: string;
+                backgroundImage: string | null; // Already in CSS format: url("...")
+                backgroundEnabled: boolean;
+                backgroundSize: string;
+                backgroundPosition: string;
+                backgroundAttachment: string;
+                backgroundRepeat: string;
+                props?: any;
+                controls?: any;
+            };
+            buttons: {
+                style: string;
+                shape: string;
+                backgroundColor: string;
+                textColor: string;
+                showIcons: boolean;
+                iconAlignment: string;
+            };
+            textColor: string | null;
+            fontPair: string;
+            header: {
+                roundedAvatar: boolean;
+            };
+            showLinkSubtext: boolean;
+        };
+        options: {
+            bio: string;
+        };
+        links: Array<{
+            id: string;
+            title: string;
+            url: string;
+            type: string;
+            isEnabled: boolean;
+            order: number;
+            icon: { type?: string; name?: string } | null;
+            headerSize?: string;
+            showInlinePlayer?: boolean;
+            autoPlay?: boolean;
+            startMuted?: boolean;
+            playerSize?: string;
+            phoneNumber?: string;
+            predefinedMessage?: string;
+            calendarProvider?: string;
+            calendarDisplayMode?: string;
+            emailAddress?: string;
+            emailSubject?: string;
+            emailBody?: string;
+            mapAddress?: string;
+            mapQuery?: string;
+            mapZoom?: number;
+            mapDisplayMode?: string;
+            mapShowAddress?: boolean;
+        }>;
+        socialLinks: Array<{
+            id: string;
+            url: string;
+            icon: { type?: string; name?: string } | null;
+            isEnabled: boolean;
+        }>;
+    };
 }
 
-export default function LandingView({
-    landing,
-    links: serverLinks,
-    socialLinks: serverSocialLinks = [],
-    storageUrl = "",
-}: LandingViewProps) {
+export default function LandingView({ landing }: LandingViewProps) {
     const { appUrl } = usePage<{ appUrl: string }>().props;
-    // Transform social links to common format
-    const socialLinks: SocialLink[] = serverSocialLinks
-        .filter((s) => s.state)
-        .map((s) => ({
-            id: s.id.toString(),
-            url: s.link || "",
-            icon: s.icon as SocialLink["icon"],
-            active: s.state,
-        }));
 
-    // Transform server links to LinkBlock format
-    const links: LinkBlock[] = serverLinks.map((link) => ({
-        id: link.id.toString(),
-        title: link.text,
-        url: link.link,
-        isEnabled: link.state,
-        clicks: link.visited || 0,
+    // Safe access to template_config (guard for any cache/format issues)
+    const templateConfig = landing.template_config || {
+        title: landing.name,
+        subtitle: "",
+        background: {
+            bgName: "custom",
+            backgroundColor: "#ffffff",
+            backgroundImage: null,
+            backgroundEnabled: true,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundAttachment: "scroll",
+            backgroundRepeat: "no-repeat",
+        },
+        buttons: {
+            style: "solid",
+            shape: "rounded",
+            backgroundColor: "#000000",
+            textColor: "#ffffff",
+            showIcons: true,
+            iconAlignment: "left",
+        },
+        textColor: null,
+        fontPair: "modern",
+        header: { roundedAvatar: true },
+        showLinkSubtext: false,
+    };
+
+    const bgConfig = templateConfig.background;
+    const buttons = templateConfig.buttons;
+
+    // Transform links to LinkBlock format
+    const links: LinkBlock[] = (landing.links || []).map((link) => ({
+        id: link.id,
+        title: link.title,
+        url: link.url,
+        isEnabled: link.isEnabled,
+        clicks: 0, // Not exposed in public view
         type: (link.type as BlockType) || "link",
         sparklineData: [],
         icon: link.icon,
-        // Config fields come from the config JSON column
-        headerSize: link.config?.header_size,
-        showInlinePlayer: link.config?.show_inline_player,
-        autoPlay: link.config?.auto_play,
-        startMuted: link.config?.start_muted,
-        playerSize: link.config?.player_size,
-        // WhatsApp
-        phoneNumber: link.config?.phone_number,
-        predefinedMessage: link.config?.predefined_message,
-        // Calendar
-        calendarProvider: link.config?.calendar_provider,
-        calendarDisplayMode: link.config?.calendar_display_mode,
-        // Email
-        emailAddress: link.config?.email_address,
-        emailSubject: link.config?.email_subject,
-        emailBody: link.config?.email_body,
-        // Map
-        mapAddress: link.config?.map_address,
-        mapQuery: link.config?.map_query,
-        mapZoom: link.config?.map_zoom,
-        mapDisplayMode: link.config?.map_display_mode,
-        mapShowAddress: link.config?.map_show_address,
+        headerSize: link.headerSize as LinkBlock["headerSize"],
+        showInlinePlayer: link.showInlinePlayer,
+        autoPlay: link.autoPlay,
+        startMuted: link.startMuted,
+        playerSize: link.playerSize as LinkBlock["playerSize"],
+        phoneNumber: link.phoneNumber,
+        predefinedMessage: link.predefinedMessage,
+        calendarProvider:
+            link.calendarProvider as LinkBlock["calendarProvider"],
+        calendarDisplayMode:
+            link.calendarDisplayMode as LinkBlock["calendarDisplayMode"],
+        emailAddress: link.emailAddress,
+        emailSubject: link.emailSubject,
+        emailBody: link.emailBody,
+        mapAddress: link.mapAddress,
+        mapQuery: link.mapQuery,
+        mapZoom: link.mapZoom,
+        mapDisplayMode: link.mapDisplayMode as LinkBlock["mapDisplayMode"],
+        mapShowAddress: link.mapShowAddress,
     }));
 
-    // Resolve background image - can be string (CSS/SVG) or object {image: 'path'}
-    const resolveBackgroundImageUrl = (
-        bg: string | { image?: string; thumb?: string } | undefined
-    ): string | undefined => {
-        if (!bg) return undefined;
-        if (typeof bg === "string") return bg; // Already CSS string (SVG patterns, gradients)
-        if (typeof bg === "object" && bg.image) {
-            const imagePath = bg.image;
-            // If already absolute URL, use as-is
-            if (imagePath.startsWith("http")) return `url("${imagePath}")`;
-            // Build full S3 URL from relative path
-            if (storageUrl) return `url("${storageUrl}${imagePath}")`;
-            // Fallback: use relative path (won't work without storageUrl)
-            return `url("/${imagePath}")`;
-        }
-        return undefined;
-    };
+    // Transform social links to common format
+    const socialLinks: SocialLink[] = (landing.socialLinks || [])
+        .filter((s) => s.isEnabled)
+        .map((s) => ({
+            id: s.id,
+            url: s.url || "",
+            icon: s.icon as SocialLink["icon"],
+            active: s.isEnabled,
+        }));
 
-    const bgConfig = landing?.template_config?.background;
-
-    // Build user profile from landing data
+    // Build user profile
     const user: UserProfile = {
-        name: landing?.template_config?.title || landing?.name || "Linkea",
-        handle: landing?.slug || landing?.domain_name || "linkea",
-        avatar: landing?.logo?.image || "/images/logo_only.png",
-        bio: landing?.template_config?.subtitle || landing?.options?.bio || "",
-        theme: (bgConfig?.bgName as any) || "custom",
+        name: templateConfig.title || landing.name,
+        handle: landing.slug || landing.domain_name || "linkea",
+        avatar: landing.logo?.image || "/images/logo_only.png",
+        bio: templateConfig.subtitle || landing.options?.bio || "",
+        theme: (bgConfig.bgName as any) || "custom",
         customDesign: {
-            backgroundColor: bgConfig?.backgroundColor || "#ffffff",
-            backgroundImage: resolveBackgroundImageUrl(
-                bgConfig?.backgroundImage
-            ),
-            // Background enabled switch (defaults to true if has image)
-            backgroundEnabled: bgConfig?.backgroundEnabled ?? true,
-            backgroundSize:
-                bgConfig?.backgroundSize || bgConfig?.props?.size || "cover",
-            backgroundPosition:
-                bgConfig?.backgroundPosition ||
-                bgConfig?.props?.position ||
-                "center",
-            backgroundAttachment:
-                bgConfig?.backgroundAttachment ||
-                (bgConfig?.props?.attachment ? "fixed" : "scroll"),
-            backgroundRepeat:
-                bgConfig?.backgroundRepeat ||
-                (bgConfig?.props?.repeat ? "repeat" : "no-repeat"),
-            buttonStyle: landing?.template_config?.buttons?.style || "solid",
-            buttonShape: landing?.template_config?.buttons?.shape || "rounded",
-            buttonColor:
-                landing?.template_config?.buttons?.backgroundColor || "#000000",
-            buttonTextColor:
-                landing?.template_config?.buttons?.textColor || "#ffffff",
-            showButtonIcons:
-                landing?.template_config?.buttons?.showIcons ?? true,
-            buttonIconAlignment:
-                landing?.template_config?.buttons?.iconAlignment || "left",
-            fontPair: landing?.template_config?.fontPair || "modern",
-            // Text color from backend (legacy support) - if not set, will be auto-calculated
-            textColor: landing?.template_config?.textColor || undefined,
-            roundedAvatar:
-                landing?.template_config?.header?.roundedAvatar ??
-                landing?.template_config?.image_rounded ??
-                true,
+            backgroundColor: bgConfig.backgroundColor,
+            backgroundImage: bgConfig.backgroundImage || undefined,
+            backgroundEnabled: bgConfig.backgroundEnabled,
+            backgroundSize: bgConfig.backgroundSize,
+            backgroundPosition: bgConfig.backgroundPosition,
+            backgroundAttachment: bgConfig.backgroundAttachment as
+                | "scroll"
+                | "fixed",
+            backgroundRepeat: bgConfig.backgroundRepeat,
+            buttonStyle:
+                buttons.style as UserProfile["customDesign"]["buttonStyle"],
+            buttonShape:
+                buttons.shape as UserProfile["customDesign"]["buttonShape"],
+            buttonColor: buttons.backgroundColor,
+            buttonTextColor: buttons.textColor,
+            showButtonIcons: buttons.showIcons,
+            buttonIconAlignment: buttons.iconAlignment as "left" | "right",
+            fontPair:
+                templateConfig.fontPair as UserProfile["customDesign"]["fontPair"],
+            textColor: templateConfig.textColor || undefined,
+            roundedAvatar: templateConfig.header?.roundedAvatar ?? true,
         },
-        seoTitle: landing?.options?.title || "",
-        seoDescription: landing?.options?.description || "",
-        isVerified: landing?.verify || false,
-        isLegacy: !!landing?.mongo_id,
+        isVerified: landing.verify,
     };
 
     // SEO data
-    const seoTitle = landing?.options?.title || `${user.name} | Linkea`;
+    const seoTitle = `${user.name} | Linkea`;
     const seoDescription =
-        landing?.options?.description ||
-        `Links de ${user.name} - Creado con Linkea`;
+        user.bio || `Links de ${user.name} - Creado con Linkea`;
     const seoImage = user.avatar?.startsWith("http")
         ? user.avatar
         : `${appUrl}${user.avatar}`;
     const canonicalUrl = `${appUrl}/${user.handle}`;
 
-    // JSON-LD structured data for this profile (includes breadcrumbs)
+    // JSON-LD structured data
     const profileJsonLd = landingFullJsonLd(
         user.name,
         user.handle,
@@ -171,14 +222,6 @@ export default function LandingView({
         seoImage,
         appUrl
     );
-
-    // Tracking IDs (support both new and legacy field names)
-    const googleAnalyticsId =
-        landing?.options?.google_analytics_id ||
-        landing?.options?.analytics?.google_code;
-    const facebookPixelId =
-        landing?.options?.facebook_pixel_id ||
-        landing?.options?.analytics?.facebook_pixel;
 
     // Detect if we need to load iframe APIs
     const hasYoutubeEmbed = useMemo(
@@ -199,6 +242,30 @@ export default function LandingView({
             ),
         [links]
     );
+
+    // Track landing page view (only for human visitors, bot filtering is server-side)
+    useEffect(() => {
+        // Use sendBeacon for reliable tracking even on page unload
+        const trackView = async () => {
+            try {
+                // Small delay to avoid counting quick bounces/redirects
+                await new Promise((resolve) => setTimeout(resolve, 500));
+
+                // Use fetch with keepalive for better reliability
+                fetch(`/api/statistics/landing/view/${landing.id}`, {
+                    method: "POST",
+                    keepalive: true,
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                });
+            } catch {
+                // Silently fail - tracking should not break the page
+            }
+        };
+
+        trackView();
+    }, [landing.id]);
 
     // Load external scripts (YouTube/Spotify iframe APIs, Mautic)
     useEffect(() => {
@@ -295,12 +362,7 @@ export default function LandingView({
 
             {/* Cookie Consent - Only on public pages */}
             <CookieConsent
-                googleAnalyticsIds={
-                    googleAnalyticsId
-                        ? ["G-FH87DE17XF", googleAnalyticsId]
-                        : ["G-FH87DE17XF"]
-                }
-                facebookPixelId={facebookPixelId}
+                googleAnalyticsIds={["G-FH87DE17XF"]}
                 accentColor={user.customDesign.buttonColor}
             />
         </>

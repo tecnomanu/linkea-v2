@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
 use App\Services\AuthService;
 use Illuminate\Http\RedirectResponse;
@@ -57,17 +58,9 @@ class AuthController extends Controller
         return Inertia::render('Auth/Register');
     }
 
-    public function register(Request $request): RedirectResponse
+    public function register(RegisterRequest $request): RedirectResponse
     {
-        $data = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|confirmed|min:8',
-        ]);
-
-        $data['name'] = $data['first_name'] . ' ' . $data['last_name'];
+        $data = $request->toServiceFormat();
         $data['company_id'] = null;
 
         $result = $this->authService->register($data);
@@ -107,9 +100,24 @@ class AuthController extends Controller
             $request->only('email')
         );
 
-        return $status === Password::RESET_LINK_SENT
-            ? back()->with('status', __($status))
-            : back()->withErrors(['email' => __($status)]);
+        if ($status === Password::RESET_LINK_SENT) {
+            return back()->with([
+                'status' => __($status),
+                'throttle_seconds' => 60, // Cooldown after successful send
+            ]);
+        }
+
+        // Check if throttled and get remaining seconds
+        if ($status === Password::RESET_THROTTLED) {
+            $key = 'passwords.' . $request->email;
+            $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($key);
+
+            return back()
+                ->withErrors(['email' => __($status)])
+                ->with('throttle_seconds', $seconds > 0 ? $seconds : 60);
+        }
+
+        return back()->withErrors(['email' => __($status)]);
     }
 
     // =========================================================================

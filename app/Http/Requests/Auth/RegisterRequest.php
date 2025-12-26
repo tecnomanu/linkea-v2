@@ -2,8 +2,13 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Constants\ReservedSlugs;
 use App\Constants\ResponseMessages;
+use App\Models\Landing;
+use App\Rules\ValidHandle;
+use App\Support\Helpers\StringHelper;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class RegisterRequest extends FormRequest
 {
@@ -18,10 +23,8 @@ class RegisterRequest extends FormRequest
             'username' => [
                 'required',
                 'string',
-                'max:255',
-                'min:5',
                 'unique:users',
-                'regex:/^[-a-z0-9_.]+$/',
+                new ValidHandle(), // Centralized validation from StringHelper
             ],
             'email' => [
                 'required',
@@ -36,13 +39,40 @@ class RegisterRequest extends FormRequest
         ];
     }
 
+    /**
+     * Additional validation after standard rules.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $username = StringHelper::normalizeHandle($this->input('username', ''));
+
+            if (empty($username)) {
+                return;
+            }
+
+            // Check reserved slugs
+            if (ReservedSlugs::isReserved($username)) {
+                $validator->errors()->add('username', 'Este nombre de usuario no esta disponible');
+                return;
+            }
+
+            // Check collision with existing landing slugs
+            $existingLanding = Landing::where('slug', $username)
+                ->orWhere('domain_name', $username)
+                ->exists();
+
+            if ($existingLanding) {
+                $validator->errors()->add('username', ResponseMessages::USERNAME_TAKEN);
+            }
+        });
+    }
+
     public function messages(): array
     {
         return [
             'username.required' => ResponseMessages::REQUIRED_FIELD,
-            'username.min' => ResponseMessages::USERNAME_MIN_LENGTH,
             'username.unique' => ResponseMessages::USERNAME_TAKEN,
-            'username.regex' => 'El nombre de usuario solo puede contener letras, numeros, guiones y puntos',
             'email.required' => ResponseMessages::REQUIRED_FIELD,
             'email.email' => ResponseMessages::INVALID_EMAIL,
             'email.unique' => ResponseMessages::EMAIL_TAKEN,
@@ -58,16 +88,17 @@ class RegisterRequest extends FormRequest
     public function toServiceFormat(): array
     {
         $data = $this->validated();
+        $username = StringHelper::normalizeHandle($data['username']);
 
         return [
-            'username' => strtolower($data['username']),
+            'username' => $username,
             'email' => strtolower($data['email']),
             'password' => $data['password'],
-            'first_name' => $data['first_name'] ?? ucfirst($data['username']),
+            'first_name' => $data['first_name'] ?? ucfirst($username),
             'last_name' => $data['last_name'] ?? '',
             'name' => isset($data['first_name'])
                 ? trim($data['first_name'] . ' ' . ($data['last_name'] ?? ''))
-                : ucfirst($data['username']),
+                : ucfirst($username),
         ];
     }
 }

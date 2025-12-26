@@ -20,6 +20,7 @@ class Landing extends Model
         'logo',
         'verify',
         'domain_name',
+        'views',
         'company_id',
         'user_id',
         'template_config',
@@ -52,7 +53,7 @@ class Landing extends Model
                 $logo = is_string($value) ? json_decode($value, true) : $value;
                 return StorageHelper::logoUrls($logo);
             },
-            set: fn ($value) => is_array($value) ? json_encode($value) : $value,
+            set: fn($value) => is_array($value) ? json_encode($value) : $value,
         );
     }
 

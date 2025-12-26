@@ -4,9 +4,18 @@ import { Input } from "@/Components/ui/Input";
 import { Label } from "@/Components/ui/Label";
 import { Textarea } from "@/Components/ui/Textarea";
 import { UserProfile } from "@/types";
+import { sanitizeHandle, validateHandle } from "@/utils/handle";
 import { usePage } from "@inertiajs/react";
-import { AtSign, BarChart3, Check, Globe, Lock, Search } from "lucide-react";
-import React from "react";
+import {
+    AlertCircle,
+    AtSign,
+    BarChart3,
+    Check,
+    Globe,
+    Lock,
+    Search,
+} from "lucide-react";
+import React, { useCallback, useMemo } from "react";
 
 interface SettingsTabProps {
     user: UserProfile;
@@ -22,6 +31,21 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
     const handleName = user.handle.startsWith("@")
         ? user.handle.substring(1)
         : user.handle;
+
+    // Handle change with sanitization
+    const handleHandleChange = useCallback(
+        (value: string) => {
+            onUpdateUser({ handle: `@${sanitizeHandle(value)}` });
+        },
+        [onUpdateUser]
+    );
+
+    // Validate handle format
+    const handleValidation = useMemo(() => {
+        const result = validateHandle(handleName);
+        // Override message when valid to show "Disponible" instead of "Formato valido"
+        return result.valid ? { valid: true, message: "Disponible" } : result;
+    }, [handleName]);
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
@@ -39,19 +63,31 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                         <Label htmlFor="username">Nombre de usuario</Label>
                         <div className="relative">
                             {/* Validation icon inside input */}
-                            <div className="absolute top-1/2 -translate-y-1/2 left-4 text-green-500">
-                                <Check size={18} strokeWidth={3} />
+                            <div
+                                className={`absolute top-1/2 -translate-y-1/2 left-4 ${
+                                    handleValidation.valid
+                                        ? "text-green-500"
+                                        : "text-amber-500"
+                                }`}
+                            >
+                                {handleValidation.valid ? (
+                                    <Check size={18} strokeWidth={3} />
+                                ) : (
+                                    <AlertCircle size={18} />
+                                )}
                             </div>
                             <input
                                 id="username"
                                 type="text"
                                 value={handleName}
                                 onChange={(e) =>
-                                    onUpdateUser({
-                                        handle: `@${e.target.value}`,
-                                    })
+                                    handleHandleChange(e.target.value)
                                 }
-                                className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl pl-11 pr-4 py-3 font-bold text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all placeholder-neutral-300 dark:placeholder-neutral-600"
+                                className={`w-full bg-white dark:bg-neutral-900 border rounded-xl pl-11 pr-4 py-3 font-bold text-neutral-900 dark:text-white focus:outline-none focus:ring-2 transition-all placeholder-neutral-300 dark:placeholder-neutral-600 ${
+                                    handleValidation.valid
+                                        ? "border-neutral-200 dark:border-neutral-700 focus:ring-brand-500/20 focus:border-brand-500"
+                                        : "border-amber-300 dark:border-amber-700 focus:ring-amber-500/20 focus:border-amber-500"
+                                }`}
                                 placeholder="username"
                             />
                         </div>
@@ -63,8 +99,14 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                                     {handleName}
                                 </span>
                             </p>
-                            <p className="text-xs font-bold text-green-600 dark:text-green-400 flex items-center gap-1">
-                                Disponible
+                            <p
+                                className={`text-xs font-bold flex items-center gap-1 ${
+                                    handleValidation.valid
+                                        ? "text-green-600 dark:text-green-400"
+                                        : "text-amber-600 dark:text-amber-400"
+                                }`}
+                            >
+                                {handleValidation.message}
                             </p>
                         </div>
                     </div>

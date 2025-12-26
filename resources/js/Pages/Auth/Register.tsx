@@ -2,10 +2,18 @@ import { AuthDivider, SocialLoginButtons } from "@/Components/Auth";
 import { Button } from "@/Components/ui/Button";
 import { Input } from "@/Components/ui/Input";
 import AuthLayout from "@/Layouts/AuthLayout";
-import { Link, useForm } from "@inertiajs/react";
-import { FormEventHandler } from "react";
+import { sanitizeHandle } from "@/utils/handle";
+import { Link, useForm, usePage } from "@inertiajs/react";
+import { FormEventHandler, useMemo } from "react";
+
+interface PageProps {
+    appUrl?: string;
+    [key: string]: unknown;
+}
 
 export default function Register() {
+    const { appUrl } = usePage<PageProps>().props;
+
     const { data, setData, post, processing, errors, reset } = useForm({
         first_name: "",
         last_name: "",
@@ -15,9 +23,19 @@ export default function Register() {
         password_confirmation: "",
     });
 
+    const handleUsernameChange = (value: string) => {
+        setData("username", sanitizeHandle(value));
+    };
+
+    // Generate preview URL
+    const previewUrl = useMemo(() => {
+        const baseUrl = appUrl?.replace(/^https?:\/\//, "") || "linkea.ar";
+        return `${baseUrl}/${data.username || "tu-linkea"}`;
+    }, [appUrl, data.username]);
+
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        post(route("register"), {
+        post(route("register") as string, {
             onFinish: () => reset("password", "password_confirmation"),
         });
     };
@@ -52,15 +70,52 @@ export default function Register() {
                     error={errors.email}
                 />
 
-                <Input
-                    id="username"
-                    type="text"
-                    label="Nombre de tu linkea"
-                    placeholder="tu-linkea"
-                    value={data.username}
-                    onChange={(e) => setData("username", e.target.value)}
-                    error={errors.username}
-                />
+                {/* Username with linkea.ar/ prefix */}
+                <div className="space-y-1.5">
+                    <label
+                        htmlFor="username"
+                        className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                    >
+                        Tu Linkea
+                    </label>
+                    <div className="flex items-stretch">
+                        <span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-sm font-medium">
+                            linkea.ar/
+                        </span>
+                        <input
+                            id="username"
+                            type="text"
+                            placeholder="tu-linkea"
+                            value={data.username}
+                            onChange={(e) =>
+                                handleUsernameChange(e.target.value)
+                            }
+                            className={`flex-1 px-4 py-3 rounded-r-xl border text-sm transition-colors
+                                ${
+                                    errors.username
+                                        ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                                        : "border-neutral-300 dark:border-neutral-600 focus:border-brand-500 focus:ring-brand-500/20"
+                                }
+                                bg-white dark:bg-neutral-900 
+                                text-neutral-900 dark:text-white 
+                                placeholder:text-neutral-400
+                                focus:outline-none focus:ring-2`}
+                        />
+                    </div>
+                    {errors.username && (
+                        <p className="text-sm text-red-500 mt-1">
+                            {errors.username}
+                        </p>
+                    )}
+                    {data.username && !errors.username && (
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                            Tu perfil estara en:{" "}
+                            <span className="font-medium text-brand-500">
+                                {previewUrl}
+                            </span>
+                        </p>
+                    )}
+                </div>
 
                 <div className="grid grid-cols-2 gap-3">
                     <Input
@@ -128,7 +183,7 @@ export default function Register() {
             <div className="mt-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
                 Ya tenes una cuenta?{" "}
                 <Link
-                    href={route("login")}
+                    href={route("login") as string}
                     className="text-brand-500 hover:text-brand-600 font-semibold transition-colors"
                 >
                     Ingresa

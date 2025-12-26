@@ -2,22 +2,22 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
-use App\Constants\UserRoles;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\RoleResource;
-use App\Models\Role;
 use App\Models\User;
+use App\Services\RoleService;
 use App\Traits\HasApiResponse;
-use App\Traits\RESTActions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class RolesController extends Controller
 {
-    use RESTActions, HasApiResponse;
+    use HasApiResponse;
 
-    const MODEL = Role::class;
+    public function __construct(
+        protected RoleService $roleService
+    ) {}
 
     /**
      * Get paginated roles with filtering based on user permissions.
@@ -31,27 +31,7 @@ class RolesController extends Controller
             return $this->unauthorized();
         }
 
-        $perPage = (int) $request->get('per_page', 10);
-        $order = $request->get('order', 'desc');
-        $orderBy = $request->get('order_by', 'id');
-        $search = $request->get('q');
-
-        $query = Role::query()
-            ->orderBy($orderBy, $order)
-            ->when(!$user->hasRole(UserRoles::ROOT), function ($query) use ($user) {
-                $query->where('type', '!=', UserRoles::ROOT);
-                if ($user->hasRole(UserRoles::USER)) {
-                    $query->where('type', '!=', UserRoles::ADMIN);
-                }
-            })
-            ->when($search, function ($query) use ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('type', 'like', "%{$search}%");
-                });
-            });
-
-        $roles = $query->paginate($perPage);
+        $roles = $this->roleService->getPaginatedForUser($user, $request);
 
         return $this->success([
             'data' => RoleResource::collection($roles),
@@ -62,6 +42,72 @@ class RolesController extends Controller
                 'total' => $roles->total(),
             ],
         ]);
+    }
+
+    /**
+     * Get single role.
+     */
+    public function get(string $id): JsonResponse
+    {
+        $role = $this->roleService->find($id);
+
+        if (!$role) {
+            return $this->notFound();
+        }
+
+        return $this->success(new RoleResource($role));
+    }
+
+    /**
+     * Create new role.
+     */
+    public function add(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'type' => 'required|string|max:50',
+        ]);
+
+        $role = $this->roleService->create($data);
+
+        return $this->created(new RoleResource($role));
+    }
+
+    /**
+     * Update role.
+     */
+    public function put(Request $request, string $id): JsonResponse
+    {
+        $role = $this->roleService->find($id);
+
+        if (!$role) {
+            return $this->notFound();
+        }
+
+        $data = $request->validate([
+            'name' => 'nullable|string|max:255',
+            'type' => 'nullable|string|max:50',
+        ]);
+
+        $updated = $this->roleService->update($role, array_filter($data));
+
+        return $this->success(new RoleResource($updated));
+    }
+
+    /**
+     * Delete role.
+     */
+    public function remove(string $id): JsonResponse
+    {
+        $role = $this->roleService->find($id);
+
+        if (!$role) {
+            return $this->notFound();
+        }
+
+        $this->roleService->delete($role);
+
+        return $this->success(null, 'Role eliminado');
     }
 }
 

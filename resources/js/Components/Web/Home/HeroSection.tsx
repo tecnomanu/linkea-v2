@@ -287,11 +287,11 @@ export default function HeroSection({
                         <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-end gap-4 mb-6">
                             <Link
                                 href="/auth/register"
-                                className="inline-flex items-center gap-2 px-8 py-4 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl text-lg font-bold shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
+                                className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl text-base sm:text-lg font-bold shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
                             >
-                                <Zap size={20} />
+                                <Zap className="w-5 h-5 sm:w-[20px] sm:h-[20px]" />
                                 CREA TU LINKEA GRATIS
-                                <ArrowRight size={20} />
+                                <ArrowRight className="w-5 h-5 sm:w-[20px] sm:h-[20px]" />
                             </Link>
                         </div>
 

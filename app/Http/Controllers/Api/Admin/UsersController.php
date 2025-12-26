@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\UserService;
 use App\Traits\HasApiResponse;
 use App\Traits\RESTActions;
 use Illuminate\Http\JsonResponse;
@@ -15,6 +16,10 @@ class UsersController extends Controller
     use RESTActions, HasApiResponse;
 
     const MODEL = User::class;
+
+    public function __construct(
+        protected UserService $userService
+    ) {}
 
     /**
      * Get all users paginated.

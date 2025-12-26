@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\PublicLandingResource;
 use App\Models\Landing;
-use App\Support\Helpers\StorageHelper;
+use App\Services\LandingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
 use Inertia\Inertia;
 
 class SystemRouterController extends Controller
 {
+    public function __construct(
+        protected LandingService $landingService
+    ) {}
+
     public function health()
     {
         return response("UP");
@@ -21,13 +26,13 @@ class SystemRouterController extends Controller
     public function llmContext()
     {
         $filePath = public_path('llm.txt');
-        
+
         if (file_exists($filePath)) {
             return response()->file($filePath, [
                 'Content-Type' => 'text/plain; charset=UTF-8',
             ]);
         }
-        
+
         return response("# Linkea.ar - No llm.txt found", 404)
             ->header('Content-Type', 'text/plain');
     }
@@ -39,10 +44,12 @@ class SystemRouterController extends Controller
 
     public function sitemap()
     {
-        $landings = Landing::all();
+        $landings = $this->landingService->getAllVerified();
+
         $contents = View::make('sitemap', [
             'landings' => $landings,
         ]);
+
         return response($contents)->header('Content-Type', 'text/xml');
     }
 
@@ -51,31 +58,19 @@ class SystemRouterController extends Controller
         $path = $slug ?? $request->path();
         if ($path === '/') $path = '';
 
-        // Try to find landing by domain_name or slug
-        $landing = Landing::where("domain_name", $path)
-            ->orWhere("slug", $path)
-            ->with(["links" => function ($query) {
-                $query->where('state', true)->orderBy('order');
-            }])
-            ->first();
+        $landing = $this->landingService->findBySlugOrDomainWithLinks($path);
 
         if ($landing) {
-            // Get social links separately
-            $socialLinks = $landing->socials()->where('state', true)->orderBy('order')->get();
-
-            // Render with Inertia for React component
             return Inertia::render('LandingView', [
-                'landing' => $landing,
-                'links' => $landing->links,
-                'socialLinks' => $socialLinks,
-                'storageUrl' => StorageHelper::baseUrl(),
+                'landing' => (new PublicLandingResource($landing))->resolve(),
             ]);
-        } else {
-            // Fallback to Angular app if exists
-            if (file_exists(public_path('index.html'))) {
-                return response()->file(public_path('index.html'));
-            }
-            return abort(404, 'Landing not found');
         }
+
+        // Fallback to Angular app if exists
+        if (file_exists(public_path('index.html'))) {
+            return response()->file(public_path('index.html'));
+        }
+
+        return abort(404, 'Landing not found');
     }
 }

@@ -1,4 +1,3 @@
-import { router } from "@inertiajs/react";
 import {
     ChevronDown,
     ChevronLeft,
@@ -9,7 +8,7 @@ import {
     Search,
     X,
 } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 
 interface Column<T> {
     key: string;
@@ -86,10 +85,13 @@ export function DataTable<T extends { id: string }>({
     const perPageOptions = [10, 25, 50, 100];
 
     return (
-        <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+        <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800">
             {/* Header with search and per page */}
-            <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                <form onSubmit={handleSearch} className="relative flex-1 max-w-sm">
+            <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between rounded-t-xl">
+                <form
+                    onSubmit={handleSearch}
+                    className="relative flex-1 max-w-sm"
+                >
                     <Search
                         size={16}
                         className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
@@ -118,7 +120,9 @@ export function DataTable<T extends { id: string }>({
                     </span>
                     <select
                         value={perPage}
-                        onChange={(e) => onPerPageChange?.(Number(e.target.value))}
+                        onChange={(e) =>
+                            onPerPageChange?.(Number(e.target.value))
+                        }
                         className="px-2 py-1.5 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20"
                     >
                         {perPageOptions.map((option) => (
@@ -142,15 +146,19 @@ export function DataTable<T extends { id: string }>({
                                 <th
                                     key={column.key}
                                     className={`px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider ${
-                                        column.sortable ? "cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300" : ""
+                                        column.sortable
+                                            ? "cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300"
+                                            : ""
                                     } ${column.className || ""}`}
                                     onClick={() =>
-                                        column.sortable && handleSort(column.key)
+                                        column.sortable &&
+                                        handleSort(column.key)
                                     }
                                 >
                                     <div className="flex items-center gap-1">
                                         {column.label}
-                                        {column.sortable && renderSortIcon(column.key)}
+                                        {column.sortable &&
+                                            renderSortIcon(column.key)}
                                     </div>
                                 </th>
                             ))}
@@ -214,7 +222,7 @@ export function DataTable<T extends { id: string }>({
             </div>
 
             {/* Pagination */}
-            <div className="p-4 border-t border-neutral-200 dark:border-neutral-800 flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div className="p-4 border-t border-neutral-200 dark:border-neutral-800 flex flex-col sm:flex-row gap-4 items-center justify-between rounded-b-xl">
                 <div className="text-sm text-neutral-500 dark:text-neutral-400">
                     Mostrando{" "}
                     <span className="font-medium text-neutral-900 dark:text-white">
@@ -248,31 +256,34 @@ export function DataTable<T extends { id: string }>({
                     </button>
 
                     <div className="flex items-center gap-1 px-2">
-                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                            let pageNum;
-                            if (totalPages <= 5) {
-                                pageNum = i + 1;
-                            } else if (currentPage <= 3) {
-                                pageNum = i + 1;
-                            } else if (currentPage >= totalPages - 2) {
-                                pageNum = totalPages - 4 + i;
-                            } else {
-                                pageNum = currentPage - 2 + i;
+                        {Array.from(
+                            { length: Math.min(5, totalPages) },
+                            (_, i) => {
+                                let pageNum;
+                                if (totalPages <= 5) {
+                                    pageNum = i + 1;
+                                } else if (currentPage <= 3) {
+                                    pageNum = i + 1;
+                                } else if (currentPage >= totalPages - 2) {
+                                    pageNum = totalPages - 4 + i;
+                                } else {
+                                    pageNum = currentPage - 2 + i;
+                                }
+                                return (
+                                    <button
+                                        key={pageNum}
+                                        onClick={() => onPageChange?.(pageNum)}
+                                        className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                                            currentPage === pageNum
+                                                ? "bg-red-500 text-white"
+                                                : "hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300"
+                                        }`}
+                                    >
+                                        {pageNum}
+                                    </button>
+                                );
                             }
-                            return (
-                                <button
-                                    key={pageNum}
-                                    onClick={() => onPageChange?.(pageNum)}
-                                    className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                                        currentPage === pageNum
-                                            ? "bg-red-500 text-white"
-                                            : "hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300"
-                                    }`}
-                                >
-                                    {pageNum}
-                                </button>
-                            );
-                        })}
+                        )}
                     </div>
 
                     <button
@@ -294,4 +305,3 @@ export function DataTable<T extends { id: string }>({
         </div>
     );
 }
-

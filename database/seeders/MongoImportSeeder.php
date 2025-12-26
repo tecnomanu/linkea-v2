@@ -58,6 +58,7 @@ class MongoImportSeeder extends Seeder
     private function createRoles(): void
     {
         $roles = [
+            ['name' => 'Root', 'type' => 'root'],
             ['name' => 'Admin', 'type' => 'admin'],
             ['name' => 'User', 'type' => 'user'],
         ];
@@ -65,6 +66,9 @@ class MongoImportSeeder extends Seeder
         foreach ($roles as $role) {
             $created = Role::firstOrCreate(['type' => $role['type']], $role);
             // Map common role names
+            if ($role['type'] === 'root') {
+                $this->idMap['roles']['root'] = $created->id;
+            }
             if ($role['type'] === 'admin') {
                 $this->idMap['roles']['60e60c8632bff4267d1c4792'] = $created->id;
             }
@@ -85,6 +89,7 @@ class MongoImportSeeder extends Seeder
         $count = 0;
         $userRole = Role::where('type', 'user')->first();
         $adminRole = Role::where('type', 'admin')->first();
+        $rootRole = Role::where('type', 'root')->first();
 
         foreach ($users as $userData) {
             $mongoId = $userData['_id'];
@@ -125,11 +130,18 @@ class MongoImportSeeder extends Seeder
                     'updated_at' => $this->parseDate($userData['updated_at'] ?? null),
                 ]);
 
-                // Assign role
-                $isAdmin = $userData['username'] === 'root_linkea' ||
-                    (isset($userData['role_id']) && in_array('60e60c8632bff4267d1c4792', (array)$userData['role_id']));
+                // Assign role: root_linkea gets root, admins get admin, others get user
+                $isRoot = $userData['username'] === 'root_linkea';
+                $isAdmin = !$isRoot && isset($userData['role_id']) &&
+                    in_array('60e60c8632bff4267d1c4792', (array)$userData['role_id']);
 
-                $user->roles()->attach($isAdmin ? $adminRole->id : $userRole->id);
+                if ($isRoot) {
+                    $user->roles()->attach($rootRole->id);
+                } elseif ($isAdmin) {
+                    $user->roles()->attach($adminRole->id);
+                } else {
+                    $user->roles()->attach($userRole->id);
+                }
 
                 $this->idMap['users'][$mongoId] = $user->id;
                 $count++;
@@ -233,8 +245,8 @@ class MongoImportSeeder extends Seeder
                 }
             }
 
-            // Sanitize domain_name for URL routing
-            $domainName = $this->sanitizeSlug($landingData['domain_name'] ?? $landingData['slug'] ?? '');
+            // Keep domain_name as-is from MongoDB (preserves legacy slugs like "mambar_.s")
+            $domainName = strtolower(trim($landingData['domain_name'] ?? $landingData['slug'] ?? ''));
             if (empty($domainName)) {
                 $domainName = 'landing-' . substr($mongoId, -8);
             }
@@ -255,9 +267,12 @@ class MongoImportSeeder extends Seeder
             }
 
             try {
+                // Keep slug as-is from MongoDB (preserves legacy slugs)
+                $slug = strtolower(trim($landingData['slug'] ?? $domainName));
+
                 $landing = Landing::create([
                     'name' => $landingData['name'] ?? $domainName,
-                    'slug' => $this->sanitizeSlug($landingData['slug'] ?? $domainName),
+                    'slug' => $slug,
                     'domain_name' => $domainName,
                     'logo' => $logo,
                     'verify' => $landingData['verify'] ?? false,
@@ -419,12 +434,13 @@ class MongoImportSeeder extends Seeder
 
     /**
      * Sanitize slug/domain_name.
+     * Allows dots (.) for compatibility with legacy slugs like "mambar_.s"
      */
     private function sanitizeSlug(string $slug): string
     {
-        // Lowercase, remove special chars except hyphens
+        // Lowercase, remove special chars except hyphens, underscores and dots
         $slug = strtolower(trim($slug));
-        $slug = preg_replace('/[^a-z0-9_-]/', '', $slug);
+        $slug = preg_replace('/[^a-z0-9_.-]/', '', $slug);
         $slug = preg_replace('/-+/', '-', $slug); // Remove multiple hyphens
         $slug = trim($slug, '-');
 
