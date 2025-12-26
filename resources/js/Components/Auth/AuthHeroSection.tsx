@@ -1,8 +1,29 @@
-import { Instagram, Youtube, Music } from "lucide-react";
+import {
+    Instagram,
+    Youtube,
+    Music,
+    Link as LinkIcon,
+    MapPin,
+    Mail,
+    ShoppingBag,
+    Calendar,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface AuthHeroSectionProps {
     variant?: "login" | "register" | "default";
 }
+
+// Icons for the rotating block preview
+const BLOCK_ICONS = [
+    { icon: LinkIcon, color: "#3b82f6" },
+    { icon: Youtube, color: "#ef4444" },
+    { icon: Music, color: "#22c55e" },
+    { icon: MapPin, color: "#f43f5e" },
+    { icon: Mail, color: "#6366f1" },
+    { icon: ShoppingBag, color: "#f59e0b" },
+    { icon: Calendar, color: "#8b5cf6" },
+];
 
 /**
  * Decorative hero section for auth pages
@@ -60,7 +81,9 @@ export function AuthHeroSection({ variant = "default" }: AuthHeroSectionProps) {
                     {/* Floating card element */}
                     <div className="absolute -left-8 top-1/3 bg-white rounded-2xl shadow-2xl p-4 animate-float">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-brand-400 to-brand-600 rounded-full" />
+                            <div className="w-10 h-10 bg-gradient-to-br from-brand-400 to-brand-600 rounded-full flex items-center justify-center">
+                                <LinkIcon className="w-5 h-5 text-white" />
+                            </div>
                             <div>
                                 <div className="h-2 w-20 bg-neutral-200 rounded-full" />
                                 <div className="h-2 w-14 bg-neutral-100 rounded-full mt-1" />
@@ -68,14 +91,8 @@ export function AuthHeroSection({ variant = "default" }: AuthHeroSectionProps) {
                         </div>
                     </div>
 
-                    {/* Phone preview element */}
-                    <div className="absolute -right-4 bottom-1/4 bg-white rounded-xl shadow-2xl p-3 animate-float-delayed">
-                        <img
-                            src="/assets/images/linkea-cellphone-perspective.webp"
-                            alt="Preview del celular"
-                            className="w-24 h-auto"
-                        />
-                    </div>
+                    {/* Rotating block preview */}
+                    <RotatingBlockPreview />
                 </div>
 
                 {/* Bottom tagline */}
@@ -106,6 +123,41 @@ function FloatingIcon({
             style={{ animationDelay: delay }}
         >
             {icon}
+        </div>
+    );
+}
+
+// Rotating block preview that cycles through different block types
+function RotatingBlockPreview() {
+    const [currentIndex, setCurrentIndex] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentIndex((prev) => (prev + 1) % BLOCK_ICONS.length);
+        }, 2000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const current = BLOCK_ICONS[currentIndex];
+    const Icon = current.icon;
+
+    return (
+        <div className="absolute -right-4 bottom-1/4 bg-white rounded-xl shadow-2xl p-4 animate-float-delayed">
+            <div className="flex items-center gap-3">
+                <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors duration-500"
+                    style={{ backgroundColor: `${current.color}20` }}
+                >
+                    <Icon
+                        className="w-5 h-5 transition-colors duration-500"
+                        style={{ color: current.color }}
+                    />
+                </div>
+                <div>
+                    <div className="h-2 w-16 bg-neutral-200 rounded-full" />
+                    <div className="h-2 w-10 bg-neutral-100 rounded-full mt-1" />
+                </div>
+            </div>
         </div>
     );
 }

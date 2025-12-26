@@ -1,5 +1,5 @@
 import { Button } from "@/Components/ui/Button";
-import { Input } from "@/Components/ui/Input";
+import { OtpInput } from "@/Components/ui/OtpInput";
 import AuthLayout from "@/Layouts/AuthLayout";
 import { Link, useForm, router } from "@inertiajs/react";
 import { FormEventHandler, useState } from "react";
@@ -45,23 +45,25 @@ export default function VerifyEmail({ status }: Props) {
                 </div>
             )}
 
-            <form onSubmit={submit} className="space-y-5">
-                <Input
-                    id="code"
-                    type="text"
-                    label="Codigo de verificacion"
-                    placeholder="123456"
+            <form onSubmit={submit} className="space-y-6">
+                <div className="space-y-3">
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 text-center">
+                        Codigo de verificacion
+                    </label>
+                    <OtpInput
+                        length={6}
                     value={data.code}
-                    onChange={(e) => setData("code", e.target.value)}
+                        onChange={(value) => setData("code", value)}
                     autoFocus
                     error={errors.code}
-                    className="text-center text-2xl tracking-widest"
-                    maxLength={6}
+                        disabled={processing}
                 />
+                </div>
 
                 <Button
                     className="w-full py-6 text-base rounded-xl font-bold"
                     isLoading={processing}
+                    disabled={data.code.length !== 6 || processing}
                 >
                     Verificar mi cuenta
                 </Button>

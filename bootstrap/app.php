@@ -33,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register named middleware aliases
         $middleware->alias([
             'root' => \App\Http\Middleware\EnsureUserIsRoot::class,
+            'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
         ]);
 
         // Configure auth middleware to redirect to /auth/login

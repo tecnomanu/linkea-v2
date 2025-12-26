@@ -45,6 +45,11 @@ class AppServiceProvider extends ServiceProvider
      */
     private function configureHttpsAndUrls(): void
     {
+        // Never force HTTPS in local/development environments
+        if ($this->app->environment(['local', 'development', 'testing'])) {
+            return;
+        }
+
         // Force HTTPS in production/staging or when behind HTTPS proxy
         if (
             $this->app->environment(['production', 'staging']) ||

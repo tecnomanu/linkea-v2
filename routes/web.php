@@ -42,7 +42,7 @@ Route::get('/llm.txt', [SystemRouterController::class, 'llmContext'])->name('llm
  * =======================================================================
  */
 
-Route::middleware(['auth'])->prefix('panel')->group(function () {
+Route::middleware(['auth', 'verified'])->prefix('panel')->group(function () {
     // Dashboard/Overview
     Route::get('/', [PanelController::class, 'index'])->name('panel');
 

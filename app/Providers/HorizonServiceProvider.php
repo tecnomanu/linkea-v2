@@ -34,8 +34,8 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
                 return true;
             }
 
-            // Check if user is superadmin
-            if ($user && $user->hasRole(UserRoles::SUPERADMIN)) {
+            // Check if user is root/admin
+            if ($user && $user->hasRole(UserRoles::ROOT)) {
                 return true;
             }
 

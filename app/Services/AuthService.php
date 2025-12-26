@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Constants\ReservedSlugs;
+use App\Constants\ResponseMessages;
 use App\Constants\UserRoles;
 use App\Jobs\Mautic\AddToMautic;
 use App\Jobs\Mautic\SetVerifyMautic;
@@ -12,6 +14,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Notifications\VerifyUserCode;
 use App\Repositories\Contracts\UserRepository;
+use App\Support\Helpers\StringHelper;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -271,5 +274,64 @@ class AuthService
     protected function generateVerificationCode(): int
     {
         return rand(100000, 999999);
+    }
+
+    /**
+     * Check if username is available for registration.
+     *
+     * @return array{available: bool, message: string}
+     */
+    public function checkUsernameAvailability(string $username): array
+    {
+        if (empty($username)) {
+            return [
+                'available' => false,
+                'message' => 'El nombre de usuario es requerido',
+            ];
+        }
+
+        // Validate format first
+        $formatValidation = StringHelper::validateHandle($username);
+        if (!$formatValidation['valid']) {
+            return [
+                'available' => false,
+                'message' => $formatValidation['message'],
+            ];
+        }
+
+        $normalizedUsername = StringHelper::normalizeHandle($username);
+
+        // Check reserved slugs
+        if (ReservedSlugs::isReserved($normalizedUsername)) {
+            return [
+                'available' => false,
+                'message' => 'Este nombre de usuario no esta disponible',
+            ];
+        }
+
+        // Check if username exists in users table
+        if (User::where('username', $normalizedUsername)->exists()) {
+            return [
+                'available' => false,
+                'message' => ResponseMessages::USERNAME_TAKEN,
+            ];
+        }
+
+        // Check collision with existing landing slugs
+        $existsInLandings = Landing::where('slug', $normalizedUsername)
+            ->orWhere('domain_name', $normalizedUsername)
+            ->exists();
+
+        if ($existsInLandings) {
+            return [
+                'available' => false,
+                'message' => ResponseMessages::USERNAME_TAKEN,
+            ];
+        }
+
+        return [
+            'available' => true,
+            'message' => 'Nombre de usuario disponible',
+        ];
     }
 }

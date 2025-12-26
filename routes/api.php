@@ -60,6 +60,10 @@ Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
+    // Username validation (public - for registration form)
+    Route::post('/check-username', [AuthController::class, 'checkUsername'])
+        ->name('api.auth.check-username');
+
     // Password Reset
     Route::post('/request-password', [AuthController::class, 'requestPassword']);
     Route::put('/reset-password', [AuthController::class, 'resetPassword']);
@@ -85,7 +89,7 @@ Route::prefix('auth')->group(function () {
  * These endpoints are used by the auto-save system and other panel features.
  * Uses 'web' guard since users are authenticated via session (Inertia).
  */
-Route::prefix('panel')->middleware(['web', 'auth'])->group(function () {
+Route::prefix('panel')->middleware(['web', 'auth', 'verified'])->group(function () {
     // Links Management
     Route::post('/links/{landingId}', [LinkController::class, 'saveLinks'])
         ->name('api.panel.links.save');

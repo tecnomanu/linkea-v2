@@ -28,7 +28,7 @@ class RegisterRequest extends FormRequest
             ],
             'email' => [
                 'required',
-                'email:rfc,dns',
+                'email:rfc,dns',  // Validates format and checks if domain exists
                 'max:255',
                 'unique:users',
             ],
@@ -74,7 +74,7 @@ class RegisterRequest extends FormRequest
             'username.required' => ResponseMessages::REQUIRED_FIELD,
             'username.unique' => ResponseMessages::USERNAME_TAKEN,
             'email.required' => ResponseMessages::REQUIRED_FIELD,
-            'email.email' => ResponseMessages::INVALID_EMAIL,
+            'email.email' => 'Este email no parece real. Verifica que este bien escrito.',
             'email.unique' => ResponseMessages::EMAIL_TAKEN,
             'password.required' => ResponseMessages::REQUIRED_FIELD,
             'password.min' => ResponseMessages::PASSWORD_MIN_LENGTH,

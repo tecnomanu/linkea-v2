@@ -102,4 +102,17 @@ class AuthController extends Controller
 
         return $this->success(null, ResponseMessages::LOGOUT_SUCCESS);
     }
+
+    /**
+     * Check username availability for registration form.
+     * Public endpoint - no auth required.
+     */
+    public function checkUsername(Request $request): JsonResponse
+    {
+        $result = $this->authService->checkUsernameAvailability(
+            $request->input('username', '')
+        );
+
+        return $this->success($result);
+    }
 }

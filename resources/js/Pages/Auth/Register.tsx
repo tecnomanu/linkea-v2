@@ -4,12 +4,15 @@ import { Input } from "@/Components/ui/Input";
 import AuthLayout from "@/Layouts/AuthLayout";
 import { sanitizeHandle } from "@/utils/handle";
 import { Link, useForm, usePage } from "@inertiajs/react";
-import { FormEventHandler, useMemo } from "react";
+import { Check, X, Loader2 } from "lucide-react";
+import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface PageProps {
     appUrl?: string;
     [key: string]: unknown;
 }
+
+type UsernameStatus = "idle" | "checking" | "available" | "taken" | "invalid";
 
 export default function Register() {
     const { appUrl } = usePage<PageProps>().props;
@@ -23,15 +26,98 @@ export default function Register() {
         password_confirmation: "",
     });
 
+    // Username validation state
+    const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle");
+    const [usernameMessage, setUsernameMessage] = useState<string>("");
+    const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Check username availability with debounce
+    const checkUsername = useCallback(async (username: string) => {
+        if (username.length < 3) {
+            setUsernameStatus("idle");
+            setUsernameMessage("");
+            return;
+        }
+
+        setUsernameStatus("checking");
+
+        try {
+            const response = await fetch("/api/auth/check-username", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                body: JSON.stringify({ username }),
+            });
+
+            const result = await response.json();
+
+            if (result.data?.available) {
+                setUsernameStatus("available");
+                setUsernameMessage(result.data.message);
+            } else {
+                setUsernameStatus(result.data?.message?.includes("caracteres") ? "invalid" : "taken");
+                setUsernameMessage(result.data?.message || "No disponible");
+            }
+        } catch {
+            setUsernameStatus("idle");
+            setUsernameMessage("");
+        }
+    }, []);
+
     const handleUsernameChange = (value: string) => {
-        setData("username", sanitizeHandle(value));
+        const sanitized = sanitizeHandle(value);
+        setData("username", sanitized);
+
+        // Reset status while typing
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+        }
+
+        if (sanitized.length < 3) {
+            setUsernameStatus("idle");
+            setUsernameMessage("");
+            return;
+        }
+
+        setUsernameStatus("checking");
+
+        // Debounce the API call
+        debounceRef.current = setTimeout(() => {
+            checkUsername(sanitized);
+        }, 500);
     };
+
+    // Cleanup debounce on unmount
+    useEffect(() => {
+        return () => {
+            if (debounceRef.current) {
+                clearTimeout(debounceRef.current);
+            }
+        };
+    }, []);
 
     // Generate preview URL
     const previewUrl = useMemo(() => {
         const baseUrl = appUrl?.replace(/^https?:\/\//, "") || "linkea.ar";
         return `${baseUrl}/${data.username || "tu-linkea"}`;
     }, [appUrl, data.username]);
+
+    // Check if form is valid and can be submitted
+    const canSubmit = useMemo(() => {
+        const hasRequiredFields = 
+            data.email.trim() !== "" &&
+            data.username.trim() !== "" &&
+            data.password.trim() !== "" &&
+            data.password_confirmation.trim() !== "";
+        
+        const isUsernameValid = usernameStatus === "available";
+        const passwordsMatch = data.password === data.password_confirmation;
+        const passwordLongEnough = data.password.length >= 8;
+
+        return hasRequiredFields && isUsernameValid && passwordsMatch && passwordLongEnough;
+    }, [data, usernameStatus]);
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -78,7 +164,7 @@ export default function Register() {
                     >
                         Tu Linkea
                     </label>
-                    <div className="flex items-stretch">
+                    <div className="flex items-stretch relative">
                         <span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-sm font-medium">
                             linkea.ar/
                         </span>
@@ -90,10 +176,12 @@ export default function Register() {
                             onChange={(e) =>
                                 handleUsernameChange(e.target.value)
                             }
-                            className={`flex-1 px-4 py-3 rounded-r-xl border text-sm transition-colors
+                            className={`flex-1 px-4 py-3 pr-10 rounded-r-xl border text-sm transition-colors
                                 ${
-                                    errors.username
+                                    errors.username || usernameStatus === "taken" || usernameStatus === "invalid"
                                         ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                                        : usernameStatus === "available"
+                                        ? "border-green-500 focus:border-green-500 focus:ring-green-500/20"
                                         : "border-neutral-300 dark:border-neutral-600 focus:border-brand-500 focus:ring-brand-500/20"
                                 }
                                 bg-white dark:bg-neutral-900 
@@ -101,13 +189,40 @@ export default function Register() {
                                 placeholder:text-neutral-400
                                 focus:outline-none focus:ring-2`}
                         />
+                        {/* Status indicator */}
+                        {data.username.length >= 3 && (
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                {usernameStatus === "checking" && (
+                                    <Loader2 size={18} className="text-neutral-400 animate-spin" />
+                                )}
+                                {usernameStatus === "available" && (
+                                    <Check size={18} className="text-green-500" />
+                                )}
+                                {(usernameStatus === "taken" || usernameStatus === "invalid") && (
+                                    <X size={18} className="text-red-500" />
+                                )}
+                            </div>
+                        )}
                     </div>
                     {errors.username && (
                         <p className="text-sm text-red-500 mt-1">
                             {errors.username}
                         </p>
                     )}
-                    {data.username && !errors.username && (
+                    {!errors.username && usernameMessage && (usernameStatus === "taken" || usernameStatus === "invalid") && (
+                        <p className="text-sm text-red-500 mt-1">
+                            {usernameMessage}
+                        </p>
+                    )}
+                    {data.username && !errors.username && usernameStatus === "available" && (
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                            Tu perfil estara en:{" "}
+                            <span className="font-medium text-green-500">
+                                {previewUrl}
+                            </span>
+                        </p>
+                    )}
+                    {data.username && !errors.username && usernameStatus !== "available" && usernameStatus !== "taken" && usernameStatus !== "invalid" && (
                         <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                             Tu perfil estara en:{" "}
                             <span className="font-medium text-brand-500">
@@ -164,6 +279,7 @@ export default function Register() {
                 <Button
                     className="w-full py-6 text-base rounded-xl font-bold"
                     isLoading={processing}
+                    disabled={!canSubmit || processing}
                 >
                     Crear cuenta
                 </Button>
