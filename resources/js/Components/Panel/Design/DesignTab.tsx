@@ -1,9 +1,8 @@
 import { ImageUploader } from "@/Components/Shared/ImageUploader";
 import { ColorPicker } from "@/Components/ui/ColorPicker";
-import { Input } from "@/Components/ui/Input";
 import { PositionSelector } from "@/Components/ui/PositionSelector";
-import { Textarea } from "@/Components/ui/Textarea";
 import { Toggle } from "@/Components/ui/Toggle";
+import { ToggleInput, ToggleTextarea } from "@/Components/ui/ToggleInput";
 import { getThemePreset, THEME_PRESETS } from "@/constants/themePresets";
 import {
     ButtonShape,
@@ -395,56 +394,33 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                             />
                         </div>
 
-                        {/* Name Input with Toggle */}
-                        <div className="flex items-center gap-3">
-                            <div className="flex-1">
-                                <Input
-                                    id="landing-name"
-                                    type="text"
-                                    value={user.name}
-                                    onChange={(e) =>
-                                        onUpdateUser({ name: e.target.value })
-                                    }
-                                    placeholder="Titulo de tu landing"
-                                    className="font-bold"
-                                    disabled={user.showTitle === false}
-                                />
-                            </div>
-                            <Toggle
-                                checked={user.showTitle !== false}
-                                onChange={(checked) =>
-                                    onUpdateUser({ showTitle: checked })
-                                }
-                                size="sm"
-                                title="Mostrar titulo"
-                            />
-                        </div>
+                        {/* Name Input with integrated Toggle */}
+                        <ToggleInput
+                            id="landing-name"
+                            value={user.name}
+                            onChange={(value) => onUpdateUser({ name: value })}
+                            enabled={user.showTitle !== false}
+                            onEnabledChange={(enabled) =>
+                                onUpdateUser({ showTitle: enabled })
+                            }
+                            placeholder="Titulo de tu landing"
+                            toggleTitle="Mostrar titulo"
+                            className="font-bold"
+                        />
 
-                        {/* Bio Input with Toggle */}
-                        <div className="flex items-start gap-3">
-                            <div className="flex-1">
-                                <Textarea
-                                    id="landing-bio"
-                                    value={user.bio}
-                                    onChange={(e) =>
-                                        onUpdateUser({ bio: e.target.value })
-                                    }
-                                    rows={2}
-                                    placeholder="Subtitulo o descripcion breve"
-                                    disabled={user.showBio === false}
-                                />
-                            </div>
-                            <div className="pt-3">
-                                <Toggle
-                                    checked={user.showBio !== false}
-                                    onChange={(checked) =>
-                                        onUpdateUser({ showBio: checked })
-                                    }
-                                    size="sm"
-                                    title="Mostrar subtitulo"
-                                />
-                            </div>
-                        </div>
+                        {/* Bio Input with integrated Toggle */}
+                        <ToggleTextarea
+                            id="landing-bio"
+                            value={user.bio}
+                            onChange={(value) => onUpdateUser({ bio: value })}
+                            enabled={user.showBio !== false}
+                            onEnabledChange={(enabled) =>
+                                onUpdateUser({ showBio: enabled })
+                            }
+                            rows={2}
+                            placeholder="Subtitulo o descripcion breve"
+                            toggleTitle="Mostrar subtitulo"
+                        />
                     </div>
                 </div>
             </section>
