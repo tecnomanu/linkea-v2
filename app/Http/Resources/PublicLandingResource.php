@@ -28,14 +28,14 @@ class PublicLandingResource extends JsonResource
         // Meta/SEO fields with fallback chain
         // New structure: options.meta.* with legacy fallback to options.*
         $meta = $options['meta'] ?? [];
-        
+
         // seoTitle: meta.title → options.title (legacy) → template_config.title → domain_name
         $seoTitle = trim($meta['title'] ?? $options['title'] ?? '') ?: $displayTitle;
-        
+
         // seoDescription: meta.description → options.description (legacy) → subtitle → generated
-        $seoDescription = trim($meta['description'] ?? $options['description'] ?? '') 
+        $seoDescription = trim($meta['description'] ?? $options['description'] ?? '')
             ?: ($displaySubtitle ?: "Links de {$displayTitle} - Creado con Linkea");
-        
+
         // seoImage: meta.image → logo (fallback to user's logo for OG image)
         $logo = StorageHelper::logoUrls($this->logo);
         $seoImage = $meta['image'] ?? $logo['image'] ?? null;

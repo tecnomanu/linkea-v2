@@ -279,10 +279,14 @@ class MongoImportSeeder extends Seeder
                 $templateConfig = $this->processLegacyTemplateConfig($landingData['template_config'] ?? []);
 
                 // Process options with new meta structure
-                $options = $this->processLegacyOptions($landingData['options'] ?? []);
+                // Pass landingData['name'] as fallback for SEO title if not set
+                $options = $this->processLegacyOptions(
+                    $landingData['options'] ?? [],
+                    $landingData['name'] ?? null
+                );
 
                 $landing = Landing::create([
-                    'name' => $landingData['name'] ?? $domainName, // Internal name
+                    'name' => $domainName, // Use domain_name as name (internal, not displayed)
                     'slug' => $slug,
                     'domain_name' => $domainName,
                     'logo' => $logo,
@@ -564,11 +568,15 @@ class MongoImportSeeder extends Seeder
      *
      * Legacy: { title: '...', description: '...', analytics: {...} }
      * New:    { meta: { title: '...', description: '...', image: null }, analytics: {...} }
+     *
+     * @param array $options Legacy options array
+     * @param string|null $landingName Landing name as fallback for SEO title
      */
-    private function processLegacyOptions(array $options): array
+    private function processLegacyOptions(array $options, ?string $landingName = null): array
     {
         // Extract SEO fields from legacy flat structure
-        $seoTitle = $options['title'] ?? null;
+        // Use landingData['name'] as fallback for SEO title if not set
+        $seoTitle = $options['title'] ?? $landingName;
         $seoDescription = $options['description'] ?? null;
 
         // Remove legacy flat fields
