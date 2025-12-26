@@ -23,7 +23,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({ user }) => {
 
     return (
         <Menu as="div" className="relative">
-            <MenuButton className="flex items-center justify-center rounded-full hover:ring-2 hover:ring-brand-500/50 transition-all">
+            <MenuButton className="flex items-center justify-center w-10 h-10 rounded-full hover:ring-2 hover:ring-brand-500/50 transition-all">
                 <UserAvatar
                     avatar={user?.avatar}
                     name={user?.name}

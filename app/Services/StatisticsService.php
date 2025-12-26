@@ -283,9 +283,11 @@ class StatisticsService
             ->values()
             ->toArray();
 
-        // Links breakdown by type
+        // Links breakdown by type (only clickable types)
+        $nonClickableTypes = ['header'];
         $linksByType = $links
             ->where('state', true)
+            ->whereNotIn('type', $nonClickableTypes)
             ->groupBy('type')
             ->map(function ($group, $type) {
                 return [

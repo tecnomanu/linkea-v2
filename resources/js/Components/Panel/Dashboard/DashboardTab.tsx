@@ -205,6 +205,8 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ stats }) => {
 
     // Filter chart data based on period
     const filteredChartData = stats.chartData.slice(-chartPeriod);
+    const filteredViewChartData =
+        stats.viewChartData?.slice(-chartPeriod) || [];
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6 pb-8 xl:pb-32">
@@ -219,7 +221,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ stats }) => {
                             <Users size={20} className="text-brand-500" />
                         </div>
                         {stats.viewsThisWeek > 0 && (
-                            <span className="text-xs font-medium px-2 py-1 rounded-lg flex items-center gap-1 text-purple-400 bg-purple-900/30">
+                            <span className="text-xs font-medium px-2 py-1 rounded-lg flex items-center gap-1 text-green-400 bg-green-900/30">
                                 +{formatNumber(stats.viewsThisWeek)} esta semana
                             </span>
                         )}
@@ -295,7 +297,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ stats }) => {
             </div>
 
             {/* Secondary Stats Row */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 <QuickStat
                     label="Views hoy"
                     value={stats.viewsToday}
@@ -305,6 +307,11 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ stats }) => {
                     label="Clicks hoy"
                     value={stats.clicksToday}
                     icon={<MousePointer2 size={14} />}
+                />
+                <QuickStat
+                    label="Views esta semana"
+                    value={stats.viewsThisWeek}
+                    icon={<Users size={14} />}
                 />
                 <QuickStat
                     label="Enlaces activos"
@@ -319,103 +326,203 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ stats }) => {
                 />
             </div>
 
-            {/* Main Chart */}
-            <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                    <div>
-                        <h3 className="font-bold text-lg text-neutral-900 dark:text-white">
-                            Actividad de Clicks
-                        </h3>
-                        <p className="text-sm text-neutral-500">
-                            Rendimiento de los ultimos {chartPeriod} dias
-                        </p>
+            {/* Charts Row - Views and Clicks */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Views Chart */}
+                <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h3 className="font-bold text-lg text-neutral-900 dark:text-white">
+                                Views
+                            </h3>
+                            <p className="text-sm text-neutral-500">
+                                Visitas ultimos {chartPeriod} dias
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-2xl font-bold text-neutral-900 dark:text-white">
+                                {formatNumber(stats.viewsThisMonth)}
+                            </span>
+                            <span className="text-xs text-neutral-400">
+                                este mes
+                            </span>
+                        </div>
                     </div>
-                    <div className="flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-lg p-1">
-                        {PERIOD_OPTIONS.map((opt) => (
-                            <Button
-                                key={opt.value}
-                                variant={
-                                    chartPeriod === opt.value
-                                        ? "primary"
-                                        : "ghost"
-                                }
-                                size="sm"
-                                onClick={() => setChartPeriod(opt.value)}
-                                className={
-                                    chartPeriod === opt.value
-                                        ? ""
-                                        : "text-neutral-500"
-                                }
-                            >
-                                {opt.label}
-                            </Button>
-                        ))}
+
+                    <div className="h-48">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={filteredViewChartData}>
+                                <defs>
+                                    <linearGradient
+                                        id="colorViews"
+                                        x1="0"
+                                        y1="0"
+                                        x2="0"
+                                        y2="1"
+                                    >
+                                        <stop
+                                            offset="5%"
+                                            stopColor="#8b5cf6"
+                                            stopOpacity={0.3}
+                                        />
+                                        <stop
+                                            offset="95%"
+                                            stopColor="#8b5cf6"
+                                            stopOpacity={0}
+                                        />
+                                    </linearGradient>
+                                </defs>
+                                <XAxis
+                                    dataKey="date"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fontSize: 10, fill: "#9ca3af" }}
+                                    interval="preserveStartEnd"
+                                />
+                                <YAxis
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fontSize: 10, fill: "#9ca3af" }}
+                                    width={30}
+                                />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: "#1f2937",
+                                        border: "none",
+                                        borderRadius: "12px",
+                                        fontSize: "12px",
+                                        padding: "8px 12px",
+                                    }}
+                                    labelStyle={{
+                                        color: "#9ca3af",
+                                        marginBottom: "4px",
+                                    }}
+                                    itemStyle={{ color: "#8b5cf6" }}
+                                    formatter={(value) => [
+                                        `${value ?? 0} views`,
+                                        "",
+                                    ]}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="views"
+                                    stroke="#8b5cf6"
+                                    strokeWidth={2}
+                                    fill="url(#colorViews)"
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
                     </div>
                 </div>
 
-                <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={filteredChartData}>
-                            <defs>
-                                <linearGradient
-                                    id="colorClicks"
-                                    x1="0"
-                                    y1="0"
-                                    x2="0"
-                                    y2="1"
-                                >
-                                    <stop
-                                        offset="5%"
-                                        stopColor="#ef5844"
-                                        stopOpacity={0.3}
-                                    />
-                                    <stop
-                                        offset="95%"
-                                        stopColor="#ef5844"
-                                        stopOpacity={0}
-                                    />
-                                </linearGradient>
-                            </defs>
-                            <XAxis
-                                dataKey="date"
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 11, fill: "#9ca3af" }}
-                                interval="preserveStartEnd"
-                            />
-                            <YAxis
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 11, fill: "#9ca3af" }}
-                                width={40}
-                            />
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: "#1f2937",
-                                    border: "none",
-                                    borderRadius: "12px",
-                                    fontSize: "12px",
-                                    padding: "8px 12px",
-                                }}
-                                labelStyle={{
-                                    color: "#9ca3af",
-                                    marginBottom: "4px",
-                                }}
-                                itemStyle={{ color: "#ef5844" }}
-                                formatter={(value: number) => [
-                                    `${value} clicks`,
-                                    "",
-                                ]}
-                            />
-                            <Area
-                                type="monotone"
-                                dataKey="clicks"
-                                stroke="#ef5844"
-                                strokeWidth={2}
-                                fill="url(#colorClicks)"
-                            />
-                        </AreaChart>
-                    </ResponsiveContainer>
+                {/* Clicks Chart */}
+                <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h3 className="font-bold text-lg text-neutral-900 dark:text-white">
+                                Clicks
+                            </h3>
+                            <p className="text-sm text-neutral-500">
+                                Clicks ultimos {chartPeriod} dias
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-2xl font-bold text-neutral-900 dark:text-white">
+                                {formatNumber(stats.clicksThisMonth)}
+                            </span>
+                            <span className="text-xs text-neutral-400">
+                                este mes
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="h-48">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={filteredChartData}>
+                                <defs>
+                                    <linearGradient
+                                        id="colorClicks"
+                                        x1="0"
+                                        y1="0"
+                                        x2="0"
+                                        y2="1"
+                                    >
+                                        <stop
+                                            offset="5%"
+                                            stopColor="#ef5844"
+                                            stopOpacity={0.3}
+                                        />
+                                        <stop
+                                            offset="95%"
+                                            stopColor="#ef5844"
+                                            stopOpacity={0}
+                                        />
+                                    </linearGradient>
+                                </defs>
+                                <XAxis
+                                    dataKey="date"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fontSize: 10, fill: "#9ca3af" }}
+                                    interval="preserveStartEnd"
+                                />
+                                <YAxis
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fontSize: 10, fill: "#9ca3af" }}
+                                    width={30}
+                                />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: "#1f2937",
+                                        border: "none",
+                                        borderRadius: "12px",
+                                        fontSize: "12px",
+                                        padding: "8px 12px",
+                                    }}
+                                    labelStyle={{
+                                        color: "#9ca3af",
+                                        marginBottom: "4px",
+                                    }}
+                                    itemStyle={{ color: "#ef5844" }}
+                                    formatter={(value) => [
+                                        `${value ?? 0} clicks`,
+                                        "",
+                                    ]}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="clicks"
+                                    stroke="#ef5844"
+                                    strokeWidth={2}
+                                    fill="url(#colorClicks)"
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+
+            {/* Period Selector */}
+            <div className="flex justify-center">
+                <div className="inline-flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-lg p-1">
+                    {PERIOD_OPTIONS.map((opt) => (
+                        <Button
+                            key={opt.value}
+                            variant={
+                                chartPeriod === opt.value ? "primary" : "ghost"
+                            }
+                            size="sm"
+                            onClick={() => setChartPeriod(opt.value)}
+                            className={
+                                chartPeriod === opt.value
+                                    ? ""
+                                    : "text-neutral-500"
+                            }
+                        >
+                            {opt.label}
+                        </Button>
+                    ))}
                 </div>
             </div>
 
