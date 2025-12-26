@@ -28,6 +28,7 @@ class PublicLandingResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'seoTitle' => $seoTitle, // For browser tab <title>
+            'seoDescription' => $options['description'] ?? null, // For meta description
             'slug' => $this->slug,
             'domain_name' => $this->domain_name,
             'verify' => (bool) $this->verify,

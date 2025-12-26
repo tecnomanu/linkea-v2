@@ -26,6 +26,7 @@ interface LandingViewProps {
         id: string;
         name: string;
         seoTitle: string; // For browser tab title (from options.title)
+        seoDescription?: string | null; // For meta description (from options.description)
         slug: string;
         domain_name: string | null;
         verify: boolean;
@@ -224,10 +225,11 @@ export default function LandingView({ landing }: LandingViewProps) {
         isVerified: landing.verify,
     };
 
-    // SEO data - use seoTitle from backend (options.title) for browser tab
+    // SEO data - use seoTitle/seoDescription from backend (options.title/description)
+    // Fallback to subtitle/generated text for legacy imports without SEO fields
     const seoTitle = `${landing.seoTitle || user.title} | Linkea`;
     const seoDescription =
-        user.subtitle || `Links de ${user.title} - Creado con Linkea`;
+        landing.seoDescription || user.subtitle || `Links de ${user.title} - Creado con Linkea`;
     const seoImage = user.avatar?.startsWith("http")
         ? user.avatar
         : `${appUrl}${user.avatar}`;
