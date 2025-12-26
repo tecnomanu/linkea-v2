@@ -14,10 +14,11 @@ class SaveDesignRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'nullable|string|max:100',
-            'bio' => 'nullable|string|max:500',
+            // Title & Subtitle (stored in template_config)
+            'title' => 'nullable|string|max:100',
+            'subtitle' => 'nullable|string|max:500',
             'showTitle' => 'nullable|boolean', // Toggle to show/hide title
-            'showBio' => 'nullable|boolean', // Toggle to show/hide bio
+            'showSubtitle' => 'nullable|boolean', // Toggle to show/hide subtitle
             'avatar' => 'nullable|string', // Can be base64 image (large)
             'theme' => 'nullable|string|max:50',
             'customDesign' => 'nullable|array',
@@ -116,39 +117,43 @@ class SaveDesignRequest extends FormRequest
             $buttonsConfig['iconAlignment'] = $customDesign['buttonIconAlignment'];
         }
 
-        // Build options, filtering nulls but preserving booleans
-        $options = array_filter([
-            'bio' => $data['bio'] ?? null,
-        ], fn($v) => $v !== null);
+        // Build template_config with title, subtitle and their visibility toggles
+        $templateConfig = [
+            'background' => $backgroundConfig,
+            'buttons' => $buttonsConfig,
+            'fontPair' => $customDesign['fontPair'] ?? 'modern',
+            // Text color for page content (legacy support)
+            'textColor' => $customDesign['textColor'] ?? null,
+            // Show link URLs/subtexts under button titles
+            'showLinkSubtext' => $customDesign['showLinkSubtext'] ?? false,
+            'header' => [
+                'roundedAvatar' => $customDesign['roundedAvatar'] ?? true,
+                'avatarFloating' => $customDesign['avatarFloating'] ?? true,
+            ],
+            // Saved custom themes (max 2 slots)
+            'savedCustomThemes' => $data['savedCustomThemes'] ?? null,
+            // Last custom design backup for restore
+            'lastCustomDesign' => $data['lastCustomDesign'] ?? null,
+        ];
 
-        // Add boolean fields explicitly
-        if (array_key_exists('showTitle', $data)) {
-            $options['show_title'] = (bool) $data['showTitle'];
+        // Add title & subtitle to template_config (only if provided)
+        if (array_key_exists('title', $data)) {
+            $templateConfig['title'] = $data['title'];
         }
-        if (array_key_exists('showBio', $data)) {
-            $options['show_bio'] = (bool) $data['showBio'];
+        if (array_key_exists('subtitle', $data)) {
+            $templateConfig['subtitle'] = $data['subtitle'];
+        }
+        
+        // Add visibility toggles to template_config
+        if (array_key_exists('showTitle', $data)) {
+            $templateConfig['showTitle'] = (bool) $data['showTitle'];
+        }
+        if (array_key_exists('showSubtitle', $data)) {
+            $templateConfig['showSubtitle'] = (bool) $data['showSubtitle'];
         }
 
         $result = [
-            'name' => $data['name'] ?? null,
-            'options' => $options,
-            'template_config' => [
-                'background' => $backgroundConfig,
-                'buttons' => $buttonsConfig,
-                'fontPair' => $customDesign['fontPair'] ?? 'modern',
-                // Text color for page content (legacy support)
-                'textColor' => $customDesign['textColor'] ?? null,
-                // Show link URLs/subtexts under button titles
-                'showLinkSubtext' => $customDesign['showLinkSubtext'] ?? false,
-                'header' => [
-                    'roundedAvatar' => $customDesign['roundedAvatar'] ?? true,
-                    'avatarFloating' => $customDesign['avatarFloating'] ?? true,
-                ],
-                // Saved custom themes (max 2 slots)
-                'savedCustomThemes' => $data['savedCustomThemes'] ?? null,
-                // Last custom design backup for restore
-                'lastCustomDesign' => $data['lastCustomDesign'] ?? null,
-            ],
+            'template_config' => $templateConfig,
         ];
 
         // Handle avatar - only include logo if avatar is explicitly provided

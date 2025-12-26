@@ -139,14 +139,16 @@ export interface LinkBlock {
 }
 
 export interface UserProfile {
+    // Internal name (not displayed)
     name: string;
     handle: string;
     avatar: string;
-    bio: string;
-
-    // Header visibility toggles
+    
+    // Title & Subtitle (displayed on page, from template_config)
+    title: string;
+    subtitle: string;
     showTitle?: boolean; // Show/hide title (default: true)
-    showBio?: boolean; // Show/hide bio/subtitle (default: true)
+    showSubtitle?: boolean; // Show/hide subtitle (default: true)
 
     // Design Configuration
     // Can be preset ID or 'custom' or saved theme ID (saved_1, saved_2)

@@ -9,16 +9,23 @@ class LandingResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $templateConfig = $this->template_config ?? [];
+        
         return [
             'id' => $this->id,
+            // Internal name (not displayed publicly)
             'name' => $this->name,
             'slug' => $this->slug,
-            'handle' => '@' . $this->slug,
+            'handle' => '@' . ($this->domain_name ?? $this->slug),
             'logo' => $this->logo,
             'avatar' => $this->logo['image'] ?? null,
-            'bio' => $this->options['bio'] ?? '',
-            'showTitle' => $this->options['show_title'] ?? true,
-            'showBio' => $this->options['show_bio'] ?? true,
+            
+            // Title & Subtitle from template_config (displayed on page)
+            'title' => $templateConfig['title'] ?? $this->domain_name,
+            'subtitle' => $templateConfig['subtitle'] ?? '',
+            'showTitle' => $templateConfig['showTitle'] ?? true,
+            'showSubtitle' => $templateConfig['showSubtitle'] ?? true,
+            
             'domain_name' => $this->domain_name,
             'verify' => (bool) $this->verify,
             

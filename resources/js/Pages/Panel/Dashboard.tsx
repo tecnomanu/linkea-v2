@@ -110,15 +110,9 @@ export default function Dashboard({
     }));
 
     // Serialize server user/landing to frontend UserProfile format
-    // Use template_config.title/subtitle for display, fallback to name only if not set
-    const displayName =
-        landing?.template_config?.title !== undefined
-            ? landing.template_config.title
-            : landing?.name || "";
-    const displayBio =
-        landing?.template_config?.subtitle !== undefined
-            ? landing.template_config.subtitle
-            : landing?.options?.bio ?? "";
+    // Title and subtitle come from template_config (as in legacy)
+    const displayTitle = landing?.template_config?.title ?? landing?.domain_name ?? "";
+    const displaySubtitle = landing?.template_config?.subtitle ?? "";
 
     // Determine if background image should be enabled (default true if image exists)
     const bgImage = landing?.template_config?.background?.backgroundImage;
@@ -133,11 +127,14 @@ export default function Dashboard({
         hasBackgroundImage;
 
     const initialUser: UserProfile = {
-        name: displayName,
-        handle: landing?.slug || auth.user.username,
+        name: landing?.name || "", // Internal name (not displayed)
+        handle: landing?.domain_name || landing?.slug || auth.user.username,
         avatar:
             landing?.logo?.image || auth.user.avatar || "/images/logo_only.png",
-        bio: displayBio,
+        title: displayTitle,
+        subtitle: displaySubtitle,
+        showTitle: landing?.template_config?.showTitle ?? true,
+        showSubtitle: landing?.template_config?.showSubtitle ?? true,
 
         theme:
             (landing?.template_config?.background?.bgName as any) || "custom",
@@ -373,8 +370,10 @@ export default function Dashboard({
     // Transform design/user data to API format
     const designPayload = useMemo(
         () => ({
-            name: user.name,
-            bio: user.bio,
+            title: user.title,
+            subtitle: user.subtitle,
+            showTitle: user.showTitle,
+            showSubtitle: user.showSubtitle,
             avatar: user.avatar,
             theme: user.theme,
             customDesign: {
@@ -386,8 +385,10 @@ export default function Dashboard({
             lastCustomDesign: user.lastCustomDesign,
         }),
         [
-            user.name,
-            user.bio,
+            user.title,
+            user.subtitle,
+            user.showTitle,
+            user.showSubtitle,
             user.avatar,
             user.theme,
             user.customDesign,

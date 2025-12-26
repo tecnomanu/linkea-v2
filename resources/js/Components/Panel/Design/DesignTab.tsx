@@ -394,11 +394,11 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                             />
                         </div>
 
-                        {/* Name Input with integrated Toggle */}
+                        {/* Title Input with integrated Toggle */}
                         <ToggleInput
-                            id="landing-name"
-                            value={user.name}
-                            onChange={(value) => onUpdateUser({ name: value })}
+                            id="landing-title"
+                            value={user.title}
+                            onChange={(value) => onUpdateUser({ title: value })}
                             enabled={user.showTitle !== false}
                             onEnabledChange={(enabled) =>
                                 onUpdateUser({ showTitle: enabled })
@@ -408,14 +408,14 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                             className="font-bold"
                         />
 
-                        {/* Bio Input with integrated Toggle */}
+                        {/* Subtitle Input with integrated Toggle */}
                         <ToggleTextarea
-                            id="landing-bio"
-                            value={user.bio}
-                            onChange={(value) => onUpdateUser({ bio: value })}
-                            enabled={user.showBio !== false}
+                            id="landing-subtitle"
+                            value={user.subtitle}
+                            onChange={(value) => onUpdateUser({ subtitle: value })}
+                            enabled={user.showSubtitle !== false}
                             onEnabledChange={(enabled) =>
-                                onUpdateUser({ showBio: enabled })
+                                onUpdateUser({ showSubtitle: enabled })
                             }
                             rows={2}
                             placeholder="Subtitulo o descripcion breve"

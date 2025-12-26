@@ -193,7 +193,7 @@ class MongoImportSeeder extends Seeder
 
             try {
                 $slug = $this->sanitizeSlug($companyData['slug'] ?? Str::slug($companyData['name'] ?? 'company'));
-                
+
                 $company = Company::updateOrCreate(
                     ['slug' => $slug],
                     [
@@ -275,36 +275,19 @@ class MongoImportSeeder extends Seeder
                 $slug = $this->sanitizeSlugForUrl($landingData['slug'] ?? $domainName);
 
                 // Process template_config with legacy defaults
+                // Keep template_config.title and template_config.subtitle as-is (this is the correct structure)
                 $templateConfig = $this->processLegacyTemplateConfig($landingData['template_config'] ?? []);
 
-                // Migrate legacy fields to unified structure:
-                // - template_config.title -> name (if not empty)
-                // - template_config.subtitle -> options.bio (if not empty)
-                $legacyTitle = $templateConfig['title'] ?? '';
-                $legacySubtitle = $templateConfig['subtitle'] ?? '';
-                
-                // Use legacy title if not empty, otherwise use name field
-                $finalName = !empty(trim($legacyTitle)) ? $legacyTitle : ($landingData['name'] ?? $domainName);
-                
-                // Build options with bio from legacy subtitle (if not already set)
-                $options = $landingData['options'] ?? [];
-                if (empty($options['bio']) && !empty(trim($legacySubtitle))) {
-                    $options['bio'] = $legacySubtitle;
-                }
-                
-                // Remove legacy title/subtitle from template_config (now in name/options.bio)
-                unset($templateConfig['title'], $templateConfig['subtitle']);
-
                 $landing = Landing::create([
-                    'name' => $finalName,
+                    'name' => $landingData['name'] ?? $domainName, // Internal name
                     'slug' => $slug,
                     'domain_name' => $domainName,
                     'logo' => $logo,
                     'verify' => $landingData['verify'] ?? false,
                     'company_id' => $companyId,
                     'user_id' => $userId,
-                    'template_config' => $templateConfig,
-                    'options' => $options,
+                    'template_config' => $templateConfig, // Contains title & subtitle
+                    'options' => $landingData['options'] ?? [],
                     'mongo_id' => $mongoId,
                     'created_at' => $this->parseDate($landingData['created_at'] ?? null),
                     'updated_at' => $this->parseDate($landingData['updated_at'] ?? null),

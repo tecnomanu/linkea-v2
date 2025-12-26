@@ -37,9 +37,11 @@ class PublicLandingResource extends JsonResource
 
             // Template config for rendering (displayed on page)
             'template_config' => [
-                // Title and subtitle now come from main fields (not legacy template_config)
-                'title' => $this->name,
-                'subtitle' => $options['bio'] ?? '',
+                // Title & Subtitle from template_config (as in legacy)
+                'title' => $templateConfig['title'] ?? $this->domain_name,
+                'subtitle' => $templateConfig['subtitle'] ?? '',
+                'showTitle' => $templateConfig['showTitle'] ?? true,
+                'showSubtitle' => $templateConfig['showSubtitle'] ?? true,
                 'background' => [
                     'bgName' => $bgConfig['bgName'] ?? 'custom',
                     'backgroundColor' => $bgConfig['backgroundColor'] ?? '#ffffff',
@@ -73,14 +75,9 @@ class PublicLandingResource extends JsonResource
                 'showLinkSubtext' => $templateConfig['showLinkSubtext'] ?? false,
             ],
 
-            // Options (only public ones)
-            'options' => [
-                'bio' => $options['bio'] ?? '',
-            ],
-
-            // Header visibility toggles
-            'showTitle' => $options['show_title'] ?? true,
-            'showBio' => $options['show_bio'] ?? true,
+            // Header visibility toggles (from template_config)
+            'showTitle' => $templateConfig['showTitle'] ?? true,
+            'showSubtitle' => $templateConfig['showSubtitle'] ?? true,
 
             // Privacy flag for noindex
             'isPrivate' => (bool) ($options['is_private'] ?? false),

@@ -393,7 +393,7 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                 <div className="relative mb-4 group cursor-pointer">
                     <img
                         src={user.avatar}
-                        alt={user.name}
+                        alt={user.title || user.handle}
                         className={`relative w-28 h-28 object-cover transition-all duration-300 ${
                             design.roundedAvatar !== false
                                 ? "rounded-full"
@@ -448,7 +448,7 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                     </button>
                 </div>
                 {/* Title - displayed after handle badge (only if enabled and has content) */}
-                {user.showTitle !== false && user.name && (
+                {user.showTitle !== false && user.title && (
                     <h2
                         className={`text-2xl font-bold mb-1 tracking-tight ${
                             isThemePreset ? baseTextColor : ""
@@ -457,11 +457,11 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                             !isThemePreset ? { color: computedTextColors.text } : {}
                         }
                     >
-                        {user.name}
+                        {user.title}
                     </h2>
                 )}
                 {/* Subtitle - displayed after title (only if enabled and has content) */}
-                {user.showBio !== false && user.bio && (
+                {user.showSubtitle !== false && user.subtitle && (
                     <p
                         className={`text-sm max-w-[280px] leading-relaxed ${
                             isThemePreset ? subTextColor : ""
@@ -472,7 +472,7 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                                 : {}
                         }
                     >
-                        {user.bio}
+                        {user.subtitle}
                     </p>
                 )}
 

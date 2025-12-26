@@ -30,12 +30,12 @@ interface LandingViewProps {
         domain_name: string | null;
         verify: boolean;
         isPrivate?: boolean; // Hide from search engines
-        showTitle?: boolean; // Show/hide title in header
-        showBio?: boolean; // Show/hide bio in header
         logo: { image: string | null; thumb: string | null } | null;
         template_config: {
-            title: string | null; // Displayed on page (may be null or invalid like ' .')
+            title: string; // Displayed on page
             subtitle: string;
+            showTitle?: boolean; // Toggle visibility
+            showSubtitle?: boolean; // Toggle visibility
             background: {
                 bgName: string;
                 backgroundColor: string;
@@ -65,9 +65,6 @@ interface LandingViewProps {
                 avatarFloating?: boolean;
             };
             showLinkSubtext: boolean;
-        };
-        options: {
-            bio: string;
         };
         links: Array<{
             id: string;
@@ -185,12 +182,15 @@ export default function LandingView({ landing }: LandingViewProps) {
         }));
 
     // Build user profile
-    // Title and bio come directly from backend (name and options.bio)
+    // Title and subtitle come from template_config (as in legacy)
     const user: UserProfile = {
-        name: templateConfig.title,
-        handle: landing.slug || landing.domain_name || "linkea",
+        name: landing.name, // Internal name (not displayed)
+        handle: landing.domain_name || landing.slug || "linkea",
         avatar: landing.logo?.image || "/images/logo_only.png",
-        bio: templateConfig.subtitle,
+        title: templateConfig.title,
+        subtitle: templateConfig.subtitle,
+        showTitle: templateConfig.showTitle ?? true,
+        showSubtitle: templateConfig.showSubtitle ?? true,
         theme: (bgConfig.bgName as any) || "custom",
         customDesign: {
             backgroundColor: bgConfig.backgroundColor,
@@ -221,15 +221,13 @@ export default function LandingView({ landing }: LandingViewProps) {
             avatarFloating: templateConfig.header?.avatarFloating ?? true,
             showLinkSubtext: templateConfig.showLinkSubtext ?? false,
         },
-        showTitle: landing.showTitle ?? true,
-        showBio: landing.showBio ?? true,
         isVerified: landing.verify,
     };
 
     // SEO data - use seoTitle from backend (options.title) for browser tab
-    const seoTitle = `${landing.seoTitle || user.name} | Linkea`;
+    const seoTitle = `${landing.seoTitle || user.title} | Linkea`;
     const seoDescription =
-        user.bio || `Links de ${user.name} - Creado con Linkea`;
+        user.subtitle || `Links de ${user.title} - Creado con Linkea`;
     const seoImage = user.avatar?.startsWith("http")
         ? user.avatar
         : `${appUrl}${user.avatar}`;
@@ -237,9 +235,9 @@ export default function LandingView({ landing }: LandingViewProps) {
 
     // JSON-LD structured data
     const profileJsonLd = landingFullJsonLd(
-        user.name,
+        user.title,
         user.handle,
-        user.bio,
+        user.subtitle,
         seoImage,
         appUrl
     );
