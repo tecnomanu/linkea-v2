@@ -21,14 +21,21 @@ class PublicLandingResource extends JsonResource
         $header = $templateConfig['header'] ?? [];
         $options = $this->options ?? [];
 
-        // SEO title for browser tab: options.title -> landing name
-        $seoTitle = $this->resolveSeoTitle($options);
+        // Display title from template_config (visible on page)
+        $displayTitle = $templateConfig['title'] ?? $this->domain_name ?? 'Linkea';
+        $displaySubtitle = $templateConfig['subtitle'] ?? '';
+
+        // SEO fields from options with fallback to display values
+        // seoTitle: options.title → template_config.title → domain_name
+        // seoDescription: options.description → template_config.subtitle → generated
+        $seoTitle = trim($options['title'] ?? '') ?: $displayTitle;
+        $seoDescription = trim($options['description'] ?? '') ?: ($displaySubtitle ?: "Links de {$displayTitle} - Creado con Linkea");
 
         return [
             'id' => $this->id,
             'name' => $this->name,
             'seoTitle' => $seoTitle, // For browser tab <title>
-            'seoDescription' => $options['description'] ?? null, // For meta description
+            'seoDescription' => $seoDescription, // For meta description
             'slug' => $this->slug,
             'domain_name' => $this->domain_name,
             'verify' => (bool) $this->verify,
@@ -87,16 +94,6 @@ class PublicLandingResource extends JsonResource
             'links' => $this->transformLinks($this->whenLoaded('links')),
             'socialLinks' => $this->transformLinks($this->whenLoaded('socials')),
         ];
-    }
-
-    /**
-     * Resolve SEO title for browser tab.
-     * Uses options.title (SEO field) with fallback to landing name.
-     */
-    protected function resolveSeoTitle(array $options): string
-    {
-        $seoTitle = trim($options['title'] ?? '');
-        return !empty($seoTitle) ? $seoTitle : ($this->name ?? 'Linkea');
     }
 
     /**
