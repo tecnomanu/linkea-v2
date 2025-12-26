@@ -228,7 +228,7 @@ export const IconSelector: React.FC<IconSelectorProps> = ({
                                                                 ? "bg-brand-500 ring-2 ring-brand-500 ring-offset-2 dark:ring-offset-neutral-900 shadow-lg"
                                                                 : "bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700"
                                                         }`}
-                                                        title={iconName}
+                                                        data-tooltip={iconName}
                                                     >
                                                         {selected && (
                                                             <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center shadow-md">

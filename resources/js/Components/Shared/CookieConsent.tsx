@@ -65,6 +65,8 @@ interface CookieConsentProps {
     policyLink?: string;
     position?: "left" | "right";
     hideAfterClick?: boolean;
+    /** Hide the floating mini-banner (use when integrating trigger into footer) */
+    hideMiniBanner?: boolean;
 }
 
 const STORAGE_KEY = "linkea_cookie_consent";
@@ -79,6 +81,7 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({
     policyLink = "/privacy",
     position = "left",
     hideAfterClick = false,
+    hideMiniBanner = false,
 }) => {
     // Normalize analytics IDs to array
     const normalizedGaIds: string[] = (() => {
@@ -100,10 +103,10 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({
     const [isAnimating, setIsAnimating] = useState(false);
 
     // Get translations
-    const browserLang = typeof window !== "undefined" 
-        ? navigator.language.split("-")[0] 
-        : "es";
-    const t = TRANSLATIONS[language] || TRANSLATIONS[browserLang] || TRANSLATIONS.es;
+    const browserLang =
+        typeof window !== "undefined" ? navigator.language.split("-")[0] : "es";
+    const t =
+        TRANSLATIONS[language] || TRANSLATIONS[browserLang] || TRANSLATIONS.es;
 
     // Check consent status on mount
     useEffect(() => {
@@ -111,12 +114,12 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({
         if (consent === "1") {
             // User accepted - activate tracking
             activateTracking();
-            if (!hideAfterClick) {
+            if (!hideAfterClick && !hideMiniBanner) {
                 setShowMiniBanner(true);
             }
         } else if (consent === "0") {
             // User rejected
-            if (!hideAfterClick) {
+            if (!hideAfterClick && !hideMiniBanner) {
                 setShowMiniBanner(true);
             }
         } else {
@@ -124,14 +127,33 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({
             setIsAnimating(true);
             setTimeout(() => setShowBanner(true), 100);
         }
-    }, [hideAfterClick]);
+    }, [hideAfterClick, hideMiniBanner]);
+
+    // Listen for external open event (from footer link)
+    useEffect(() => {
+        const handleExternalOpen = () => {
+            setShowMiniBanner(false);
+            setIsAnimating(true);
+            setTimeout(() => setShowBanner(true), 100);
+        };
+
+        window.addEventListener("linkea:openCookieModal", handleExternalOpen);
+        return () => {
+            window.removeEventListener(
+                "linkea:openCookieModal",
+                handleExternalOpen
+            );
+        };
+    }, []);
 
     // Activate Google Analytics
     const activateGoogleAnalytics = useCallback(() => {
         if (normalizedGaIds.length === 0) return;
 
         // Load gtag script once
-        if (!document.querySelector('script[src*="googletagmanager.com/gtag"]')) {
+        if (
+            !document.querySelector('script[src*="googletagmanager.com/gtag"]')
+        ) {
             const script = document.createElement("script");
             script.async = true;
             script.src = `https://www.googletagmanager.com/gtag/js?id=${normalizedGaIds[0]}`;
@@ -144,7 +166,9 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            ${normalizedGaIds.map(id => `gtag('config', '${id}');`).join('\n')}
+            ${normalizedGaIds
+                .map((id) => `gtag('config', '${id}');`)
+                .join("\n")}
         `;
         document.head.appendChild(configScript);
     }, [normalizedGaIds]);
@@ -226,10 +250,10 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({
 
     return (
         <>
-            {/* Mini Banner - Subtle, no background, uses theme text color (legacy style) */}
-            {/* On mobile: centered at bottom. On desktop: positioned left/right */}
-            {showMiniBanner && (
-                <div className="fixed bottom-2 sm:bottom-4 left-0 right-0 sm:left-auto sm:right-auto z-50 flex justify-center sm:block">
+            {/* Mini Banner - Only show if not hidden via prop */}
+            {/* Mobile: centered at bottom | Desktop: positioned left/right */}
+            {showMiniBanner && !hideMiniBanner && (
+                <div className="fixed bottom-4 left-0 right-0 z-50 flex justify-center sm:block sm:left-auto sm:right-auto">
                     <button
                         onClick={handleOpenBanner}
                         className={`flex items-center gap-1.5 py-2 transition-all duration-200 hover:scale-[0.97] animate-in slide-in-from-bottom-4 fade-in sm:fixed sm:bottom-4 ${
@@ -245,20 +269,21 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({
                         >
                             <path d="M510.52 255.82c-69.97-.85-126.47-57.69-126.47-127.86-70.17 0-127-56.49-127.86-126.45-27.26-4.14-55.13.3-79.72 12.82l-69.13 35.22a132.221 132.221 0 0 0-57.79 57.81l-35.1 68.88a132.645 132.645 0 0 0-12.82 80.95l12.08 76.27a132.521 132.521 0 0 0 37.16 72.96l54.77 54.76a132.036 132.036 0 0 0 72.71 37.06l76.71 12.15c27.51 4.36 55.7-.11 80.53-12.76l69.13-35.21a132.273 132.273 0 0 0 57.79-57.81l35.1-68.88c12.56-24.64 17.01-52.58 12.91-79.91zM176 368c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32zm32-160c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32zm160 128c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32z" />
                         </svg>
-                        <span className="text-sm font-bold">{t.manageText}</span>
+                        <span className="text-sm font-bold">
+                            {t.manageText}
+                        </span>
                     </button>
                 </div>
             )}
 
-            {/* Main Banner - Dark themed with accent color buttons (legacy style) */}
-            {/* On mobile: full width with margins, stacked buttons. On desktop: fixed width, side buttons */}
+            {/* Main Banner - Bottom centered */}
             {showBanner && (
                 <div
-                    className={`fixed z-50 bg-neutral-800 rounded-2xl shadow-2xl overflow-hidden
-                        bottom-0 left-0 right-0 mx-2 mb-2
-                        sm:bottom-4 sm:left-auto sm:right-auto sm:mx-0 sm:max-w-sm sm:w-full
-                        ${position === "left" ? "sm:left-4" : "sm:right-4"}
-                        ${isAnimating ? "animate-in slide-in-from-bottom-4 fade-in duration-300" : ""}`}
+                    className={`fixed z-50 bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-1rem)] max-w-sm bg-neutral-800 rounded-2xl shadow-2xl overflow-hidden ${
+                        isAnimating
+                            ? "animate-in slide-in-from-bottom-4 fade-in duration-300"
+                            : ""
+                    }`}
                 >
                     {/* Close button */}
                     <button
@@ -277,7 +302,7 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({
                         )}
 
                         {/* Description */}
-                        <p className="text-sm text-neutral-300 mb-4 leading-relaxed">
+                        <p className="text-sm text-neutral-300 mb-4">
                             {t.bannerDescription}{" "}
                             <a
                                 href={policyLink}
@@ -289,20 +314,20 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({
                             </a>
                         </p>
 
-                        {/* Buttons - Stacked on mobile, side by side on desktop */}
-                        <div className="flex flex-col sm:flex-row gap-2.5">
+                        {/* Buttons - Stack on mobile, row on desktop */}
+                        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:gap-2.5">
+                            <button
+                                onClick={handleReject}
+                                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-neutral-200 text-neutral-700 transition-all duration-200 hover:bg-neutral-300 hover:scale-[1.02]"
+                            >
+                                {t.rejectBtnText}
+                            </button>
                             <button
                                 onClick={handleAccept}
-                                className="flex-1 px-4 py-3 sm:py-2.5 rounded-xl text-sm font-bold text-white transition-all duration-200 hover:brightness-90 hover:scale-[1.02]"
+                                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all duration-200 hover:brightness-90 hover:scale-[1.02]"
                                 style={{ backgroundColor: accentColor }}
                             >
                                 {t.acceptBtnText}
-                            </button>
-                            <button
-                                onClick={handleReject}
-                                className="flex-1 px-4 py-3 sm:py-2.5 rounded-xl text-sm font-bold bg-neutral-200 text-neutral-700 transition-all duration-200 hover:bg-neutral-300 hover:scale-[1.02]"
-                            >
-                                {t.rejectBtnText}
                             </button>
                         </div>
                     </div>
@@ -313,4 +338,3 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({
 };
 
 export default CookieConsent;
-

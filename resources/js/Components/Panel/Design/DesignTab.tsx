@@ -600,7 +600,7 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                                     handleDeleteSavedTheme(saved.id);
                                 }}
                                 className="absolute top-1 right-1 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                                title="Eliminar tema guardado"
+                                data-tooltip="Eliminar tema"
                             >
                                 <Trash2 size={12} />
                             </button>
@@ -800,7 +800,7 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                                         });
                                     }}
                                     className="absolute top-3 right-3 p-2 bg-red-500 hover:bg-red-600 text-white rounded-xl shadow-lg transition-colors z-10"
-                                    title="Eliminar imagen de fondo"
+                                    data-tooltip="Eliminar imagen"
                                 >
                                     <Trash2 size={18} />
                                 </button>
@@ -1304,7 +1304,7 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                                                         : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
                                                 }
                                             `}
-                                            title={align.label}
+                                            data-tooltip={align.label}
                                         >
                                             {align.icon}
                                             <span className="hidden sm:inline">

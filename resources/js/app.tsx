@@ -1,6 +1,7 @@
 import "../css/app.css";
 import "./bootstrap";
 
+import { TooltipProvider } from "@/Components/ui/Tooltip";
 import { createInertiaApp } from "@inertiajs/react";
 import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
 import { createRoot } from "react-dom/client";
@@ -47,7 +48,11 @@ createInertiaApp({
         window.__LINKEA_APP_NAME__ = appName;
 
         const root = createRoot(el);
-        root.render(<App {...props} />);
+        root.render(
+            <TooltipProvider>
+                <App {...props} />
+            </TooltipProvider>
+        );
     },
     progress: {
         color: "#f97316", // Brand orange color

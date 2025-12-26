@@ -36,7 +36,13 @@ export const LinkStats: React.FC<LinkStatsProps> = ({
                 ${isExpanded ? "opacity-100" : ""}
             `}
             tabIndex={isClickable ? 0 : -1}
-            title={isClickable ? "Ver estadisticas detalladas" : undefined}
+            data-tooltip={
+                isClickable
+                    ? isExpanded
+                        ? "Cerrar estadisticas"
+                        : "Ver estadisticas"
+                    : undefined
+            }
         >
             <div
                 className="w-24 h-10 outline-none focus:outline-none relative"

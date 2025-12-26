@@ -20,4 +20,4 @@ export { SegmentedSelect } from "./SegmentedSelect";
 export type { SelectOption } from "./SegmentedSelect";
 export { Textarea } from "./Textarea";
 export { Toggle } from "./Toggle";
-
+export { Tooltip, TooltipProvider } from "./Tooltip";

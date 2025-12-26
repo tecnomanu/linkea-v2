@@ -50,7 +50,7 @@ const MenuButton = ({
         type="button"
         onClick={onClick}
         disabled={disabled}
-        title={title}
+        data-tooltip={title}
         className={`p-1.5 rounded transition-colors ${
             active
                 ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"

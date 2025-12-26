@@ -97,7 +97,7 @@ export const SocialLinkCard: React.FC<SocialLinkCardProps> = ({
                                     : "bg-neutral-100 dark:bg-neutral-800 text-neutral-300 dark:text-neutral-600"
                             }
                         `}
-                        title="Cambiar icono"
+                        data-tooltip="Cambiar icono"
                     >
                         {link.icon ? (
                             <img
@@ -195,7 +195,7 @@ export const SocialLinkCard: React.FC<SocialLinkCardProps> = ({
                                 ? "bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/30"
                                 : "bg-neutral-100 dark:bg-neutral-800 text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"
                         }
-                        title={link.active ? "Desactivar" : "Activar"}
+                        data-tooltip={link.active ? "Desactivar" : "Activar"}
                     >
                         {link.active ? <Eye size={18} /> : <EyeOff size={18} />}
                     </Button>
@@ -206,7 +206,7 @@ export const SocialLinkCard: React.FC<SocialLinkCardProps> = ({
                         size="icon"
                         onClick={() => setShowDeleteConfirm(true)}
                         className="hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        title="Eliminar"
+                        data-tooltip="Eliminar"
                     >
                         <Trash2 size={18} />
                     </Button>

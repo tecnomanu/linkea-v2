@@ -305,7 +305,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({
                                     : "bg-neutral-100 dark:bg-neutral-800 text-neutral-300 dark:text-neutral-600"
                             }
                         `}
-                        title={
+                        data-tooltip={
                             link.type !== "header" ? "Cambiar icono" : undefined
                         }
                     >
@@ -356,14 +356,15 @@ export const LinkCard: React.FC<LinkCardProps> = ({
                     <div className="h-8 w-px bg-neutral-100 dark:bg-neutral-800 mx-2 hidden md:block"></div>
 
                     {/* Toggle Switch */}
-                    <Toggle
-                        checked={link.isEnabled}
-                        onChange={(checked) =>
-                            onUpdate(link.id, { isEnabled: checked })
-                        }
-                        size="md"
-                        title="Toggle Visibility"
-                    />
+                    <div data-tooltip={link.isEnabled ? "Ocultar" : "Mostrar"}>
+                        <Toggle
+                            checked={link.isEnabled}
+                            onChange={(checked) =>
+                                onUpdate(link.id, { isEnabled: checked })
+                            }
+                            size="md"
+                        />
+                    </div>
 
                     {/* Action Menu */}
                     <div className="flex items-center gap-1">
@@ -371,7 +372,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({
                             variant="ghost"
                             size="icon"
                             onClick={() => setShowConfig(true)}
-                            title="Configurar"
+                            data-tooltip="Configurar"
                         >
                             <Settings size={18} />
                         </Button>
@@ -380,7 +381,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({
                             size="icon"
                             onClick={() => setShowDeleteConfirm(true)}
                             className="hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                            title="Eliminar"
+                            data-tooltip="Eliminar"
                         >
                             <Trash2 size={18} />
                         </Button>

@@ -9,7 +9,7 @@ import { getLucideIcon } from "@/config/blockConfig";
 import { Icon } from "@/constants/icons";
 import { isLinkComplete } from "@/hooks/useLinkValidation";
 import { LinkBlock, UserProfile } from "@/types";
-import { calculateContrastColors } from "@/utils/colorUtils";
+import { calculateContrastColors, isLightColor } from "@/utils/colorUtils";
 import {
     isLegacyIcon,
     isLucideIcon,
@@ -26,7 +26,7 @@ import {
     X as XIcon,
     Youtube,
 } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import ShareModal from "./ShareModal";
 import {
     CalendarBlock,
@@ -159,6 +159,20 @@ export const LandingContent: React.FC<LandingContentProps> = ({
     fullScreen = false,
 }) => {
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    // Animated share button text - shows briefly on first load (public pages only)
+    const [showShareText, setShowShareText] = useState(false);
+
+    // Share button text animation: appear after 2.5s, disappear after 5s total
+    useEffect(() => {
+        if (isPreview) return;
+        const showTimer = setTimeout(() => setShowShareText(true), 2500);
+        const hideTimer = setTimeout(() => setShowShareText(false), 5000);
+        return () => {
+            clearTimeout(showTimer);
+            clearTimeout(hideTimer);
+        };
+    }, [isPreview]);
+
     const activeSocialLinks = socialLinks.filter((s) => s.active);
     // Filter links that are enabled AND have complete/valid data
     const activeLinks = links.filter((l) => l.isEnabled && isLinkComplete(l));
@@ -213,6 +227,48 @@ export const LandingContent: React.FC<LandingContentProps> = ({
         design.backgroundColor,
         design.backgroundImage,
     ]);
+
+    // Badge styling: INVERTED for contrast - dark badge on light bg, light badge on dark bg
+    // This creates visual separation between badge and page background
+    const badgeStyle = useMemo(() => {
+        // For preset themes, use known values (inverted)
+        if (isThemePreset) {
+            return isDarkTheme
+                ? {
+                      // Dark page: light badge with dark text
+                      color: "#1f2937",
+                      backgroundColor: "rgba(255,255,255,0.75)",
+                      borderColor: "rgba(255,255,255,0.3)",
+                  }
+                : {
+                      // Light page: dark badge with light text
+                      color: "#ffffff",
+                      backgroundColor: "rgba(0,0,0,0.55)",
+                      borderColor: "rgba(0,0,0,0.1)",
+                  };
+        }
+
+        // For custom themes, check if background is light or dark
+        const bgColor = design.backgroundColor || "#ffffff";
+        const bgIsLight = isLightColor(bgColor);
+
+        // Badge INVERTED for contrast with page background:
+        // - Light background: dark badge with white text (stands out)
+        // - Dark background: light badge with dark text (stands out)
+        if (bgIsLight) {
+            return {
+                color: "#ffffff", // white text
+                backgroundColor: "rgba(0,0,0,0.55)", // dark bg with blur
+                borderColor: "rgba(0,0,0,0.1)",
+            };
+        } else {
+            return {
+                color: "#1f2937", // dark text
+                backgroundColor: "rgba(255,255,255,0.75)", // light bg with blur
+                borderColor: "rgba(255,255,255,0.3)",
+            };
+        }
+    }, [isThemePreset, isDarkTheme, design.backgroundColor]);
 
     const baseTextColor = isDarkTheme ? "text-white" : "text-neutral-900";
     const subTextColor = isDarkTheme ? "text-neutral-400" : "text-neutral-600";
@@ -403,33 +459,46 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                         }`}
                     />
                 </div>
-                {/* Handle badge - displayed first after avatar */}
-                <p
-                    className={`text-sm font-medium mb-2 px-3 py-1 rounded-full backdrop-blur-sm border border-white/10 ${
-                        isThemePreset ? subTextColor : ""
-                    }`}
-                    style={
-                        !isThemePreset
-                            ? {
-                                  color: computedTextColors.textMuted,
-                                  backgroundColor:
-                                      computedTextColors.text === "#ffffff"
-                                          ? "rgba(255,255,255,0.1)"
-                                          : "rgba(0,0,0,0.05)",
-                              }
-                            : {}
-                    }
-                >
-                    @{user.handle}
-                    {(user.isVerified || user.isLegacy) && (
-                        <img
-                            src="/assets/images/icons/official.svg"
-                            alt="Verified"
-                            className="w-3.5 h-3.5 ml-1 inline-block"
-                            title="Cuenta verificada"
-                        />
-                    )}
-                </p>
+                {/* Handle badge with share button - displayed first after avatar */}
+                <div className="flex items-center gap-2 mb-2">
+                    <p
+                        className="text-sm font-medium px-3 py-1 rounded-full backdrop-blur-md border"
+                        style={badgeStyle}
+                    >
+                        @{user.handle}
+                        {(user.isVerified || user.isLegacy) && (
+                            <img
+                                src="/assets/images/icons/official.svg"
+                                alt="Verified"
+                                className="w-3.5 h-3.5 ml-1 inline-block"
+                                title="Cuenta verificada"
+                            />
+                        )}
+                    </p>
+                    {/* Share button - inline with handle badge, expands briefly to show text */}
+                    <button
+                        onClick={() => !isPreview && setIsShareModalOpen(true)}
+                        className={`h-8 flex items-center justify-center rounded-full backdrop-blur-sm border border-white/10 transition-all duration-500 ease-out hover:scale-105 active:scale-95 ${
+                            isPreview ? "cursor-default" : ""
+                        } ${showShareText ? "px-3 gap-1.5" : "w-8"}`}
+                        style={{
+                            backgroundColor: `${design.buttonColor}E6`,
+                            color: design.buttonTextColor,
+                        }}
+                        title="Compartir"
+                    >
+                        <Share2 size={14} className="shrink-0" />
+                        <span
+                            className={`text-xs font-semibold whitespace-nowrap overflow-hidden transition-all duration-500 ease-out ${
+                                showShareText
+                                    ? "max-w-[80px] opacity-100"
+                                    : "max-w-0 opacity-0"
+                            }`}
+                        >
+                            Compartir
+                        </span>
+                    </button>
+                </div>
                 {/* Title - displayed after handle badge */}
                 <h2
                     className={`text-2xl font-bold mb-1 tracking-tight ${
@@ -493,30 +562,6 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                     </div>
                 )}
             </div>
-
-            {/* Floating Share Button - Top Right */}
-            {/* In preview mode: always icon-only, positioned lower to avoid mock status bar */}
-            {/* In public page: responsive - icon-only on mobile, icon+text on sm+ screens */}
-            <button
-                onClick={() => !isPreview && setIsShareModalOpen(true)}
-                className={`fixed z-50 flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 backdrop-blur-md border border-white/20 rounded-full ${
-                    isPreview
-                        ? "cursor-default top-16 right-4 w-11 h-11"
-                        : "top-4 right-4 w-11 h-11 sm:w-auto sm:h-auto sm:gap-2 sm:px-4 sm:py-2.5"
-                }`}
-                style={{
-                    backgroundColor: `${design.buttonColor}E6`,
-                    color: design.buttonTextColor,
-                }}
-                title="Compartir"
-            >
-                <Share2 size={18} />
-                {!isPreview && (
-                    <span className="hidden sm:inline text-sm font-semibold">
-                        Compartir
-                    </span>
-                )}
-            </button>
 
             {/* Links Stack */}
             <div
@@ -916,8 +961,14 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                 })}
             </div>
 
-            {/* Footer - Uses theme text color for consistency */}
-            <div className="mt-auto pt-6 pb-10 flex flex-col items-center gap-2">
+            {/* Footer - Uses theme text color, safe-area for iOS */}
+            <div
+                className="mt-auto pt-6 flex flex-col items-center gap-2"
+                style={{
+                    paddingBottom:
+                        "max(2.5rem, calc(1rem + env(safe-area-inset-bottom)))",
+                }}
+            >
                 <div
                     className={`flex items-center gap-2 text-xs ${
                         isThemePreset ? subTextColor : ""
@@ -936,8 +987,24 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                         className="hover:underline"
                         style={{ color: "inherit" }}
                     >
-                        Politica de Privacidad
+                        Privacidad
                     </a>
+                    <span>|</span>
+                    <button
+                        onClick={(e) => {
+                            if (isPreview) {
+                                e.preventDefault();
+                                return;
+                            }
+                            window.dispatchEvent(
+                                new Event("linkea:openCookieModal")
+                            );
+                        }}
+                        className="hover:underline"
+                        style={{ color: "inherit" }}
+                    >
+                        Cookies
+                    </button>
                     <span>|</span>
                     <span>
                         Creado con{" "}

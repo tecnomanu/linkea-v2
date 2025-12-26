@@ -70,15 +70,10 @@ export const NavLink: React.FC<NavLinkProps> = ({
                     isActive ? styles.active : styles.inactive,
                     className
                 )}
+                data-tooltip={showTooltip ? label : undefined}
+                data-tooltip-position="right"
             >
                 {icon}
-
-                {/* Tooltip on hover */}
-                {showTooltip && (
-                    <span className="absolute left-14 bg-neutral-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                        {label}
-                    </span>
-                )}
 
                 {/* Active Indicator */}
                 {isActive && (

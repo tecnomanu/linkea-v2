@@ -380,11 +380,11 @@ export default function LandingView({ landing }: LandingViewProps) {
                 fullScreen={true}
             />
 
-            {/* Cookie Consent - Only on public pages */}
+            {/* Cookie Consent - Only on public pages, mini-banner hidden (trigger is in footer) */}
             <CookieConsent
                 googleAnalyticsIds={["G-FH87DE17XF"]}
                 accentColor={user.customDesign.buttonColor}
-                textColor={user.customDesign.textColor}
+                hideMiniBanner={true}
             />
         </>
     );
