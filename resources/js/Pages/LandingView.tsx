@@ -185,12 +185,12 @@ export default function LandingView({ landing }: LandingViewProps) {
         }));
 
     // Build user profile
-    // Note: templateConfig.title is what's displayed on page (may be ' .' etc)
+    // Title and bio come directly from backend (name and options.bio)
     const user: UserProfile = {
-        name: templateConfig.title ?? landing.name,
+        name: templateConfig.title,
         handle: landing.slug || landing.domain_name || "linkea",
         avatar: landing.logo?.image || "/images/logo_only.png",
-        bio: templateConfig.subtitle || landing.options?.bio || "",
+        bio: templateConfig.subtitle,
         theme: (bgConfig.bgName as any) || "custom",
         customDesign: {
             backgroundColor: bgConfig.backgroundColor,

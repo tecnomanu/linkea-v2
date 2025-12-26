@@ -37,8 +37,9 @@ class PublicLandingResource extends JsonResource
 
             // Template config for rendering (displayed on page)
             'template_config' => [
-                'title' => $templateConfig['title'] ?? null, // Displayed on page as-is
-                'subtitle' => $templateConfig['subtitle'] ?? ($options['bio'] ?? ''),
+                // Title and subtitle now come from main fields (not legacy template_config)
+                'title' => $this->name,
+                'subtitle' => $options['bio'] ?? '',
                 'background' => [
                     'bgName' => $bgConfig['bgName'] ?? 'custom',
                     'backgroundColor' => $bgConfig['backgroundColor'] ?? '#ffffff',
