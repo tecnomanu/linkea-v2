@@ -478,9 +478,9 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                     {/* Share button - inline with handle badge, expands briefly to show text */}
                     <button
                         onClick={() => !isPreview && setIsShareModalOpen(true)}
-                        className={`h-8 flex items-center justify-center rounded-full backdrop-blur-sm border border-white/10 transition-all duration-500 ease-out hover:scale-105 active:scale-95 ${
+                        className={`h-8 px-2.5 flex items-center justify-center rounded-full backdrop-blur-sm border border-white/10 transition-all duration-500 ease-in-out hover:scale-105 active:scale-95 ${
                             isPreview ? "cursor-default" : ""
-                        } ${showShareText ? "px-3 gap-1.5" : "w-8"}`}
+                        } ${showShareText ? "gap-1.5" : "gap-0"}`}
                         style={{
                             backgroundColor: `${design.buttonColor}E6`,
                             color: design.buttonTextColor,
@@ -489,11 +489,13 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                     >
                         <Share2 size={14} className="shrink-0" />
                         <span
-                            className={`text-xs font-semibold whitespace-nowrap overflow-hidden transition-all duration-500 ease-out ${
-                                showShareText
-                                    ? "max-w-[80px] opacity-100"
-                                    : "max-w-0 opacity-0"
-                            }`}
+                            className="text-xs font-semibold whitespace-nowrap overflow-hidden"
+                            style={{
+                                maxWidth: showShareText ? 80 : 0,
+                                opacity: showShareText ? 1 : 0,
+                                transition:
+                                    "max-width 500ms ease-in-out, opacity 400ms ease-in-out",
+                            }}
                         >
                             Compartir
                         </span>
