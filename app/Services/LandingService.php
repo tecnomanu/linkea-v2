@@ -275,6 +275,128 @@ class LandingService
     }
 
     /**
+     * Get all public landings for gallery page with pagination.
+     * Returns quality-ranked landings filtered by activity and engagement.
+     * 
+     * Ranking criteria:
+     * - Must have real avatar (no dicebear)
+     * - Must have been modified after creation
+     * - Must not have only the default "Mi primer Link" block
+     * - Sorted by: total clicks, link count, recent activity
+     */
+    public function getAllPublicLandings(int $perPage = 30, ?string $search = null): array
+    {
+        $query = Landing::query()
+            ->where('verify', true)
+            // Only real avatars (no generated ones)
+            ->where('logo', 'NOT LIKE', '%dicebear%')
+            // Must have been modified after creation (shows activity)
+            ->whereRaw('updated_at > created_at')
+            // Load links with click stats
+            ->with(['links' => function ($query) {
+                $query->where('state', true)->orderBy('order', 'asc');
+            }])
+            // Subquery for total clicks across all links
+            ->withSum(['links as total_clicks' => function ($query) {
+                $query->where('state', true);
+            }], 'visited')
+            // Subquery for active link count
+            ->withCount(['links as active_links_count' => function ($query) {
+                $query->where('state', true);
+            }]);
+
+        // Search filter
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('slug', 'LIKE', "%{$search}%")
+                    ->orWhere('domain_name', 'LIKE', "%{$search}%");
+            });
+        }
+
+        // Get all matching landings for filtering
+        $landings = $query->get();
+
+        // Filter out landings with only default block "Mi primer Link"
+        $filtered = $landings->filter(function ($landing) {
+            $links = $landing->links;
+
+            // Must have at least one link
+            if ($links->isEmpty()) {
+                return false;
+            }
+
+            // If only one link, check it's not the default one
+            if ($links->count() === 1) {
+                $firstLink = $links->first();
+                $defaultTexts = ['Mi primer Link', 'Mi primer link', 'mi primer link'];
+                if (in_array($firstLink->text, $defaultTexts)) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+
+        // Calculate quality score and sort
+        $scored = $filtered->map(function ($landing) {
+            // Score components (weighted)
+            $clickScore = min(($landing->total_clicks ?? 0) / 10, 100); // Max 100 pts from clicks
+            $linkScore = min($landing->active_links_count * 5, 50); // Max 50 pts from link count
+            $recencyScore = $this->calculateRecencyScore($landing->updated_at); // Max 30 pts
+
+            $landing->quality_score = $clickScore + $linkScore + $recencyScore;
+            return $landing;
+        })->sortByDesc('quality_score')->values();
+
+        // Manual pagination
+        $page = (int) request()->query('page', 1);
+        $offset = ($page - 1) * $perPage;
+        $total = $scored->count();
+        $lastPage = (int) ceil($total / $perPage);
+
+        $pageItems = $scored->slice($offset, $perPage);
+
+        return [
+            'data' => $pageItems->map(function ($landing) {
+                return $this->transformLandingForDisplay($landing);
+            })->values()->toArray(),
+            'meta' => [
+                'current_page' => $page,
+                'last_page' => max(1, $lastPage),
+                'per_page' => $perPage,
+                'total' => $total,
+            ],
+        ];
+    }
+
+    /**
+     * Calculate recency score based on last update.
+     * More recent updates get higher scores.
+     */
+    protected function calculateRecencyScore($updatedAt): float
+    {
+        if (!$updatedAt) {
+            return 0;
+        }
+
+        $daysSinceUpdate = now()->diffInDays($updatedAt);
+
+        // Score decay: 30 pts if updated today, decreasing over 90 days
+        if ($daysSinceUpdate <= 7) {
+            return 30;
+        } elseif ($daysSinceUpdate <= 30) {
+            return 25;
+        } elseif ($daysSinceUpdate <= 60) {
+            return 15;
+        } elseif ($daysSinceUpdate <= 90) {
+            return 10;
+        }
+
+        return 5; // Minimum score for older but still valid landings
+    }
+
+    /**
      * Get featured landings for homepage display.
      * Returns verified landings with real images (no generated avatars) and multiple links.
      */
@@ -423,5 +545,18 @@ class LandingService
         }
 
         return null;
+    }
+
+    /**
+     * Get public statistics for homepage.
+     * Returns total landings, links (blocks), and clicks.
+     */
+    public function getPublicStats(): array
+    {
+        return [
+            'landings' => Landing::count(),
+            'blocks' => Link::count(),
+            'clicks' => (int) Link::sum('visited'),
+        ];
     }
 }

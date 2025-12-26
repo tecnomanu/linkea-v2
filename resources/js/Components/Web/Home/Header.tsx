@@ -52,7 +52,15 @@ export default function Header() {
                 </Link>
 
                 {/* Nav - Always visible, responsive sizing */}
-                <nav className="flex items-center">
+                <nav className="flex items-center gap-4 sm:gap-6">
+                    {/* Gallery link */}
+                    <Link
+                        href="/gallery"
+                        className="text-sm font-medium text-gray-600 hover:text-brand-500 transition-colors hidden sm:block"
+                    >
+                        Galeria
+                    </Link>
+
                     {auth?.user ? (
                         // Logged in user - Avatar with dropdown
                         <div className="relative" ref={userMenuRef}>

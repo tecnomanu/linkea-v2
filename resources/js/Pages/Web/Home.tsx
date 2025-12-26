@@ -9,11 +9,18 @@ import StatsSection from "../../Components/Web/Home/StatsSection";
 import TestimonialsSection from "../../Components/Web/Home/TestimonialsSection";
 import WebLayout from "../../Layouts/WebLayout";
 
-interface HomeProps {
-    featuredLandings: FeaturedLanding[];
+interface Stats {
+    landings: number;
+    blocks: number;
+    clicks: number;
 }
 
-export default function Home({ featuredLandings }: HomeProps) {
+interface HomeProps {
+    featuredLandings: FeaturedLanding[];
+    stats?: Stats;
+}
+
+export default function Home({ featuredLandings, stats }: HomeProps) {
     return (
         <WebLayout
             title="Linkea - Todos tus enlaces en un solo lugar | Link in Bio Argentina"
@@ -22,7 +29,7 @@ export default function Home({ featuredLandings }: HomeProps) {
         >
             {/* Hero + Stats */}
             <HeroSection landings={featuredLandings} />
-            <StatsSection />
+            <StatsSection stats={stats} />
 
             {/* NEW: Features highlight from 2.0 */}
             <FeaturesHighlightSection />

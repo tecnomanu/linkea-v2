@@ -102,6 +102,11 @@ export default function Footer() {
                                 </Link>
                             </li>
                             <li>
+                                <Link href="/gallery" className="text-gray-400 hover:text-brand-500 transition-colors text-sm">
+                                    Galeria
+                                </Link>
+                            </li>
+                            <li>
                                 <a href="mailto:hola@linkea.ar" className="text-gray-400 hover:text-brand-500 transition-colors text-sm">
                                     Contactanos
                                 </a>

@@ -43,5 +43,25 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectUsersTo('/panel');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Render 404 errors with Inertia
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, $request) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Not found'], 404);
+            }
+
+            // Get featured landings for the 404 page
+            $featuredLandings = [];
+            try {
+                $landingService = app(\App\Services\LandingService::class);
+                $featuredLandings = $landingService->getFeaturedForHomepage(5);
+            } catch (\Throwable) {
+                // Silently fail - fallback data will be used in frontend
+            }
+
+            return \Inertia\Inertia::render('Error/NotFound', [
+                'featuredLandings' => $featuredLandings,
+            ])
+                ->toResponse($request)
+                ->setStatusCode(404);
+        });
     })->create();

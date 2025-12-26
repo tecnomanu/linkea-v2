@@ -28,6 +28,9 @@ use Illuminate\Support\Facades\Route;
 // Home Page
 Route::get('/', [WebController::class, 'index'])->name('home');
 
+// Gallery Page - All public landings
+Route::get('/gallery', [WebController::class, 'gallery'])->name('gallery');
+
 // System Routes
 Route::get('/health', [SystemRouterController::class, 'health'])->name('health');
 Route::get('/privacy', [SystemRouterController::class, 'privacy'])->name('privacy');
