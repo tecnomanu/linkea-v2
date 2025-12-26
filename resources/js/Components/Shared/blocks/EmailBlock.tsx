@@ -9,7 +9,8 @@ import { BlockDesign } from "@/hooks/useBlockStyles";
 import { LinkBlock, UserProfile } from "@/types";
 import { Mail } from "lucide-react";
 import React from "react";
-import { BlockButton, renderBlockIcon } from "./partial";
+import { renderBlockIcon } from "@/hooks/useBlockIcon";
+import { BlockButton } from "./partial";
 
 interface EmailBlockProps {
     link: LinkBlock;

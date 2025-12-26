@@ -5,37 +5,27 @@
  * Any changes here will reflect in both places.
  */
 
-import { getLucideIcon } from "@/config/blockConfig";
 import { Icon } from "@/constants/icons";
+import { renderLegacyIcon } from "@/hooks/useBlockIcon";
 import { isLinkComplete } from "@/hooks/useLinkValidation";
 import { LinkBlock, UserProfile } from "@/types";
 import { calculateContrastColors, isLightColor } from "@/utils/colorUtils";
-import {
-    isLegacyIcon,
-    isLucideIcon,
-    renderLegacyIcon,
-} from "@/utils/iconHelper";
-import {
-    Calendar,
-    Ghost,
-    Globe,
-    MessageCircle,
-    Music,
-    Share2,
-    Video,
-    X as XIcon,
-    Youtube,
-} from "lucide-react";
+import { Globe, Share2 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import ShareModal from "./ShareModal";
 import {
     CalendarBlock,
     EmailBlock,
+    HeaderBlock,
     MapBlock,
     SoundCloudBlock,
+    SpotifyBlock,
+    StandardLinkBlock,
     TikTokBlock,
     TwitchBlock,
     VimeoBlock,
+    WhatsAppBlock,
+    YouTubeBlock,
 } from "./blocks";
 
 export type DeviceMode = "mobile" | "tablet" | "desktop";
@@ -57,50 +47,6 @@ interface LandingContentProps {
     /** If true, uses min-h-screen for full viewport coverage (public pages) */
     fullScreen?: boolean;
 }
-
-// --- Helpers ---
-
-const getYoutubeId = (url: string) => {
-    const regExp =
-        /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return match && match[2].length === 11 ? match[2] : null;
-};
-
-const getSpotifyEmbedUrl = (url: string) => {
-    try {
-        const urlObj = new URL(url);
-        return urlObj.href.replace(
-            "open.spotify.com/",
-            "open.spotify.com/embed/"
-        );
-    } catch {
-        return null;
-    }
-};
-
-const getIcon = (iconName: string, size = 16) => {
-    switch (iconName) {
-        case "Youtube":
-            return <Youtube size={size} />;
-        case "MessageCircle":
-            return <MessageCircle size={size} />;
-        case "Music":
-            return <Music size={size} />;
-        case "Video":
-            return <Video size={size} />;
-        case "Twitter":
-            return <XIcon size={size} />;
-        case "Mastodon":
-            return <Ghost size={size} />;
-        case "Calendar":
-            return <Calendar size={size} />;
-        case "Type":
-            return null;
-        default:
-            return <Globe size={size} />;
-    }
-};
 
 // --- Style Generators ---
 
@@ -574,27 +520,15 @@ export const LandingContent: React.FC<LandingContentProps> = ({
 
                     // Header Block
                     if (link.type === "header") {
-                        const sizeClass =
-                            link.headerSize === "large"
-                                ? "text-3xl font-black mt-6 mb-2"
-                                : link.headerSize === "small"
-                                ? "text-lg font-bold mt-2 mb-1 opacity-80"
-                                : "text-xl font-bold mt-4 mb-2";
                         return (
-                            <div
+                            <HeaderBlock
                                 key={link.id}
-                                className={`text-center ${sizeClass} ${
-                                    isThemePreset ? "" : ""
-                                } animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards`}
-                                style={{
-                                    ...(!isThemePreset
-                                        ? { color: computedTextColors.text }
-                                        : {}),
-                                    animationDelay: `${delay}ms`,
-                                }}
-                            >
-                                {link.title}
-                            </div>
+                                link={link}
+                                design={design}
+                                theme={user.theme}
+                                isPreview={isPreview}
+                                animationDelay={delay}
+                            />
                         );
                     }
 
@@ -710,255 +644,66 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                         );
                     }
 
-                    // Media Embeds (YouTube/Spotify)
-                    if (
-                        (link.type === "video" ||
-                            link.type === "music" ||
-                            link.type === "youtube" ||
-                            link.type === "spotify") &&
-                        link.showInlinePlayer
-                    ) {
-                        const isSpotify = link.type === "music";
-                        const embedUrl = isSpotify
-                            ? getSpotifyEmbedUrl(link.url)
-                            : null;
-                        const videoId = !isSpotify
-                            ? getYoutubeId(link.url)
-                            : null;
-
-                        if (videoId || embedUrl) {
-                            return (
-                                <div
-                                    key={link.id}
-                                    className={`w-full overflow-hidden shadow-sm mb-4 ${getRounding()} ${
-                                        videoId ? "aspect-video bg-black" : ""
-                                    } animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards`}
-                                    style={{ animationDelay: `${delay}ms` }}
-                                >
-                                    {videoId ? (
-                                        <iframe
-                                            width="100%"
-                                            height="100%"
-                                            src={`https://www.youtube.com/embed/${videoId}?autoplay=${
-                                                link.autoPlay ? 1 : 0
-                                            }&mute=${link.startMuted ? 1 : 0}`}
-                                            title={link.title}
-                                            frameBorder="0"
-                                            allowFullScreen
-                                        ></iframe>
-                                    ) : (
-                                        <iframe
-                                            style={{
-                                                borderRadius:
-                                                    design.buttonShape ===
-                                                    "sharp"
-                                                        ? "0"
-                                                        : "12px",
-                                            }}
-                                            src={embedUrl!}
-                                            width="100%"
-                                            height={
-                                                link.playerSize === "compact"
-                                                    ? "80"
-                                                    : "152"
-                                            }
-                                            frameBorder="0"
-                                            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                                            loading="lazy"
-                                        ></iframe>
-                                    )}
-                                </div>
-                            );
-                        }
+                    // YouTube Block
+                    if (link.type === "youtube" || link.type === "video") {
+                        return (
+                            <YouTubeBlock
+                                key={link.id}
+                                link={link}
+                                design={design}
+                                buttonClassName={btnClassName}
+                                buttonStyle={btnStyle}
+                                isPreview={isPreview}
+                                onClick={(e) => handleLinkClick(e, link.id)}
+                                animationDelay={delay}
+                            />
+                        );
                     }
 
-                    // Standard Button
-                    let finalUrl = link.url;
-                    let subLabel = link.url;
-                    if (link.type === "whatsapp") {
-                        finalUrl = `https://wa.me/${
-                            link.phoneNumber
-                        }?text=${encodeURIComponent(
-                            link.predefinedMessage || ""
-                        )}`;
-                        subLabel = link.phoneNumber || "";
-                    } else if (link.type === "video") subLabel = "Ver Video";
-                    else if (link.type === "music") subLabel = "Escuchar";
-
-                    // Determine icon: legacy SVG icon takes priority, then Lucide icon, then type-based fallback
-                    const hasLegacyIcon = isLegacyIcon(link.icon);
-                    const hasLucideIcon = isLucideIcon(link.icon);
-                    let iconName = "Globe";
-                    if (link.type === "whatsapp") iconName = "MessageCircle";
-                    else if (link.type === "video") iconName = "Youtube";
-                    else if (link.type === "music") iconName = "Music";
-                    else if (link.type === "twitter") iconName = "Twitter";
-                    else if (link.type === "mastodon") iconName = "Mastodon";
-
-                    // Icon display settings
-                    const showIcons = design.showButtonIcons !== false;
-                    const iconAlignment = design.buttonIconAlignment || "left";
-                    // Subtext (URL/description) is hidden by default
-                    const showSubtext = design.showLinkSubtext === true;
-
-                    // Icon background style - fixed for outline buttons
-                    const getIconContainerStyle = (): React.CSSProperties => {
-                        if (design.buttonStyle === "outline") {
-                            return {
-                                backgroundColor: `${design.buttonColor}15`,
-                            };
-                        }
-                        return {};
-                    };
-
-                    // Render the icon element
-                    const renderIcon = (size: number = 22) => {
-                        // Legacy SVG icon (from icon picker)
-                        if (hasLegacyIcon) {
-                            return (
-                                <span style={{ color: design.buttonTextColor }}>
-                                    {renderLegacyIcon(
-                                        link.icon,
-                                        size,
-                                        "",
-                                        design.buttonTextColor
-                                    )}
-                                </span>
-                            );
-                        }
-
-                        // Lucide icon saved in link (user can change via config)
-                        if (hasLucideIcon) {
-                            const iconObj = link.icon as unknown as {
-                                type: string;
-                                name: string;
-                            };
-                            const SavedIcon = getLucideIcon(iconObj.name);
-                            return (
-                                <span style={{ color: design.buttonTextColor }}>
-                                    <SavedIcon size={size} />
-                                </span>
-                            );
-                        }
-
-                        // Fallback to type-based icon
+                    // Spotify Block
+                    if (link.type === "spotify" || link.type === "music") {
                         return (
-                            <span style={{ color: design.buttonTextColor }}>
-                                {getIcon(iconName, size)}
-                            </span>
+                            <SpotifyBlock
+                                key={link.id}
+                                link={link}
+                                design={design}
+                                buttonClassName={btnClassName}
+                                buttonStyle={btnStyle}
+                                isPreview={isPreview}
+                                onClick={(e) => handleLinkClick(e, link.id)}
+                                animationDelay={delay}
+                            />
                         );
-                    };
+                    }
 
-                    // Inner padding based on button size
-                    const innerPadding =
-                        design.buttonSize === "normal" ? "p-3" : "p-2";
+                    // WhatsApp Block
+                    if (link.type === "whatsapp") {
+                        return (
+                            <WhatsAppBlock
+                                key={link.id}
+                                link={link}
+                                design={design}
+                                buttonClassName={btnClassName}
+                                buttonStyle={btnStyle}
+                                isPreview={isPreview}
+                                onClick={(e) => handleLinkClick(e, link.id)}
+                                animationDelay={delay}
+                            />
+                        );
+                    }
 
+                    // Standard Link Block (fallback for link, social, twitter, mastodon, etc.)
                     return (
-                        <a
+                        <StandardLinkBlock
                             key={link.id}
-                            href={finalUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            link={link}
+                            design={design}
+                            buttonClassName={btnClassName}
+                            buttonStyle={btnStyle}
+                            isPreview={isPreview}
                             onClick={(e) => handleLinkClick(e, link.id)}
-                            className={`${btnClassName} animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards`}
-                            style={{
-                                ...btnStyle,
-                                animationDelay: `${delay}ms`,
-                            }}
-                        >
-                            <div
-                                className={`flex items-center ${innerPadding} ${
-                                    iconAlignment === "right" ? "relative" : ""
-                                }`}
-                            >
-                                {/* Left icon - separate column */}
-                                {showIcons && iconAlignment === "left" && (
-                                    <div
-                                        className={`${
-                                            design.buttonSize === "normal"
-                                                ? "w-11 h-11 mr-4"
-                                                : "w-9 h-9 mr-3"
-                                        } flex items-center justify-center shrink-0 transition-colors duration-300 ${getRounding()} ${
-                                            design.buttonStyle === "outline" &&
-                                            !design.buttonBorderColor
-                                                ? ""
-                                                : "bg-white/20"
-                                        }`}
-                                        style={getIconContainerStyle()}
-                                    >
-                                        {renderIcon(
-                                            design.buttonSize === "normal"
-                                                ? 22
-                                                : 18
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Text content */}
-                                <div
-                                    className={`flex-1 min-w-0 ${
-                                        iconAlignment === "inline"
-                                            ? "flex items-center gap-3"
-                                            : "text-left"
-                                    } ${
-                                        iconAlignment === "right" ? "pr-12" : ""
-                                    }`}
-                                >
-                                    {/* Inline icon - before text */}
-                                    {showIcons &&
-                                        iconAlignment === "inline" &&
-                                        renderIcon(18)}
-                                    <div className="min-w-0">
-                                        <h3
-                                            className={`${
-                                                design.buttonSize === "normal"
-                                                    ? "text-base"
-                                                    : "text-sm"
-                                            } font-bold truncate`}
-                                        >
-                                            {link.title}
-                                        </h3>
-                                        {showSubtext &&
-                                            subLabel &&
-                                            iconAlignment !== "inline" && (
-                                                <p
-                                                    className={`${
-                                                        design.buttonSize ===
-                                                        "normal"
-                                                            ? "text-xs"
-                                                            : "text-[11px]"
-                                                    } truncate opacity-70`}
-                                                >
-                                                    {subLabel}
-                                                </p>
-                                            )}
-                                    </div>
-                                </div>
-
-                                {/* Right icon - absolute positioned */}
-                                {showIcons && iconAlignment === "right" && (
-                                    <div
-                                        className={`absolute ${
-                                            design.buttonSize === "normal"
-                                                ? "right-4 w-10 h-10"
-                                                : "right-3 w-8 h-8"
-                                        } top-1/2 -translate-y-1/2 flex items-center justify-center shrink-0 ${getRounding()} ${
-                                            design.buttonStyle === "outline" &&
-                                            !design.buttonBorderColor
-                                                ? ""
-                                                : "bg-white/20"
-                                        }`}
-                                        style={getIconContainerStyle()}
-                                    >
-                                        {renderIcon(
-                                            design.buttonSize === "normal"
-                                                ? 20
-                                                : 16
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </a>
+                            animationDelay={delay}
+                        />
                     );
                 })}
             </div>

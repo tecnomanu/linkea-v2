@@ -8,16 +8,12 @@
  * - Button + Preview: Header button with embedded calendar widget
  */
 
+import { renderBlockIcon } from "@/hooks/useBlockIcon";
 import { BlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
 import { LinkBlock, UserProfile } from "@/types";
 import { Calendar, ExternalLink } from "lucide-react";
 import React from "react";
-import {
-    BlockButton,
-    BlockContainer,
-    BlockPreview,
-    renderBlockIcon,
-} from "./partial";
+import { BlockButton, BlockContainer, BlockPreview } from "./partial";
 
 interface CalendarBlockProps {
     link: LinkBlock;

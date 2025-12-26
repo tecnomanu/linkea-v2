@@ -35,6 +35,7 @@ export default function TestimonialsSection() {
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isHovered, setIsHovered] = useState(false);
+    const [touchStart, setTouchStart] = useState<number | null>(null);
 
     useEffect(() => {
         if (isHovered) return;
@@ -46,21 +47,44 @@ export default function TestimonialsSection() {
         return () => clearInterval(interval);
     }, [isHovered, testimonials.length]);
 
+    // Swipe handlers
+    const handleTouchStart = (e: React.TouchEvent) => {
+        setTouchStart(e.touches[0].clientX);
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        if (touchStart === null) return;
+        const touchEnd = e.changedTouches[0].clientX;
+        const diff = touchStart - touchEnd;
+        const threshold = 50;
+
+        if (diff > threshold) {
+            setCurrentIndex((prev) => (prev + 1) % testimonials.length);
+        } else if (diff < -threshold) {
+            setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+        }
+        setTouchStart(null);
+    };
+
     return (
         <section
-            className="py-16 bg-white overflow-hidden"
+            className="py-10 md:py-16 bg-white overflow-hidden"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
             <div className="container mx-auto px-4">
                 {/* Title */}
-                <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-12">
+                <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-8 md:mb-12">
                     Esto dicen nuestros usuarios
                 </h2>
 
                 {/* Carousel Container */}
                 <div className="relative max-w-3xl mx-auto">
-                    <div className="overflow-hidden">
+                    <div 
+                        className="overflow-hidden touch-pan-y"
+                        onTouchStart={handleTouchStart}
+                        onTouchEnd={handleTouchEnd}
+                    >
                         <div
                             className="flex transition-transform duration-500 ease-out"
                             style={{

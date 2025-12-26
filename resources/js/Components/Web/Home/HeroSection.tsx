@@ -255,8 +255,8 @@ export default function HeroSection({
                         backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
                     }}
                 />
-                <div className="absolute top-20 left-10 w-72 h-72 bg-primary-400/20 rounded-full blur-3xl" />
-                <div className="absolute bottom-20 right-10 w-96 h-96 bg-orange-300/20 rounded-full blur-3xl" />
+                <div className="absolute top-20 -left-20 w-72 h-72 bg-primary-400/20 rounded-full blur-3xl" />
+                <div className="absolute bottom-20 -right-20 w-72 h-72 md:w-96 md:h-96 bg-orange-300/20 rounded-full blur-3xl" />
             </div>
 
             <div className="container mx-auto px-4 relative z-10">
@@ -370,7 +370,7 @@ export default function HeroSection({
                                         return (
                                             <div
                                                 key={landing.id}
-                                                className="absolute left-1/2 top-1/2 transition-all duration-700 ease-out cursor-pointer"
+                                                className="absolute left-1/2 top-1/2 transition-all duration-700 ease-out"
                                                 style={{
                                                     transform: `
                                                         translateX(calc(-50% + ${pos.translateX}px))
@@ -388,12 +388,13 @@ export default function HeroSection({
                                                         ? "none"
                                                         : "brightness(0.9)",
                                                 }}
-                                                onClick={() =>
-                                                    setActiveIndex(phoneIndex)
-                                                }
                                             >
-                                                <div
-                                                    className={`relative ${
+                                                <Link
+                                                    href={`/${landing.user.handle.replace(
+                                                        "@",
+                                                        ""
+                                                    )}`}
+                                                    className={`relative block ${
                                                         isFront
                                                             ? "animate-float-front"
                                                             : "animate-float-back"
@@ -423,16 +424,20 @@ export default function HeroSection({
                                                             })`,
                                                         }}
                                                     />
-                                                    {/* Real PhonePreview - NOT in preview mode (links are clickable) */}
-                                                    <PhonePreview
-                                                        user={landing.user}
-                                                        links={landing.links}
-                                                        device="mobile"
-                                                        scale={1}
-                                                        className="relative z-10"
-                                                        isPreview={false}
-                                                    />
-                                                </div>
+                                                    {/* PhonePreview - non-interactive, entire phone is the link */}
+                                                    <div className="pointer-events-none overflow-hidden rounded-[56px]">
+                                                        <PhonePreview
+                                                            user={landing.user}
+                                                            links={
+                                                                landing.links
+                                                            }
+                                                            device="mobile"
+                                                            scale={1}
+                                                            className="relative z-10"
+                                                            isPreview={true}
+                                                        />
+                                                    </div>
+                                                </Link>
                                             </div>
                                         );
                                     })}

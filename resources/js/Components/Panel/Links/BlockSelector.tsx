@@ -5,13 +5,17 @@
  */
 
 import {
+    BLOCK_TYPES,
+    getVisibleBlockTypes,
+    renderBlockTypeIcon,
+} from "@/Components/Shared/blocks/blockConfig";
+import {
     Dialog,
     DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogHeader,
 } from "@/Components/ui/Dialog";
-import { BLOCK_TYPES, getVisibleBlockTypes } from "@/config/blockConfig";
 import { BlockType } from "@/types";
 import { Search } from "lucide-react";
 import React, { useMemo, useState } from "react";
@@ -21,22 +25,6 @@ interface BlockSelectorProps {
     onClose: () => void;
     onSelect: (type: BlockType) => void;
 }
-
-// Re-export BLOCK_CONFIG for backwards compatibility
-// TODO: Update consumers to import from @/config/blockConfig directly
-export const BLOCK_CONFIG = Object.fromEntries(
-    Object.entries(BLOCK_TYPES).map(([key, config]) => [
-        key,
-        {
-            label: config.label,
-            desc: config.description,
-            icon: <config.icon size={24} />,
-            colorClass: config.colorClass,
-            badgeBg: config.badgeClass,
-            hidden: config.hidden,
-        },
-    ])
-);
 
 export const BlockSelector: React.FC<BlockSelectorProps> = ({
     isOpen,
@@ -122,7 +110,6 @@ export const BlockSelector: React.FC<BlockSelectorProps> = ({
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {filteredBlocks.map((type) => {
                                 const config = BLOCK_TYPES[type];
-                                const IconComponent = config.icon;
                                 return (
                                     <button
                                         key={type}
@@ -135,7 +122,7 @@ export const BlockSelector: React.FC<BlockSelectorProps> = ({
                                         <div
                                             className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-3 ${config.colorClass}`}
                                         >
-                                            <IconComponent size={24} />
+                                            {renderBlockTypeIcon(type, 24)}
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-neutral-900 dark:text-white group-hover:text-brand-700 dark:group-hover:text-brand-400 transition-colors">

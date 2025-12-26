@@ -164,3 +164,4 @@ export const MapConfig: React.FC<MapConfigProps> = ({ link, onUpdate }) => {
         </div>
     );
 };
+

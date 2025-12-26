@@ -75,6 +75,7 @@ interface LandingViewProps {
             order: number;
             icon: { type?: string; name?: string } | null;
             headerSize?: string;
+            mediaDisplayMode?: string;
             showInlinePlayer?: boolean;
             autoPlay?: boolean;
             startMuted?: boolean;
@@ -148,6 +149,8 @@ export default function LandingView({ landing }: LandingViewProps) {
         sparklineData: [],
         icon: link.icon,
         headerSize: link.headerSize as LinkBlock["headerSize"],
+        mediaDisplayMode:
+            link.mediaDisplayMode as LinkBlock["mediaDisplayMode"],
         showInlinePlayer: link.showInlinePlayer,
         autoPlay: link.autoPlay,
         startMuted: link.startMuted,

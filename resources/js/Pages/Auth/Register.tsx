@@ -1,22 +1,13 @@
 import { AuthDivider, SocialLoginButtons } from "@/Components/Auth";
 import { Button } from "@/Components/ui/Button";
+import { HandleInput } from "@/Components/ui/HandleInput";
 import { Input } from "@/Components/ui/Input";
+import { useHandleValidation } from "@/hooks/useHandleValidation";
 import AuthLayout from "@/Layouts/AuthLayout";
-import { sanitizeHandle } from "@/utils/handle";
-import { Link, useForm, usePage } from "@inertiajs/react";
-import { Check, X, Loader2 } from "lucide-react";
-import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-interface PageProps {
-    appUrl?: string;
-    [key: string]: unknown;
-}
-
-type UsernameStatus = "idle" | "checking" | "available" | "taken" | "invalid";
+import { Link, useForm } from "@inertiajs/react";
+import { FormEventHandler, useEffect, useMemo } from "react";
 
 export default function Register() {
-    const { appUrl } = usePage<PageProps>().props;
-
     const { data, setData, post, processing, errors, reset } = useForm({
         first_name: "",
         last_name: "",
@@ -26,98 +17,38 @@ export default function Register() {
         password_confirmation: "",
     });
 
-    // Username validation state
-    const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle");
-    const [usernameMessage, setUsernameMessage] = useState<string>("");
-    const debounceRef = useRef<NodeJS.Timeout | null>(null);
+    // Username validation with async availability check
+    const handleValidation = useHandleValidation({
+        checkAvailability: true,
+        debounceMs: 500,
+    });
 
-    // Check username availability with debounce
-    const checkUsername = useCallback(async (username: string) => {
-        if (username.length < 3) {
-            setUsernameStatus("idle");
-            setUsernameMessage("");
-            return;
-        }
-
-        setUsernameStatus("checking");
-
-        try {
-            const response = await fetch("/api/auth/check-username", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                },
-                body: JSON.stringify({ username }),
-            });
-
-            const result = await response.json();
-
-            if (result.data?.available) {
-                setUsernameStatus("available");
-                setUsernameMessage(result.data.message);
-            } else {
-                setUsernameStatus(result.data?.message?.includes("caracteres") ? "invalid" : "taken");
-                setUsernameMessage(result.data?.message || "No disponible");
-            }
-        } catch {
-            setUsernameStatus("idle");
-            setUsernameMessage("");
-        }
-    }, []);
-
+    // Sync handle value with form data
     const handleUsernameChange = (value: string) => {
-        const sanitized = sanitizeHandle(value);
-        setData("username", sanitized);
-
-        // Reset status while typing
-        if (debounceRef.current) {
-            clearTimeout(debounceRef.current);
-        }
-
-        if (sanitized.length < 3) {
-            setUsernameStatus("idle");
-            setUsernameMessage("");
-            return;
-        }
-
-        setUsernameStatus("checking");
-
-        // Debounce the API call
-        debounceRef.current = setTimeout(() => {
-            checkUsername(sanitized);
-        }, 500);
+        handleValidation.onChange(value);
     };
 
-    // Cleanup debounce on unmount
+    // Keep form data in sync when validation updates the value
     useEffect(() => {
-        return () => {
-            if (debounceRef.current) {
-                clearTimeout(debounceRef.current);
-            }
-        };
-    }, []);
-
-    // Generate preview URL
-    const previewUrl = useMemo(() => {
-        const baseUrl = appUrl?.replace(/^https?:\/\//, "") || "linkea.ar";
-        return `${baseUrl}/${data.username || "tu-linkea"}`;
-    }, [appUrl, data.username]);
+        if (handleValidation.value !== data.username) {
+            setData("username", handleValidation.value);
+        }
+    }, [handleValidation.value]);
 
     // Check if form is valid and can be submitted
     const canSubmit = useMemo(() => {
-        const hasRequiredFields = 
+        const hasRequiredFields =
             data.email.trim() !== "" &&
             data.username.trim() !== "" &&
             data.password.trim() !== "" &&
             data.password_confirmation.trim() !== "";
-        
-        const isUsernameValid = usernameStatus === "available";
+
+        const isUsernameValid = handleValidation.isValid;
         const passwordsMatch = data.password === data.password_confirmation;
         const passwordLongEnough = data.password.length >= 8;
 
         return hasRequiredFields && isUsernameValid && passwordsMatch && passwordLongEnough;
-    }, [data, usernameStatus]);
+    }, [data, handleValidation.isValid]);
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -143,8 +74,8 @@ export default function Register() {
             subtitle="Crea tu cuenta gratis y empeza hoy"
             heroVariant="register"
         >
-            {/* Email field first (like Linktree) */}
             <form onSubmit={submit} className="space-y-4">
+                {/* Email field first (like Linktree) */}
                 <Input
                     id="email"
                     type="email"
@@ -157,80 +88,16 @@ export default function Register() {
                 />
 
                 {/* Username with linkea.ar/ prefix */}
-                <div className="space-y-1.5">
-                    <label
-                        htmlFor="username"
-                        className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
-                    >
-                        Tu Linkea
-                    </label>
-                    <div className="flex items-stretch relative">
-                        <span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-sm font-medium">
-                            linkea.ar/
-                        </span>
-                        <input
-                            id="username"
-                            type="text"
-                            placeholder="tu-linkea"
-                            value={data.username}
-                            onChange={(e) =>
-                                handleUsernameChange(e.target.value)
-                            }
-                            className={`flex-1 px-4 py-3 pr-10 rounded-r-xl border text-sm transition-colors
-                                ${
-                                    errors.username || usernameStatus === "taken" || usernameStatus === "invalid"
-                                        ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-                                        : usernameStatus === "available"
-                                        ? "border-green-500 focus:border-green-500 focus:ring-green-500/20"
-                                        : "border-neutral-300 dark:border-neutral-600 focus:border-brand-500 focus:ring-brand-500/20"
-                                }
-                                bg-white dark:bg-neutral-900 
-                                text-neutral-900 dark:text-white 
-                                placeholder:text-neutral-400
-                                focus:outline-none focus:ring-2`}
-                        />
-                        {/* Status indicator */}
-                        {data.username.length >= 3 && (
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                {usernameStatus === "checking" && (
-                                    <Loader2 size={18} className="text-neutral-400 animate-spin" />
-                                )}
-                                {usernameStatus === "available" && (
-                                    <Check size={18} className="text-green-500" />
-                                )}
-                                {(usernameStatus === "taken" || usernameStatus === "invalid") && (
-                                    <X size={18} className="text-red-500" />
-                                )}
-                            </div>
-                        )}
-                    </div>
-                    {errors.username && (
-                        <p className="text-sm text-red-500 mt-1">
-                            {errors.username}
-                        </p>
-                    )}
-                    {!errors.username && usernameMessage && (usernameStatus === "taken" || usernameStatus === "invalid") && (
-                        <p className="text-sm text-red-500 mt-1">
-                            {usernameMessage}
-                        </p>
-                    )}
-                    {data.username && !errors.username && usernameStatus === "available" && (
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                            Tu perfil estara en:{" "}
-                            <span className="font-medium text-green-500">
-                                {previewUrl}
-                            </span>
-                        </p>
-                    )}
-                    {data.username && !errors.username && usernameStatus !== "available" && usernameStatus !== "taken" && usernameStatus !== "invalid" && (
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                            Tu perfil estara en:{" "}
-                            <span className="font-medium text-brand-500">
-                                {previewUrl}
-                            </span>
-                        </p>
-                    )}
-                </div>
+                <HandleInput
+                    id="username"
+                    label="Tu Linkea"
+                    value={handleValidation.value}
+                    onChange={handleUsernameChange}
+                    status={handleValidation.status}
+                    message={handleValidation.message}
+                    error={errors.username}
+                    showUrlPreview={true}
+                />
 
                 <div className="grid grid-cols-2 gap-3">
                     <Input
@@ -270,9 +137,7 @@ export default function Register() {
                     label="Confirmar contrasena"
                     placeholder="Repeti tu contrasena"
                     value={data.password_confirmation}
-                    onChange={(e) =>
-                        setData("password_confirmation", e.target.value)
-                    }
+                    onChange={(e) => setData("password_confirmation", e.target.value)}
                     error={errors.password_confirmation}
                 />
 

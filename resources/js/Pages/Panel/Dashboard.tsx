@@ -84,6 +84,7 @@ export default function Dashboard({
                 .map(() => ({ value: 0 })), // Use server data or fallback to zeros
         // Config fields - from config JSON column
         headerSize: link.config?.header_size,
+        mediaDisplayMode: link.config?.media_display_mode,
         showInlinePlayer: link.config?.show_inline_player,
         autoPlay: link.config?.auto_play,
         startMuted: link.config?.start_muted,
@@ -327,6 +328,7 @@ export default function Dashboard({
                 // Header
                 headerSize: link.headerSize,
                 // Video embeds (YouTube, Spotify, Vimeo, etc.)
+                mediaDisplayMode: link.mediaDisplayMode,
                 showInlinePlayer: link.showInlinePlayer,
                 autoPlay: link.autoPlay,
                 startMuted: link.startMuted,

@@ -122,13 +122,15 @@ export const useLinkValidation = () => {
      * @param url - The calendar URL
      * @returns Provider name or 'other'
      */
-    const detectCalendarProvider = (url: string): 'calendly' | 'cal' | 'acuity' | 'other' => {
-        if (!url) return 'other';
+    const detectCalendarProvider = (
+        url: string
+    ): "calendly" | "cal" | "acuity" | "other" => {
+        if (!url) return "other";
         const trimmedUrl = url.trim().toLowerCase();
-        if (trimmedUrl.includes('calendly.com')) return 'calendly';
-        if (trimmedUrl.includes('cal.com')) return 'cal';
-        if (trimmedUrl.includes('acuityscheduling.com')) return 'acuity';
-        return 'other';
+        if (trimmedUrl.includes("calendly.com")) return "calendly";
+        if (trimmedUrl.includes("cal.com")) return "cal";
+        if (trimmedUrl.includes("acuityscheduling.com")) return "acuity";
+        return "other";
     };
 
     /**
@@ -169,7 +171,10 @@ export const useLinkValidation = () => {
 
             case "email":
                 // Email needs a valid email address
-                return !!(link.emailAddress && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(link.emailAddress));
+                return !!(
+                    link.emailAddress &&
+                    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(link.emailAddress)
+                );
 
             case "map":
                 // Map needs either address or query
@@ -188,8 +193,13 @@ export const useLinkValidation = () => {
                 return !!(link.url && /soundcloud\.com/i.test(link.url));
 
             case "twitch":
-                // Twitch needs a URL or channel name
-                return !!(link.url && (link.url.includes('twitch.tv') || /^[a-zA-Z0-9_]+$/.test(link.url)));
+                // Twitch needs a URL with twitch.tv or just a channel name
+                if (!link.url) return false;
+                const twitchUrl = link.url.trim().toLowerCase();
+                return (
+                    twitchUrl.includes("twitch.tv") ||
+                    /^[a-zA-Z0-9_]+$/.test(twitchUrl)
+                );
 
             case "link":
             case "button":
@@ -300,7 +310,15 @@ export const useLinkValidation = () => {
 
             case "twitch":
                 if (!link.url) {
-                    return "Canal de Twitch requerido";
+                    return "URL o nombre del canal requerido";
+                }
+                // Validate Twitch URL/channel format
+                const twitchVal = link.url.trim().toLowerCase();
+                if (
+                    !twitchVal.includes("twitch.tv") &&
+                    !/^[a-zA-Z0-9_]+$/.test(link.url.trim())
+                ) {
+                    return "URL de Twitch invalida o nombre de canal invalido";
                 }
                 return null;
 
@@ -391,7 +409,10 @@ export const isLinkComplete = (link: LinkBlock): boolean => {
             return URL_PATTERNS.http.test(link.url || "");
         case "email":
             // Email needs a valid email address
-            return !!(link.emailAddress && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(link.emailAddress));
+            return !!(
+                link.emailAddress &&
+                /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(link.emailAddress)
+            );
         case "map":
             // Map needs either address or query
             return !!(link.mapAddress || link.mapQuery);
@@ -405,10 +426,14 @@ export const isLinkComplete = (link: LinkBlock): boolean => {
             // SoundCloud needs a valid SoundCloud URL
             return !!(link.url && /soundcloud\.com/i.test(link.url));
         case "twitch":
-            // Twitch needs a URL with twitch.tv
-            return !!(link.url && link.url.includes('twitch.tv'));
+            // Twitch needs a URL with twitch.tv or just a channel name
+            if (!link.url) return false;
+            const twitchUrl = link.url.trim().toLowerCase();
+            return (
+                twitchUrl.includes("twitch.tv") ||
+                /^[a-zA-Z0-9_]+$/.test(twitchUrl)
+            );
         default:
             return validateUrl(link.url);
     }
 };
-

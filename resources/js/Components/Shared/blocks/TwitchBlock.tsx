@@ -15,15 +15,11 @@
  */
 
 import { BlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
-import { LinkBlock, UserProfile } from "@/types";
+import { LinkBlock, MediaDisplayMode, UserProfile } from "@/types";
 import { Video } from "lucide-react";
 import React from "react";
-import {
-    BlockButton,
-    BlockContainer,
-    BlockPreview,
-    renderBlockIcon,
-} from "./partial";
+import { renderBlockIcon } from "@/hooks/useBlockIcon";
+import { BlockButton, BlockContainer, BlockPreview } from "./partial";
 
 interface TwitchBlockProps {
     link: LinkBlock;
@@ -43,6 +39,14 @@ const extractTwitchChannel = (url: string): string | null => {
     if (!/[./]/.test(url)) return url;
     const match = url.match(/twitch\.tv\/([^/?]+)/i);
     return match ? match[1] : null;
+};
+
+/**
+ * Get the current display mode, handling legacy showInlinePlayer
+ */
+const getDisplayMode = (link: LinkBlock): MediaDisplayMode => {
+    if (link.mediaDisplayMode) return link.mediaDisplayMode;
+    return link.showInlinePlayer ? "both" : "button";
 };
 
 export const TwitchBlock: React.FC<TwitchBlockProps> = ({
@@ -102,63 +106,89 @@ export const TwitchBlock: React.FC<TwitchBlockProps> = ({
         color: design.buttonTextColor,
     });
 
-    // Button + Preview mode (inline player enabled)
-    if (link.showInlinePlayer && channel) {
+    const displayMode = getDisplayMode(link);
+    const showButton = displayMode === "button" || displayMode === "both";
+    const showPreview = (displayMode === "preview" || displayMode === "both") && channel && embedUrl;
+
+    // Button only mode
+    if (displayMode === "button" || !showPreview) {
+        return (
+            <BlockButton
+                href={twitchUrl}
+                title={link.title}
+                subtitle={subtitle}
+                design={blockDesign}
+                position="full"
+                icon={icon}
+                isPreview={isPreview}
+                onClick={onClick}
+                animationDelay={animationDelay}
+                className="mb-4"
+            />
+        );
+    }
+
+    // Preview only mode
+    if (displayMode === "preview") {
         return (
             <BlockContainer animationDelay={animationDelay}>
-                {/* Header button */}
-                {link.title && (
-                    <BlockButton
-                        href={twitchUrl}
-                        title={link.title}
-                        subtitle={subtitle}
-                        design={blockDesign}
-                        position="top"
-                        icon={icon}
-                        // TODO: Add when live detection is implemented
-                        // rightContent={isLive ? <LiveBadge /> : undefined}
-                        isPreview={isPreview}
-                        onClick={onClick}
-                    />
-                )}
-
-                {/* Stream embed */}
                 <BlockPreview
                     design={blockDesign}
-                    hasButton={!!link.title}
+                    hasButton={false}
                     aspectRatio="16/9"
                     backgroundColor="black"
                 >
-                    {embedUrl && (
-                        <iframe
-                            src={embedUrl}
-                            title={link.title || `${channel} - Twitch`}
-                            width="100%"
-                            height="100%"
-                            frameBorder="0"
-                            allowFullScreen
-                            loading="lazy"
-                        />
-                    )}
+                    <iframe
+                        src={embedUrl}
+                        title={link.title || `${channel} - Twitch`}
+                        width="100%"
+                        height="100%"
+                        frameBorder="0"
+                        allowFullScreen
+                        loading="lazy"
+                    />
                 </BlockPreview>
             </BlockContainer>
         );
     }
 
-    // Button only mode (default)
+    // Both mode (button + preview)
     return (
-        <BlockButton
-            href={twitchUrl}
-            title={link.title}
-            subtitle={subtitle}
-            design={blockDesign}
-            position="full"
-            icon={icon}
-            isPreview={isPreview}
-            onClick={onClick}
-            animationDelay={animationDelay}
-            className="mb-4"
-        />
+        <BlockContainer animationDelay={animationDelay}>
+            {/* Header button */}
+            {link.title && (
+                <BlockButton
+                    href={twitchUrl}
+                    title={link.title}
+                    subtitle={subtitle}
+                    design={blockDesign}
+                    position="top"
+                    icon={icon}
+                    // TODO: Add when live detection is implemented
+                    // rightContent={isLive ? <LiveBadge /> : undefined}
+                    isPreview={isPreview}
+                    onClick={onClick}
+                />
+            )}
+
+            {/* Stream embed */}
+            <BlockPreview
+                design={blockDesign}
+                hasButton={!!link.title}
+                aspectRatio="16/9"
+                backgroundColor="black"
+            >
+                <iframe
+                    src={embedUrl}
+                    title={link.title || `${channel} - Twitch`}
+                    width="100%"
+                    height="100%"
+                    frameBorder="0"
+                    allowFullScreen
+                    loading="lazy"
+                />
+            </BlockPreview>
+        </BlockContainer>
     );
 };
 

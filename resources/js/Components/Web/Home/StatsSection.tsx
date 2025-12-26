@@ -92,16 +92,18 @@ function AnimatedStatCard({
     }, [shouldAnimate, delay]);
 
     return (
-        <div className="group relative bg-white rounded-2xl p-6 shadow-xl shadow-gray-200/50 border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+        <div className="group relative text-center md:text-left p-4 md:p-6 md:bg-white md:rounded-2xl md:shadow-xl md:shadow-gray-200/50 md:border md:border-gray-100 md:hover:shadow-2xl md:hover:-translate-y-1 transition-all duration-300">
             <div
-                className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${color} mb-4`}
+                className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${color} mb-3 md:mb-4`}
             >
                 <Icon className="text-white" size={24} />
             </div>
-            <div className="text-4xl font-bold text-gray-900 mb-1 tabular-nums">
+            <div className="text-3xl md:text-4xl font-bold text-gray-900 mb-1 tabular-nums">
                 {formatNumber(animatedValue)}+
             </div>
-            <div className="text-gray-500 font-medium">{label}</div>
+            <div className="text-gray-500 font-medium text-sm md:text-base">
+                {label}
+            </div>
         </div>
     );
 }
@@ -158,9 +160,12 @@ export default function StatsSection({ stats }: StatsSectionProps) {
     ];
 
     return (
-        <section ref={sectionRef} className="relative z-20 -mt-12 mb-16">
+        <section
+            ref={sectionRef}
+            className="relative z-20 -mt-8 md:-mt-12 mb-12 md:mb-16"
+        >
             <div className="container mx-auto px-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-6 max-w-4xl mx-auto">
                     {statItems.map((stat, idx) => (
                         <AnimatedStatCard
                             key={idx}

@@ -373,14 +373,14 @@ const features: Feature[] = [
 
 export default function FeaturesHighlightSection() {
     return (
-        <section className="py-24 bg-gradient-to-b from-white via-white to-gray-50 relative overflow-hidden">
+        <section className="py-12 md:py-24 bg-gradient-to-b from-white via-white to-gray-50 relative overflow-hidden">
             {/* Background decoration - only at bottom */}
             <div className="absolute bottom-0 left-0 w-96 h-96 bg-violet-100/30 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
             <div className="absolute bottom-1/4 right-0 w-72 h-72 bg-brand-100/30 rounded-full blur-3xl translate-x-1/2" />
 
             <div className="container mx-auto px-4 relative z-10">
                 {/* Header */}
-                <div className="text-center mb-16">
+                <div className="text-center mb-8 md:mb-16">
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-50 text-brand-600 rounded-full text-sm font-semibold mb-6">
                         <Sparkles size={16} />
                         <span>Nueva version 2.0</span>
@@ -435,12 +435,12 @@ export default function FeaturesHighlightSection() {
                 </div>
 
                 {/* CTA */}
-                <div className="text-center mt-12">
+                <div className="text-center mt-8 md:mt-12">
                     <Link
                         href="/auth/register"
                         className="inline-flex items-center gap-2 px-8 py-4 bg-gray-900 hover:bg-gray-800 text-white rounded-2xl text-lg font-bold shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
                     >
-                        <span>Proba estas funciones gratis</span>
+                        <span>Proba estas funciones GRATIS</span>
                         <ArrowRight size={20} />
                     </Link>
                 </div>

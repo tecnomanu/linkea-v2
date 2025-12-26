@@ -94,6 +94,12 @@
 
 /* Base Styles from Legacy Template */
 @layer base {
+  html,
+  body {
+    /* Use clip instead of hidden to prevent horizontal scroll without breaking position:sticky */
+    overflow-x: clip;
+  }
+
   body {
     /* Fun, subtle mesh gradient background */
     background-color: #f8fafc;

@@ -1,34 +1,44 @@
 /**
- * SoundCloudBlock - SoundCloud audio block
+ * SpotifyBlock - Spotify audio block
  *
- * Modes:
- * - Button only: Link to SoundCloud
- * - Button + Preview: Header button with embedded player widget
+ * Display modes:
+ * - button: Link only (opens Spotify)
+ * - preview: Embed only (player widget)
+ * - both: Button + Embed (header button with player below)
  */
 
 import { BlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
 import { LinkBlock, MediaDisplayMode, UserProfile } from "@/types";
-import { Headphones } from "lucide-react";
+import { Music } from "lucide-react";
 import React from "react";
 import { renderBlockIcon } from "@/hooks/useBlockIcon";
 import { BlockButton, BlockContainer, BlockPreview } from "./partial";
 
-interface SoundCloudBlockProps {
+interface SpotifyBlockProps {
     link: LinkBlock;
     design: UserProfile["customDesign"];
-    buttonClassName: string; // Legacy prop - not used
-    buttonStyle: React.CSSProperties; // Legacy prop - not used
+    buttonClassName: string;
+    buttonStyle: React.CSSProperties;
     isPreview?: boolean;
     onClick?: (e: React.MouseEvent) => void;
     animationDelay?: number;
 }
 
 /**
- * Build SoundCloud embed URL
+ * Convert Spotify URL to embed URL
  */
-const buildSoundCloudEmbedUrl = (url: string): string | null => {
-    if (!url || !url.includes("soundcloud.com")) return null;
-    return `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23ff5500&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false`;
+const getSpotifyEmbedUrl = (url: string): string | null => {
+    if (!url) return null;
+    try {
+        const urlObj = new URL(url);
+        if (!urlObj.hostname.includes("spotify.com")) return null;
+        return urlObj.href.replace(
+            "open.spotify.com/",
+            "open.spotify.com/embed/"
+        );
+    } catch {
+        return null;
+    }
 };
 
 /**
@@ -36,17 +46,19 @@ const buildSoundCloudEmbedUrl = (url: string): string | null => {
  */
 const getDisplayMode = (link: LinkBlock): MediaDisplayMode => {
     if (link.mediaDisplayMode) return link.mediaDisplayMode;
-    return link.showInlinePlayer ? "both" : "button";
+    // Legacy fallback: showInlinePlayer true = preview only (old behavior)
+    return link.showInlinePlayer ? "preview" : "button";
 };
 
-export const SoundCloudBlock: React.FC<SoundCloudBlockProps> = ({
+export const SpotifyBlock: React.FC<SpotifyBlockProps> = ({
     link,
     design,
     isPreview = false,
     onClick,
     animationDelay = 0,
 }) => {
-    const embedUrl = buildSoundCloudEmbedUrl(link.url);
+    const embedUrl = getSpotifyEmbedUrl(link.url);
+    const isCompact = link.playerSize === "compact";
 
     // Convert design to BlockDesign format
     const blockDesign: BlockDesign = {
@@ -59,18 +71,47 @@ export const SoundCloudBlock: React.FC<SoundCloudBlockProps> = ({
     };
 
     // Get subtitle based on showLinkSubtext setting
-    const subtitle = getBlockSubtitle(blockDesign, "SoundCloud", link.url);
+    const subtitle = getBlockSubtitle(
+        blockDesign,
+        "Escuchar en Spotify",
+        link.url
+    );
 
-    // Render icon: user custom icon takes priority, else fallback to Headphones
+    // Render icon: user custom icon takes priority, else fallback
     const icon = renderBlockIcon({
         linkIcon: link.icon,
-        fallbackIcon: <Headphones size={22} style={{ color: design.buttonTextColor }} />,
+        fallbackIcon: (
+            <Music size={22} style={{ color: design.buttonTextColor }} />
+        ),
         size: 22,
         color: design.buttonTextColor,
     });
 
     const displayMode = getDisplayMode(link);
-    const showPreview = (displayMode === "preview" || displayMode === "both") && embedUrl;
+    const showPreview =
+        (displayMode === "preview" || displayMode === "both") && embedUrl;
+
+    // Helper to render the Spotify embed
+    const renderEmbed = (hasButton: boolean) => (
+        <BlockPreview
+            design={blockDesign}
+            hasButton={hasButton}
+            backgroundColor="transparent"
+        >
+            <iframe
+                style={{
+                    borderRadius:
+                        design.buttonShape === "sharp" ? "0" : "12px",
+                }}
+                src={embedUrl!}
+                width="100%"
+                height={isCompact ? "80" : "152"}
+                frameBorder="0"
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy"
+            />
+        </BlockPreview>
+    );
 
     // Button only mode
     if (displayMode === "button" || !showPreview) {
@@ -94,22 +135,7 @@ export const SoundCloudBlock: React.FC<SoundCloudBlockProps> = ({
     if (displayMode === "preview") {
         return (
             <BlockContainer animationDelay={animationDelay}>
-                <BlockPreview
-                    design={blockDesign}
-                    hasButton={false}
-                    backgroundColor="#f5f5f5"
-                >
-                    <iframe
-                        src={embedUrl}
-                        title={link.title || "SoundCloud Player"}
-                        width="100%"
-                        height="166"
-                        frameBorder="0"
-                        allow="autoplay"
-                        loading="lazy"
-                        scrolling="no"
-                    />
-                </BlockPreview>
+                {renderEmbed(false)}
             </BlockContainer>
         );
     }
@@ -131,25 +157,11 @@ export const SoundCloudBlock: React.FC<SoundCloudBlockProps> = ({
                 />
             )}
 
-            {/* SoundCloud player embed */}
-            <BlockPreview
-                design={blockDesign}
-                hasButton={!!link.title}
-                backgroundColor="#f5f5f5"
-            >
-                <iframe
-                    src={embedUrl}
-                    title={link.title || "SoundCloud Player"}
-                    width="100%"
-                    height="166"
-                    frameBorder="0"
-                    allow="autoplay"
-                    loading="lazy"
-                    scrolling="no"
-                />
-            </BlockPreview>
+            {/* Player embed */}
+            {renderEmbed(!!link.title)}
         </BlockContainer>
     );
 };
 
-export default SoundCloudBlock;
+export default SpotifyBlock;
+

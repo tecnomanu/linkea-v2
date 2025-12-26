@@ -7,9 +7,12 @@ import {
     DialogFooter,
     DialogHeader,
 } from "@/Components/ui/Dialog";
+import {
+    getBlockConfig,
+    renderBlockTypeIcon,
+} from "@/Components/Shared/blocks/blockConfig";
 import { LinkBlock } from "@/types";
 import React from "react";
-import { BLOCK_CONFIG } from "./BlockSelector";
 import {
     CalendarConfig,
     DefaultConfig,
@@ -20,7 +23,7 @@ import {
     SoundCloudConfig,
     VideoEmbedConfig,
     WhatsAppConfig,
-} from "./configs";
+} from "@/Components/Shared/blocks/configs";
 
 interface LinkConfigDialogProps {
     isOpen: boolean;
@@ -35,7 +38,7 @@ export const LinkConfigDialog: React.FC<LinkConfigDialogProps> = ({
     link,
     onUpdate,
 }) => {
-    const config = BLOCK_CONFIG[link.type] || BLOCK_CONFIG["link"];
+    const config = getBlockConfig(link.type);
 
     const renderConfigContent = () => {
         switch (link.type) {
@@ -80,7 +83,7 @@ export const LinkConfigDialog: React.FC<LinkConfigDialogProps> = ({
                         <div
                             className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-inner ${config.colorClass}`}
                         >
-                            {config.icon}
+                            {renderBlockTypeIcon(link.type, 20, "", true)}
                         </div>
                         <div>
                             <h3 className="font-bold text-neutral-900 dark:text-white text-lg">

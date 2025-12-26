@@ -1,35 +1,51 @@
 /**
- * TikTokBlock - TikTok video link block
+ * WhatsAppBlock - WhatsApp direct message block
  *
- * TikTok does not support easy external embeds,
- * so this renders as a button that opens TikTok in a new tab.
- * Button only - no preview mode.
+ * Renders a button that opens WhatsApp with a predefined message.
+ * Uses wa.me deep link format.
  */
 
 import { BlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
 import { LinkBlock, UserProfile } from "@/types";
-import { ExternalLink, Play } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import React from "react";
 import { renderBlockIcon } from "@/hooks/useBlockIcon";
 import { BlockButton } from "./partial";
 
-interface TikTokBlockProps {
+interface WhatsAppBlockProps {
     link: LinkBlock;
     design: UserProfile["customDesign"];
-    buttonClassName: string; // Legacy prop - not used
-    buttonStyle: React.CSSProperties; // Legacy prop - not used
+    buttonClassName: string;
+    buttonStyle: React.CSSProperties;
     isPreview?: boolean;
     onClick?: (e: React.MouseEvent) => void;
     animationDelay?: number;
 }
 
-export const TikTokBlock: React.FC<TikTokBlockProps> = ({
+/**
+ * Build WhatsApp deep link URL
+ */
+const buildWhatsAppUrl = (
+    phoneNumber?: string,
+    predefinedMessage?: string
+): string => {
+    const phone = phoneNumber?.replace(/\D/g, "") || "";
+    const message = encodeURIComponent(predefinedMessage || "");
+    return `https://wa.me/${phone}${message ? `?text=${message}` : ""}`;
+};
+
+export const WhatsAppBlock: React.FC<WhatsAppBlockProps> = ({
     link,
     design,
     isPreview = false,
     onClick,
     animationDelay = 0,
 }) => {
+    const whatsappUrl = buildWhatsAppUrl(
+        link.phoneNumber,
+        link.predefinedMessage
+    );
+
     // Convert design to BlockDesign format
     const blockDesign: BlockDesign = {
         buttonColor: design.buttonColor,
@@ -40,30 +56,28 @@ export const TikTokBlock: React.FC<TikTokBlockProps> = ({
         showLinkSubtext: design.showLinkSubtext,
     };
 
-    // Render icon: user custom icon takes priority, else fallback to Play
+    // Format phone number for display
+    const displayPhone = link.phoneNumber || "";
+    const subtitle = getBlockSubtitle(blockDesign, displayPhone, displayPhone);
+
+    // Render icon: user custom icon takes priority, else fallback
     const icon = renderBlockIcon({
         linkIcon: link.icon,
-        fallbackIcon: <Play size={22} style={{ color: design.buttonTextColor }} />,
+        fallbackIcon: (
+            <MessageCircle
+                size={22}
+                style={{ color: design.buttonTextColor }}
+            />
+        ),
         size: 22,
         color: design.buttonTextColor,
     });
 
-    // Get subtitle based on showLinkSubtext setting
-    const subtitleText = getBlockSubtitle(blockDesign, "TikTok", link.url);
-
-    // Subtitle with external link icon
-    const SubtitleContent = () => (
-        <span className="flex items-center gap-1">
-            <span>{subtitleText}</span>
-            <ExternalLink size={10} />
-        </span>
-    );
-
     return (
         <BlockButton
-            href={link.url}
+            href={whatsappUrl}
             title={link.title}
-            subtitle={<SubtitleContent />}
+            subtitle={subtitle}
             design={blockDesign}
             position="full"
             icon={icon}
@@ -75,4 +89,5 @@ export const TikTokBlock: React.FC<TikTokBlockProps> = ({
     );
 };
 
-export default TikTokBlock;
+export default WhatsAppBlock;
+

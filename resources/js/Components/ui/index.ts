@@ -14,6 +14,7 @@ export {
     DialogFooter,
     DialogHeader,
 } from "./Dialog";
+export { HandleInput } from "./HandleInput";
 export { Input } from "./Input";
 export { Label } from "./Label";
 export { SegmentedSelect } from "./SegmentedSelect";

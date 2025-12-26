@@ -1,21 +1,14 @@
 import { Button } from "@/Components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/Components/ui/Card";
+import { HandleInput } from "@/Components/ui/HandleInput";
 import { Input } from "@/Components/ui/Input";
 import { Label } from "@/Components/ui/Label";
 import { Textarea } from "@/Components/ui/Textarea";
+import { useHandleValidation } from "@/hooks/useHandleValidation";
 import { UserProfile } from "@/types";
-import { sanitizeHandle, validateHandle } from "@/utils/handle";
-import { usePage } from "@inertiajs/react";
-import {
-    AlertCircle,
-    AtSign,
-    BarChart3,
-    Check,
-    Globe,
-    Lock,
-    Search,
-} from "lucide-react";
-import React, { useCallback, useMemo } from "react";
+import { sanitizeHandle } from "@/utils/handle";
+import { AtSign, BarChart3, Globe, Lock, Search } from "lucide-react";
+import React, { useCallback, useEffect } from "react";
 
 interface SettingsTabProps {
     user: UserProfile;
@@ -26,26 +19,35 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
     user,
     onUpdateUser,
 }) => {
-    const { appUrl } = usePage<{ appUrl: string }>().props;
-    const displayDomain = appUrl.replace(/^https?:\/\//, "");
-    const handleName = user.handle.startsWith("@")
+    // Extract handle without @ prefix
+    const initialHandle = user.handle.startsWith("@")
         ? user.handle.substring(1)
         : user.handle;
 
-    // Handle change with sanitization
+    // Handle validation with async availability check
+    const handleValidation = useHandleValidation({
+        initialValue: initialHandle,
+        checkAvailability: true,
+        debounceMs: 500,
+        currentHandle: initialHandle, // Exclude current handle from "taken" check
+    });
+
+    // Initialize validation on mount
+    useEffect(() => {
+        if (initialHandle && handleValidation.value !== initialHandle) {
+            handleValidation.setValue(initialHandle);
+        }
+    }, []);
+
+    // Handle change - update parent and validation
     const handleHandleChange = useCallback(
         (value: string) => {
-            onUpdateUser({ handle: `@${sanitizeHandle(value)}` });
+            handleValidation.onChange(value);
+            const sanitized = sanitizeHandle(value);
+            onUpdateUser({ handle: `@${sanitized}` });
         },
-        [onUpdateUser]
+        [handleValidation, onUpdateUser]
     );
-
-    // Validate handle format
-    const handleValidation = useMemo(() => {
-        const result = validateHandle(handleName);
-        // Override message when valid to show "Disponible" instead of "Formato valido"
-        return result.valid ? { valid: true, message: "Disponible" } : result;
-    }, [handleName]);
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
@@ -59,57 +61,16 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                     subtitle="Reclama tu URL unica."
                 />
                 <CardBody className="space-y-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="username">Nombre de usuario</Label>
-                        <div className="relative">
-                            {/* Validation icon inside input */}
-                            <div
-                                className={`absolute top-1/2 -translate-y-1/2 left-4 ${
-                                    handleValidation.valid
-                                        ? "text-green-500"
-                                        : "text-amber-500"
-                                }`}
-                            >
-                                {handleValidation.valid ? (
-                                    <Check size={18} strokeWidth={3} />
-                                ) : (
-                                    <AlertCircle size={18} />
-                                )}
-                            </div>
-                            <input
-                                id="username"
-                                type="text"
-                                value={handleName}
-                                onChange={(e) =>
-                                    handleHandleChange(e.target.value)
-                                }
-                                className={`w-full bg-white dark:bg-neutral-900 border rounded-xl pl-11 pr-4 py-3 font-bold text-neutral-900 dark:text-white focus:outline-none focus:ring-2 transition-all placeholder-neutral-300 dark:placeholder-neutral-600 ${
-                                    handleValidation.valid
-                                        ? "border-neutral-200 dark:border-neutral-700 focus:ring-brand-500/20 focus:border-brand-500"
-                                        : "border-amber-300 dark:border-amber-700 focus:ring-amber-500/20 focus:border-amber-500"
-                                }`}
-                                placeholder="username"
-                            />
-                        </div>
-                        {/* Helper Text */}
-                        <div className="flex justify-between px-1">
-                            <p className="text-xs text-neutral-400 dark:text-neutral-500">
-                                {displayDomain}/
-                                <span className="font-bold text-neutral-600 dark:text-neutral-300">
-                                    {handleName}
-                                </span>
-                            </p>
-                            <p
-                                className={`text-xs font-bold flex items-center gap-1 ${
-                                    handleValidation.valid
-                                        ? "text-green-600 dark:text-green-400"
-                                        : "text-amber-600 dark:text-amber-400"
-                                }`}
-                            >
-                                {handleValidation.message}
-                            </p>
-                        </div>
-                    </div>
+                    <HandleInput
+                        id="username"
+                        label="Nombre de usuario"
+                        value={handleValidation.value}
+                        onChange={handleHandleChange}
+                        status={handleValidation.status}
+                        message={handleValidation.message}
+                        showUrlPreview={true}
+                        placeholder="username"
+                    />
                 </CardBody>
             </Card>
 

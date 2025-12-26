@@ -1,129 +1,237 @@
 import {
-    Headphones,
-    Link as LinkIcon,
-    MessageCircle,
-    Type,
-    Youtube,
-} from "lucide-react";
+    getWebFeatures,
+    renderBlockTypeIcon,
+} from "@/Components/Shared/blocks/blockConfig";
+import { PhonePreview } from "@/Components/Shared/PhonePreview";
+import { BlockType, LinkBlock, UserProfile } from "@/types";
 import { useEffect, useState } from "react";
-import { LinkBlock, UserProfile } from "../../../types";
-import { PhonePreview } from "../../Shared/PhonePreview";
+
+// Demo profiles for the phone preview
+interface DemoProfile {
+    id: string;
+    label: string;
+    user: UserProfile;
+    links: LinkBlock[];
+}
+
+const DEMO_PROFILES: DemoProfile[] = [
+    // Musician
+    {
+        id: "musician",
+        label: "Musico",
+        user: {
+            name: "Lucas Beats",
+            handle: "lucasbeats",
+            avatar: "https://ui-avatars.com/api/?name=Lucas+B&background=7c3aed&color=fff&size=200",
+            bio: "Productor Musical & DJ",
+            theme: "midnight",
+            customDesign: {
+                backgroundColor: "#1e1b4b",
+                buttonStyle: "soft",
+                buttonShape: "pill",
+                buttonColor: "#a855f7",
+                buttonTextColor: "#ffffff",
+                fontPair: "mono",
+            },
+        },
+        links: [
+            {
+                id: "1",
+                title: "Mi musica",
+                url: "",
+                isEnabled: true,
+                clicks: 0,
+                type: "header",
+                headerSize: "small",
+                sparklineData: [],
+            },
+            {
+                id: "2",
+                title: "Escucha en Spotify",
+                url: "https://spotify.com",
+                isEnabled: true,
+                clicks: 1250,
+                type: "link",
+                sparklineData: [],
+            },
+            {
+                id: "3",
+                title: "Nuevo EP disponible",
+                url: "https://linkea.ar",
+                isEnabled: true,
+                clicks: 890,
+                type: "link",
+                sparklineData: [],
+            },
+            {
+                id: "4",
+                title: "Beats para comprar",
+                url: "https://linkea.ar",
+                isEnabled: true,
+                clicks: 456,
+                type: "link",
+                sparklineData: [],
+            },
+            {
+                id: "5",
+                title: "Contacto profesional",
+                url: "mailto:lucas@beats.com",
+                isEnabled: true,
+                clicks: 234,
+                type: "link",
+                sparklineData: [],
+            },
+        ],
+    },
+    // Fitness Coach
+    {
+        id: "fitness",
+        label: "Fitness",
+        user: {
+            name: "Sofia Martinez",
+            handle: "sofimart",
+            avatar: "https://ui-avatars.com/api/?name=Sofia+M&background=ec4899&color=fff&size=200",
+            bio: "Fitness Coach & Content Creator",
+            theme: "sunset",
+            customDesign: {
+                backgroundColor: "#fef3c7",
+                buttonStyle: "solid",
+                buttonShape: "rounded",
+                buttonColor: "#ec4899",
+                buttonTextColor: "#ffffff",
+                fontPair: "modern",
+            },
+        },
+        links: [
+            {
+                id: "1",
+                title: "Mis servicios",
+                url: "",
+                isEnabled: true,
+                clicks: 0,
+                type: "header",
+                headerSize: "small",
+                sparklineData: [],
+            },
+            {
+                id: "2",
+                title: "Clases personalizadas",
+                url: "https://linkea.ar",
+                isEnabled: true,
+                clicks: 234,
+                type: "link",
+                sparklineData: [],
+            },
+            {
+                id: "3",
+                title: "Plan de nutricion",
+                url: "https://linkea.ar",
+                isEnabled: true,
+                clicks: 189,
+                type: "link",
+                sparklineData: [],
+            },
+            {
+                id: "4",
+                title: "Reserva tu turno",
+                url: "https://linkea.ar",
+                isEnabled: true,
+                clicks: 156,
+                type: "link",
+                sparklineData: [],
+            },
+            {
+                id: "5",
+                title: "Escribime por WhatsApp",
+                url: "https://wa.me/123456",
+                isEnabled: true,
+                clicks: 312,
+                type: "whatsapp",
+                phoneNumber: "5491112345678",
+                sparklineData: [],
+            },
+        ],
+    },
+    // Streamer
+    {
+        id: "streamer",
+        label: "Streamer",
+        user: {
+            name: "NightWolf Gaming",
+            handle: "nightwolfgg",
+            avatar: "https://ui-avatars.com/api/?name=NW&background=6366f1&color=fff&size=200",
+            bio: "Streamer & Content Creator",
+            theme: "ocean",
+            customDesign: {
+                backgroundColor: "#0f172a",
+                buttonStyle: "hard",
+                buttonShape: "rounded",
+                buttonColor: "#6366f1",
+                buttonTextColor: "#ffffff",
+                fontPair: "modern",
+            },
+        },
+        links: [
+            {
+                id: "1",
+                title: "Mis redes",
+                url: "",
+                isEnabled: true,
+                clicks: 0,
+                type: "header",
+                headerSize: "small",
+                sparklineData: [],
+            },
+            {
+                id: "2",
+                title: "Canal de Twitch",
+                url: "https://twitch.tv",
+                isEnabled: true,
+                clicks: 3420,
+                type: "link",
+                sparklineData: [],
+            },
+            {
+                id: "3",
+                title: "Videos en YouTube",
+                url: "https://youtube.com",
+                isEnabled: true,
+                clicks: 2100,
+                type: "link",
+                sparklineData: [],
+            },
+            {
+                id: "4",
+                title: "Discord comunidad",
+                url: "https://discord.gg",
+                isEnabled: true,
+                clicks: 1560,
+                type: "link",
+                sparklineData: [],
+            },
+            {
+                id: "5",
+                title: "Tienda de merch",
+                url: "https://linkea.ar",
+                isEnabled: true,
+                clicks: 780,
+                type: "link",
+                sparklineData: [],
+            },
+        ],
+    },
+];
 
 export default function FeaturesSection() {
-    const mockUser: UserProfile = {
-        name: "Features Demo",
-        handle: "@demo",
-        avatar: "https://ui-avatars.com/api/?name=Features&background=8b5cf6&color=fff",
-        bio: "Mira todo lo que puedes agregar a tu Linkea.",
-        theme: "midnight",
-        customDesign: {
-            backgroundColor: "#1e1b4b",
-            buttonStyle: "hard",
-            buttonShape: "sharp",
-            buttonColor: "#f43f5e",
-            buttonTextColor: "#ffffff",
-            fontPair: "mono",
-        },
-    };
+    const [activeProfileIndex, setActiveProfileIndex] = useState(0);
+    const activeProfile = DEMO_PROFILES[activeProfileIndex];
 
-    const mockLinks: LinkBlock[] = [
-        {
-            id: "1",
-            title: "Video Destacado",
-            url: "https://youtube.com",
-            isEnabled: true,
-            clicks: 0,
-            type: "youtube",
-            showInlinePlayer: true,
-            sparklineData: [],
-        },
-        {
-            id: "2",
-            title: "Mi Playlist",
-            url: "https://spotify.com",
-            isEnabled: true,
-            clicks: 0,
-            type: "spotify",
-            showInlinePlayer: true,
-            playerSize: "compact",
-            sparklineData: [],
-        },
-        {
-            id: "3",
-            title: "Contactame",
-            url: "#",
-            isEnabled: true,
-            clicks: 0,
-            type: "whatsapp",
-            phoneNumber: "123456",
-            sparklineData: [],
-        },
-        {
-            id: "4",
-            title: "Seccion Importante",
-            url: "",
-            isEnabled: true,
-            clicks: 0,
-            type: "header",
-            headerSize: "medium",
-            sparklineData: [],
-        },
-        {
-            id: "5",
-            title: "Sitio Web",
-            url: "https://linkea.ar",
-            isEnabled: true,
-            clicks: 0,
-            type: "link",
-            sparklineData: [],
-        },
-    ];
-
-    const features = [
-        {
-            id: "youtube",
-            title: "YouTube",
-            desc: "Muestra en linea videos de la plataforma mas famosa del mundo.",
-            icon: Youtube,
-            color: "text-white",
-            bg: "bg-red-500",
-        },
-        {
-            id: "spotify",
-            title: "Spotify",
-            desc: "Pone play a tus canciones en linea para tus visitantes con el reproductor integrado.",
-            icon: Headphones,
-            color: "text-white",
-            bg: "bg-green-500",
-        },
-        {
-            id: "whatsapp",
-            title: "WhatsApp",
-            desc: "Es importante que los usuarios puedan comunicarse con vos directamente. Abre WhatsApp con un mensaje predefinido.",
-            icon: MessageCircle,
-            color: "text-white",
-            bg: "bg-emerald-500",
-        },
-        {
-            id: "heading",
-            title: "Linea de Texto",
-            desc: "Es bueno organizarse, para eso podes usar lineas de titulos que separen tus bloques como mas te guste.",
-            icon: Type,
-            color: "text-white",
-            bg: "bg-gray-700",
-        },
-        {
-            id: "link",
-            title: "Enlace",
-            desc: "Crea enlaces a tus redes o cualquier sitio en la web que quieras compartir con los visitantes.",
-            icon: LinkIcon,
-            color: "text-white",
-            bg: "bg-blue-500",
-        },
-    ];
+    // Get features from centralized config - always in sync
+    const features = getWebFeatures();
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isMobile, setIsMobile] = useState(false);
+    const [touchStart, setTouchStart] = useState<number | null>(null);
 
     // Detect mobile
     useEffect(() => {
@@ -144,10 +252,33 @@ export default function FeaturesSection() {
         return () => clearInterval(interval);
     }, [isMobile, features.length]);
 
+    // Swipe handlers
+    const handleTouchStart = (e: React.TouchEvent) => {
+        setTouchStart(e.touches[0].clientX);
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        if (touchStart === null) return;
+        const touchEnd = e.changedTouches[0].clientX;
+        const diff = touchStart - touchEnd;
+        const threshold = 50;
+
+        if (diff > threshold) {
+            // Swipe left - next
+            setCurrentIndex((prev) => (prev + 1) % features.length);
+        } else if (diff < -threshold) {
+            // Swipe right - previous
+            setCurrentIndex(
+                (prev) => (prev - 1 + features.length) % features.length
+            );
+        }
+        setTouchStart(null);
+    };
+
     return (
-        <section className="py-24 bg-gradient-to-br from-primary-500 via-primary-600 to-orange-500 relative overflow-hidden">
+        <section className="py-12 md:py-24 bg-gradient-to-br from-primary-500 via-primary-600 to-orange-500 relative">
             {/* Background pattern */}
-            <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0 opacity-10 overflow-hidden">
                 <div
                     className="absolute inset-0"
                     style={{
@@ -157,7 +288,7 @@ export default function FeaturesSection() {
             </div>
 
             <div className="container mx-auto px-4 relative z-10">
-                <div className="text-center mb-16">
+                <div className="text-center mb-8 md:mb-16">
                     <span className="inline-block px-4 py-2 bg-white/20 rounded-full text-white text-sm font-medium mb-4">
                         Mas herramientas
                     </span>
@@ -171,18 +302,32 @@ export default function FeaturesSection() {
 
                 {/* Mobile Slider */}
                 <div className="lg:hidden">
-                    <div className="overflow-hidden">
+                    <div
+                        className="overflow-hidden touch-pan-y"
+                        onTouchStart={handleTouchStart}
+                        onTouchEnd={handleTouchEnd}
+                    >
                         <div
                             className="flex transition-transform duration-500 ease-out"
-                            style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+                            style={{
+                                transform: `translateX(-${
+                                    currentIndex * 100
+                                }%)`,
+                            }}
                         >
                             {features.map((feature) => (
-                                <div key={feature.id} className="w-full flex-shrink-0 px-4">
+                                <div
+                                    key={feature.id}
+                                    className="w-full flex-shrink-0 px-4"
+                                >
                                     <div className="bg-white rounded-2xl p-6 shadow-xl max-w-sm mx-auto flex gap-4 items-start">
                                         <div
-                                            className={`w-14 h-14 shrink-0 rounded-xl flex items-center justify-center ${feature.bg} ${feature.color} shadow-lg`}
+                                            className={`w-14 h-14 shrink-0 rounded-xl flex items-center justify-center ${feature.colorClass} shadow-lg`}
                                         >
-                                            <feature.icon size={28} strokeWidth={2} />
+                                            {renderBlockTypeIcon(
+                                                feature.id as BlockType,
+                                                28
+                                            )}
                                         </div>
                                         <div>
                                             <h3 className="text-lg font-bold text-gray-900 mb-1">
@@ -212,40 +357,39 @@ export default function FeaturesSection() {
                             />
                         ))}
                     </div>
-
-                    {/* Phone Preview below slider on mobile */}
-                    <div className="flex justify-center mt-10">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-white/10 rounded-[3rem] blur-2xl scale-90" />
-                            <PhonePreview
-                                user={mockUser}
-                                links={mockLinks}
-                                device="mobile"
-                                scale={0.7}
-                                className="relative z-10"
-                            />
-                        </div>
-                    </div>
                 </div>
 
-                {/* Desktop Layout */}
-                <div className="hidden lg:flex flex-row gap-12 items-start max-w-6xl mx-auto">
-                    {/* Phone Preview (Sticky) */}
-                    <div className="flex-1 w-full sticky top-24 flex justify-center">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-white/10 rounded-[3rem] blur-2xl scale-90" />
-                            <PhonePreview
-                                user={mockUser}
-                                links={mockLinks}
-                                device="mobile"
-                                scale={0.8}
-                                className="relative z-10"
-                            />
+                {/* Desktop Layout - Grid enables proper sticky behavior */}
+                <div className="hidden lg:grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                    {/* Phone Preview (Sticky) - sticky applied directly to grid cell */}
+                    <div className="sticky top-24 self-start flex flex-col items-center justify-self-end">
+                        <PhonePreview
+                            user={activeProfile.user}
+                            links={activeProfile.links}
+                            device="mobile"
+                            scale={0.7}
+                            fitContainer
+                        />
+                        {/* Profile selector buttons */}
+                        <div className="flex gap-2 mt-6">
+                            {DEMO_PROFILES.map((profile, idx) => (
+                                <button
+                                    key={profile.id}
+                                    onClick={() => setActiveProfileIndex(idx)}
+                                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                                        activeProfileIndex === idx
+                                            ? "bg-white text-gray-900 shadow-lg"
+                                            : "bg-white/20 text-white hover:bg-white/30"
+                                    }`}
+                                >
+                                    {profile.label}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
                     {/* Features List */}
-                    <div className="flex-1 w-full space-y-4">
+                    <div className="space-y-4">
                         {features.map((feature, idx) => (
                             <div
                                 key={feature.id}
@@ -253,9 +397,12 @@ export default function FeaturesSection() {
                                 style={{ animationDelay: `${idx * 100}ms` }}
                             >
                                 <div
-                                    className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center ${feature.bg} ${feature.color} shadow-lg`}
+                                    className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center ${feature.colorClass} shadow-lg`}
                                 >
-                                    <feature.icon size={24} strokeWidth={2} />
+                                    {renderBlockTypeIcon(
+                                        feature.id as BlockType,
+                                        24
+                                    )}
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-primary-600 transition-colors">

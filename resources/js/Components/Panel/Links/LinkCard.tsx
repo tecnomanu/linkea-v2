@@ -4,15 +4,18 @@
  * Uses centralized configuration from @/config/blockConfig.ts
  */
 
+import {
+    getBlockConfig,
+    renderBlockTypeIcon,
+} from "@/Components/Shared/blocks/blockConfig";
 import { Button } from "@/Components/ui/Button";
 import { ConfirmDialog } from "@/Components/ui/ConfirmDialog";
 import { Toggle } from "@/Components/ui/Toggle";
-import { getBlockConfig, getLucideIcon } from "@/config/blockConfig";
 import { Icon } from "@/constants/icons";
+import { getLucideIcon, isLegacyIcon } from "@/hooks/useBlockIcon";
 import { useDebounceWithPending } from "@/hooks/useDebounce";
 import { useLinkValidation } from "@/hooks/useLinkValidation";
 import { LinkBlock } from "@/types";
-import { isLegacyIcon, isLucideIcon } from "@/utils/iconHelper";
 import { Check, Loader2, Settings, Trash2, XCircle } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { IconSelector } from "./IconSelector";
@@ -71,40 +74,42 @@ export const LinkCard: React.FC<LinkCardProps> = ({
     const isValid = isLinkComplete(linkForValidation);
     const validationError = getValidationError(linkForValidation);
 
-    // Render the icon based on link.icon or fallback to config default
+    // Render the icon based on link.icon
+    // Icon is always stored as { type, name } where:
+    // - type: "lucide" | "brands" | "solid" | "regular" | "colors"
+    // - name: icon name (e.g., "whatsapp", "calendar", "heart")
     const renderIcon = () => {
         const iconSize = 20;
+        const iconObj = link.icon as
+            | { type?: string; name?: string }
+            | undefined;
 
-        // If user has selected a legacy icon (from icon picker), show it
-        if (isLegacyIcon(link.icon)) {
-            return (
-                <img
-                    src={`/assets/images/icons/${link.icon.type}/${link.icon.name}.svg`}
-                    alt={link.icon.name}
-                    className="w-5 h-5"
-                    style={{
-                        filter:
-                            link.isEnabled && link.icon.type !== "colors"
-                                ? "brightness(0) invert(1)"
-                                : "none",
-                    }}
-                />
-            );
+        // No icon or invalid - use block default
+        if (!iconObj?.type || !iconObj?.name) {
+            return renderBlockTypeIcon(link.type, iconSize);
         }
 
-        // If user has a Lucide icon saved, use that specific icon
-        if (isLucideIcon(link.icon)) {
-            const iconObj = link.icon as unknown as {
-                type: string;
-                name: string;
-            };
-            const SavedIcon = getLucideIcon(iconObj.name);
-            return <SavedIcon size={iconSize} />;
+        // Lucide icon (type === "lucide")
+        if (iconObj.type === "lucide") {
+            const LucideIconComponent = getLucideIcon(iconObj.name);
+            return <LucideIconComponent size={iconSize} />;
         }
 
-        // Fallback to default icon from config
-        const DefaultIcon = config.icon;
-        return <DefaultIcon size={iconSize} />;
+        // SVG icon from assets (brands, solid, regular, colors)
+        const isColorIcon = iconObj.type === "colors";
+        return (
+            <img
+                src={`/assets/images/icons/${iconObj.type}/${iconObj.name}.svg`}
+                alt={iconObj.name}
+                className="w-5 h-5"
+                style={{
+                    filter:
+                        link.isEnabled && !isColorIcon
+                            ? "brightness(0) invert(1)"
+                            : "none",
+                }}
+            />
+        );
     };
 
     // Get status display for special block types
@@ -331,11 +336,22 @@ export const LinkCard: React.FC<LinkCardProps> = ({
                                         ? "text-lg"
                                         : "text-base"
                                 }
+                                ${
+                                    !link.title?.trim() &&
+                                    "ring-1 ring-amber-400 bg-amber-50/50 dark:bg-amber-900/20"
+                                }
                             `}
                             placeholder={config.titlePlaceholder}
                         />
 
                         {link.type !== "header" && renderStatusLine()}
+
+                        {/* Show validation error message */}
+                        {!isValid && validationError && !isValidating && (
+                            <span className="text-xs text-amber-600 dark:text-amber-400 px-1">
+                                {validationError}
+                            </span>
+                        )}
                     </div>
                 </div>
 

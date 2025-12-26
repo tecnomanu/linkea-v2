@@ -5,7 +5,7 @@
  */
 
 import { Dialog, DialogBody, DialogContent } from "@/Components/ui/Dialog";
-import { createBlockDefaults } from "@/config/blockConfig";
+import { createBlockDefaults } from "@/Components/Shared/blocks/blockConfig";
 import { Icon } from "@/constants/icons";
 import { BlockType, LinkBlock } from "@/types";
 import {

@@ -54,6 +54,7 @@ class SaveLinksRequest extends FormRequest
             'links.*.order' => 'required|integer|min:0',
             'links.*.icon' => 'nullable|array',
             'links.*.headerSize' => 'nullable|string|in:small,medium,large',
+            'links.*.mediaDisplayMode' => 'nullable|string|in:button,preview,both',
             'links.*.showInlinePlayer' => 'nullable|boolean',
             'links.*.autoPlay' => 'nullable|boolean',
             'links.*.startMuted' => 'nullable|boolean',
@@ -114,6 +115,7 @@ class SaveLinksRequest extends FormRequest
     {
         $config = array_filter([
             'header_size' => $link['headerSize'] ?? null,
+            'media_display_mode' => $link['mediaDisplayMode'] ?? null,
             'show_inline_player' => $link['showInlinePlayer'] ?? null,
             'auto_play' => $link['autoPlay'] ?? null,
             'start_muted' => $link['startMuted'] ?? null,

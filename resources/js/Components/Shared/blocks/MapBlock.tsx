@@ -10,12 +10,8 @@ import { BlockDesign } from "@/hooks/useBlockStyles";
 import { LinkBlock, UserProfile } from "@/types";
 import { MapPin } from "lucide-react";
 import React from "react";
-import {
-    BlockButton,
-    BlockContainer,
-    BlockPreview,
-    renderBlockIcon,
-} from "./partial";
+import { renderBlockIcon } from "@/hooks/useBlockIcon";
+import { BlockButton, BlockContainer, BlockPreview } from "./partial";
 
 interface MapBlockProps {
     link: LinkBlock;

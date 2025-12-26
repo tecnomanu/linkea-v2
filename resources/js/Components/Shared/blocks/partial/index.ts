@@ -8,5 +8,3 @@
 export { BlockButton } from "./BlockButton";
 export { BlockContainer } from "./BlockContainer";
 export { BlockPreview } from "./BlockPreview";
-export { renderBlockIcon } from "./renderBlockIcon";
-

@@ -174,8 +174,8 @@ export default function PreviewPagesSection() {
     const currentTransform = offset + dragOffset;
 
     return (
-        <section className="py-16 bg-gradient-to-b from-white to-gray-50 overflow-hidden">
-            <div className="container mx-auto px-4 mb-10">
+        <section className="py-10 md:py-16 bg-gradient-to-b from-white to-gray-50 overflow-hidden">
+            <div className="container mx-auto px-4 mb-6 md:mb-10">
                 <h3 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-2">
                     Descubri lo que otros estan creando
                 </h3>

@@ -7,10 +7,11 @@
  */
 
 import { BlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
-import { LinkBlock, UserProfile } from "@/types";
+import { LinkBlock, MediaDisplayMode, UserProfile } from "@/types";
 import { Play, Video } from "lucide-react";
 import React from "react";
-import { BlockButton, BlockContainer, BlockPreview, renderBlockIcon } from "./partial";
+import { renderBlockIcon } from "@/hooks/useBlockIcon";
+import { BlockButton, BlockContainer, BlockPreview } from "./partial";
 
 interface VimeoBlockProps {
     link: LinkBlock;
@@ -37,6 +38,14 @@ const extractVimeoId = (url: string): string | null => {
         if (match) return match[1];
     }
     return null;
+};
+
+/**
+ * Get the current display mode, handling legacy showInlinePlayer
+ */
+const getDisplayMode = (link: LinkBlock): MediaDisplayMode => {
+    if (link.mediaDisplayMode) return link.mediaDisplayMode;
+    return link.showInlinePlayer ? "both" : "button";
 };
 
 export const VimeoBlock: React.FC<VimeoBlockProps> = ({
@@ -75,28 +84,34 @@ export const VimeoBlock: React.FC<VimeoBlockProps> = ({
             color: design.buttonTextColor,
         });
 
-    // Button + Preview mode (inline player enabled)
-    if (link.showInlinePlayer && embedUrl) {
+    const displayMode = getDisplayMode(link);
+    const showPreview = (displayMode === "preview" || displayMode === "both") && embedUrl;
+
+    // Button only mode
+    if (displayMode === "button" || !showPreview) {
+        return (
+            <BlockButton
+                href={link.url}
+                title={link.title}
+                subtitle={subtitle}
+                design={blockDesign}
+                position="full"
+                icon={getIcon(false)}
+                isPreview={isPreview}
+                onClick={onClick}
+                animationDelay={animationDelay}
+                className="mb-4"
+            />
+        );
+    }
+
+    // Preview only mode
+    if (displayMode === "preview") {
         return (
             <BlockContainer animationDelay={animationDelay}>
-                {/* Header button */}
-                {link.title && (
-                    <BlockButton
-                        href={link.url}
-                        title={link.title}
-                        subtitle={subtitle}
-                        design={blockDesign}
-                        position="top"
-                        icon={getIcon(true)}
-                        isPreview={isPreview}
-                        onClick={onClick}
-                    />
-                )}
-
-                {/* Video embed */}
                 <BlockPreview
                     design={blockDesign}
-                    hasButton={!!link.title}
+                    hasButton={false}
                     aspectRatio="16/9"
                     backgroundColor="black"
                 >
@@ -115,20 +130,42 @@ export const VimeoBlock: React.FC<VimeoBlockProps> = ({
         );
     }
 
-    // Button only mode (default)
+    // Both mode (button + preview)
     return (
-        <BlockButton
-            href={link.url}
-            title={link.title}
-            subtitle={subtitle}
-            design={blockDesign}
-            position="full"
-            icon={getIcon(false)}
-            isPreview={isPreview}
-            onClick={onClick}
-            animationDelay={animationDelay}
-            className="mb-4"
-        />
+        <BlockContainer animationDelay={animationDelay}>
+            {/* Header button */}
+            {link.title && (
+                <BlockButton
+                    href={link.url}
+                    title={link.title}
+                    subtitle={subtitle}
+                    design={blockDesign}
+                    position="top"
+                    icon={getIcon(true)}
+                    isPreview={isPreview}
+                    onClick={onClick}
+                />
+            )}
+
+            {/* Video embed */}
+            <BlockPreview
+                design={blockDesign}
+                hasButton={!!link.title}
+                aspectRatio="16/9"
+                backgroundColor="black"
+            >
+                <iframe
+                    src={embedUrl}
+                    title={link.title || "Vimeo Video"}
+                    width="100%"
+                    height="100%"
+                    frameBorder="0"
+                    allow="autoplay; fullscreen; picture-in-picture"
+                    allowFullScreen
+                    loading="lazy"
+                />
+            </BlockPreview>
+        </BlockContainer>
     );
 };
 

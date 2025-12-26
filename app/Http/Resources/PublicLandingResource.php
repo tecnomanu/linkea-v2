@@ -125,6 +125,7 @@ class PublicLandingResource extends JsonResource
                     'order' => (int) $link->order,
                     'icon' => $link->icon,
                     'headerSize' => $config['header_size'] ?? 'medium',
+                    'mediaDisplayMode' => $config['media_display_mode'] ?? null,
                     'showInlinePlayer' => $config['show_inline_player'] ?? false,
                     'autoPlay' => $config['auto_play'] ?? false,
                     'startMuted' => $config['start_muted'] ?? true,
