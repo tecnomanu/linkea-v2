@@ -277,11 +277,13 @@ class AuthService
     }
 
     /**
-     * Check if username is available for registration.
+     * Check if username is available for registration or handle change.
      *
+     * @param string $username The username to check
+     * @param User|null $currentUser The current authenticated user (to exclude their own landing)
      * @return array{available: bool, message: string}
      */
-    public function checkUsernameAvailability(string $username): array
+    public function checkUsernameAvailability(string $username, ?User $currentUser = null): array
     {
         if (empty($username)) {
             return [
@@ -301,28 +303,38 @@ class AuthService
 
         $normalizedUsername = StringHelper::normalizeHandle($username);
 
-        // Check reserved slugs
-        if (ReservedSlugs::isReserved($normalizedUsername)) {
+        // Check reserved slugs (root users can bypass this)
+        $isRoot = $currentUser && $currentUser->hasRole(UserRoles::ROOT);
+        if (!$isRoot && ReservedSlugs::isReserved($normalizedUsername)) {
             return [
                 'available' => false,
                 'message' => 'Este nombre de usuario no esta disponible',
             ];
         }
 
-        // Check if username exists in users table
-        if (User::where('username', $normalizedUsername)->exists()) {
+        // Check if username exists in users table (excluding current user)
+        $userQuery = User::where('username', $normalizedUsername);
+        if ($currentUser) {
+            $userQuery->where('id', '!=', $currentUser->id);
+        }
+        if ($userQuery->exists()) {
             return [
                 'available' => false,
                 'message' => ResponseMessages::USERNAME_TAKEN,
             ];
         }
 
-        // Check collision with existing landing slugs
-        $existsInLandings = Landing::where('slug', $normalizedUsername)
-            ->orWhere('domain_name', $normalizedUsername)
-            ->exists();
+        // Check collision with existing landing slugs (excluding current user's landings)
+        $landingQuery = Landing::where(function ($q) use ($normalizedUsername) {
+            $q->where('slug', $normalizedUsername)
+              ->orWhere('domain_name', $normalizedUsername);
+        });
+        
+        if ($currentUser) {
+            $landingQuery->where('user_id', '!=', $currentUser->id);
+        }
 
-        if ($existsInLandings) {
+        if ($landingQuery->exists()) {
             return [
                 'available' => false,
                 'message' => ResponseMessages::USERNAME_TAKEN,

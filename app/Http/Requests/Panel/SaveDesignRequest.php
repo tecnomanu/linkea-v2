@@ -16,6 +16,8 @@ class SaveDesignRequest extends FormRequest
         return [
             'name' => 'nullable|string|max:100',
             'bio' => 'nullable|string|max:500',
+            'showTitle' => 'nullable|boolean', // Toggle to show/hide title
+            'showBio' => 'nullable|boolean', // Toggle to show/hide bio
             'avatar' => 'nullable|string', // Can be base64 image (large)
             'theme' => 'nullable|string|max:50',
             'customDesign' => 'nullable|array',
@@ -114,11 +116,22 @@ class SaveDesignRequest extends FormRequest
             $buttonsConfig['iconAlignment'] = $customDesign['buttonIconAlignment'];
         }
 
+        // Build options, filtering nulls but preserving booleans
+        $options = array_filter([
+            'bio' => $data['bio'] ?? null,
+        ], fn($v) => $v !== null);
+
+        // Add boolean fields explicitly
+        if (array_key_exists('showTitle', $data)) {
+            $options['show_title'] = (bool) $data['showTitle'];
+        }
+        if (array_key_exists('showBio', $data)) {
+            $options['show_bio'] = (bool) $data['showBio'];
+        }
+
         $result = [
             'name' => $data['name'] ?? null,
-            'options' => array_filter([
-                'bio' => $data['bio'] ?? null,
-            ]),
+            'options' => $options,
             'template_config' => [
                 'background' => $backgroundConfig,
                 'buttons' => $buttonsConfig,

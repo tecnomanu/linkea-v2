@@ -96,7 +96,6 @@ export default function Register() {
                     status={handleValidation.status}
                     message={handleValidation.message}
                     error={errors.username}
-                    showUrlPreview={true}
                 />
 
                 <div className="grid grid-cols-2 gap-3">

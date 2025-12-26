@@ -17,6 +17,8 @@ class LandingResource extends JsonResource
             'logo' => $this->logo,
             'avatar' => $this->logo['image'] ?? null,
             'bio' => $this->options['bio'] ?? '',
+            'showTitle' => $this->options['show_title'] ?? true,
+            'showBio' => $this->options['show_bio'] ?? true,
             'domain_name' => $this->domain_name,
             'verify' => (bool) $this->verify,
             

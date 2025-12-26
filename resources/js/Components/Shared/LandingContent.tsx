@@ -447,19 +447,21 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                         </span>
                     </button>
                 </div>
-                {/* Title - displayed after handle badge */}
-                <h2
-                    className={`text-2xl font-bold mb-1 tracking-tight ${
-                        isThemePreset ? baseTextColor : ""
-                    }`}
-                    style={
-                        !isThemePreset ? { color: computedTextColors.text } : {}
-                    }
-                >
-                    {user.name}
-                </h2>
-                {/* Subtitle - displayed after title */}
-                {user.bio && (
+                {/* Title - displayed after handle badge (only if enabled and has content) */}
+                {user.showTitle !== false && user.name && (
+                    <h2
+                        className={`text-2xl font-bold mb-1 tracking-tight ${
+                            isThemePreset ? baseTextColor : ""
+                        }`}
+                        style={
+                            !isThemePreset ? { color: computedTextColors.text } : {}
+                        }
+                    >
+                        {user.name}
+                    </h2>
+                )}
+                {/* Subtitle - displayed after title (only if enabled and has content) */}
+                {user.showBio !== false && user.bio && (
                     <p
                         className={`text-sm max-w-[280px] leading-relaxed ${
                             isThemePreset ? subTextColor : ""

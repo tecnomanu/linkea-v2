@@ -1,10 +1,16 @@
 import { sanitizeHandle, validateHandle } from "@/utils/handle";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export type HandleStatus = "idle" | "checking" | "available" | "taken" | "invalid";
+export type HandleStatus = 
+    | "idle" 
+    | "checking" 
+    | "available" 
+    | "taken" 
+    | "invalid"
+    | "current"; // The user's own current handle
 
 interface UseHandleValidationOptions {
-    /** Initial handle value */
+    /** Initial handle value (the user's current handle) */
     initialValue?: string;
     /** Minimum length before triggering async validation */
     minLengthForCheck?: number;
@@ -12,30 +18,34 @@ interface UseHandleValidationOptions {
     debounceMs?: number;
     /** Whether to check availability via API (default: true) */
     checkAvailability?: boolean;
-    /** Current handle to exclude from availability check (for edit mode) */
-    currentHandle?: string;
 }
 
 interface UseHandleValidationReturn {
     /** Current sanitized handle value */
     value: string;
+    /** The original/saved handle value */
+    originalValue: string;
     /** Validation status */
     status: HandleStatus;
     /** Validation/status message */
     message: string;
-    /** Whether the handle is valid for submission */
+    /** Whether the handle is valid for submission (available or current) */
     isValid: boolean;
+    /** Whether the value has changed from original */
+    hasChanged: boolean;
+    /** Whether the change can be saved (valid and changed) */
+    canSave: boolean;
     /** Handle input change */
     onChange: (rawValue: string) => void;
-    /** Set value directly (sanitized) */
-    setValue: (value: string) => void;
-    /** Reset to initial state */
+    /** Reset to original value */
     reset: () => void;
+    /** Confirm the change (call this after successful save) */
+    confirm: () => void;
 }
 
 /**
  * Hook for handle/username validation with async availability check.
- * Encapsulates sanitization, format validation, and API availability check.
+ * Tracks original value and only allows saving valid changes.
  */
 export function useHandleValidation(
     options: UseHandleValidationOptions = {}
@@ -45,14 +55,47 @@ export function useHandleValidation(
         minLengthForCheck = 3,
         debounceMs = 500,
         checkAvailability = true,
-        currentHandle,
     } = options;
 
-    const [value, setValueState] = useState(() => sanitizeHandle(initialValue));
-    const [status, setStatus] = useState<HandleStatus>("idle");
+    // Sanitize and store the initial value - only set once on mount
+    const sanitizedInitial = sanitizeHandle(initialValue);
+    const originalRef = useRef<string>(sanitizedInitial);
+    const isInitializedRef = useRef(false);
+    
+    const [value, setValueState] = useState(sanitizedInitial);
+    const [status, setStatus] = useState<HandleStatus>(() => {
+        // Start with "current" if initial value is valid
+        if (sanitizedInitial.length >= minLengthForCheck) {
+            const formatValidation = validateHandle(sanitizedInitial);
+            if (formatValidation.valid) {
+                return "current";
+            }
+        }
+        return "idle";
+    });
     const [message, setMessage] = useState("");
     const debounceRef = useRef<NodeJS.Timeout | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
+
+    // Initialize only once when initialValue becomes available
+    useEffect(() => {
+        if (isInitializedRef.current) return;
+        
+        const sanitized = sanitizeHandle(initialValue);
+        if (sanitized.length > 0) {
+            isInitializedRef.current = true;
+            originalRef.current = sanitized;
+            setValueState(sanitized);
+            
+            if (sanitized.length >= minLengthForCheck) {
+                const formatValidation = validateHandle(sanitized);
+                if (formatValidation.valid) {
+                    setStatus("current");
+                    setMessage("");
+                }
+            }
+        }
+    }, [initialValue, minLengthForCheck]);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -66,6 +109,13 @@ export function useHandleValidation(
         };
     }, []);
 
+    // Check if handle matches original (case-insensitive, sanitized)
+    const isOriginalHandle = useCallback((handle: string): boolean => {
+        const sanitized = sanitizeHandle(handle);
+        const original = originalRef.current;
+        return sanitized.toLowerCase() === original.toLowerCase();
+    }, []);
+
     // Check availability via API
     const checkUsernameAvailability = useCallback(
         async (handle: string) => {
@@ -74,10 +124,10 @@ export function useHandleValidation(
                 abortControllerRef.current.abort();
             }
 
-            // Skip check if it's the current handle (edit mode)
-            if (currentHandle && handle === sanitizeHandle(currentHandle)) {
-                setStatus("available");
-                setMessage("Tu nombre actual");
+            // Double-check if it's the original handle
+            if (isOriginalHandle(handle)) {
+                setStatus("current");
+                setMessage("");
                 return;
             }
 
@@ -93,6 +143,7 @@ export function useHandleValidation(
                     },
                     body: JSON.stringify({ username: handle }),
                     signal: controller.signal,
+                    credentials: "same-origin", // Include session cookies
                 });
 
                 const result = await response.json();
@@ -101,7 +152,7 @@ export function useHandleValidation(
 
                 if (result.data?.available) {
                     setStatus("available");
-                    setMessage(result.data.message || "Disponible");
+                    setMessage("Disponible");
                 } else {
                     const isTaken = !result.data?.message?.includes("caracteres");
                     setStatus(isTaken ? "taken" : "invalid");
@@ -109,14 +160,14 @@ export function useHandleValidation(
                 }
             } catch (error) {
                 if (error instanceof Error && error.name === "AbortError") {
-                    return; // Ignore abort errors
+                    return;
                 }
-                // On network error, fall back to format validation
-                setStatus("idle");
+                // On network error, assume valid format is enough
+                setStatus("available");
                 setMessage("");
             }
         },
-        [currentHandle]
+        [isOriginalHandle]
     );
 
     // Handle value change with sanitization and validation
@@ -128,6 +179,13 @@ export function useHandleValidation(
             // Clear pending debounce
             if (debounceRef.current) {
                 clearTimeout(debounceRef.current);
+            }
+
+            // If back to original, mark as current immediately
+            if (isOriginalHandle(sanitized)) {
+                setStatus("current");
+                setMessage("");
+                return;
             }
 
             // Basic format validation first
@@ -148,62 +206,47 @@ export function useHandleValidation(
             // If availability check is enabled, show checking state and debounce API call
             if (checkAvailability) {
                 setStatus("checking");
-                setMessage("Verificando...");
+                setMessage("");
 
                 debounceRef.current = setTimeout(() => {
                     checkUsernameAvailability(sanitized);
                 }, debounceMs);
             } else {
-                // Just format validation
                 setStatus("available");
-                setMessage("Formato valido");
+                setMessage("");
             }
         },
-        [checkAvailability, checkUsernameAvailability, debounceMs, minLengthForCheck]
+        [checkAvailability, checkUsernameAvailability, debounceMs, minLengthForCheck, isOriginalHandle]
     );
 
-    // Set value directly (already sanitized)
-    const setValue = useCallback(
-        (newValue: string) => {
-            const sanitized = sanitizeHandle(newValue);
-            setValueState(sanitized);
-
-            if (sanitized.length >= minLengthForCheck) {
-                const formatValidation = validateHandle(sanitized);
-                if (formatValidation.valid) {
-                    if (checkAvailability) {
-                        setStatus("checking");
-                        checkUsernameAvailability(sanitized);
-                    } else {
-                        setStatus("available");
-                        setMessage("Formato valido");
-                    }
-                } else {
-                    setStatus("invalid");
-                    setMessage(formatValidation.message);
-                }
-            }
-        },
-        [checkAvailability, checkUsernameAvailability, minLengthForCheck]
-    );
-
-    // Reset to initial state
+    // Reset to original value
     const reset = useCallback(() => {
-        setValueState(sanitizeHandle(initialValue));
-        setStatus("idle");
+        setValueState(originalRef.current);
+        setStatus("current");
         setMessage("");
-    }, [initialValue]);
+    }, []);
 
-    const isValid = status === "available";
+    // Confirm the change (update original after successful save)
+    const confirm = useCallback(() => {
+        originalRef.current = value;
+        setStatus("current");
+        setMessage("");
+    }, [value]);
+
+    const hasChanged = !isOriginalHandle(value);
+    const isValid = status === "available" || status === "current";
+    const canSave = hasChanged && status === "available";
 
     return {
         value,
+        originalValue: originalRef.current,
         status,
         message,
         isValid,
+        hasChanged,
+        canSave,
         onChange,
-        setValue,
         reset,
+        confirm,
     };
 }
-

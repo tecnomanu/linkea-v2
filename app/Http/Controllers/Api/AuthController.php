@@ -104,13 +104,15 @@ class AuthController extends Controller
     }
 
     /**
-     * Check username availability for registration form.
-     * Public endpoint - no auth required.
+     * Check username availability for registration or handle change.
+     * Works for both guests (registration) and authenticated users (handle change).
+     * Root users can use reserved slugs.
      */
     public function checkUsername(Request $request): JsonResponse
     {
         $result = $this->authService->checkUsernameAvailability(
-            $request->input('username', '')
+            $request->input('username', ''),
+            $request->user() // Pass authenticated user if available
         );
 
         return $this->success($result);

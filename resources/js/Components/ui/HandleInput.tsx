@@ -11,7 +11,7 @@ interface HandleInputProps
     onChange: (value: string) => void;
     /** Validation status */
     status: HandleStatus;
-    /** Validation message */
+    /** Validation message (only shown for errors or when available) */
     message?: string;
     /** Label text */
     label?: string;
@@ -19,13 +19,19 @@ interface HandleInputProps
     prefix?: string;
     /** Server-side error message */
     error?: string;
-    /** Show URL preview below input */
-    showUrlPreview?: boolean;
+    /** Whether the value has changed from original */
+    hasChanged?: boolean;
 }
 
 /**
  * Specialized input for handle/username with prefix and validation indicators.
  * Shows app_url/ prefix, real-time validation status (check/X/loader).
+ * 
+ * Visual states:
+ * - current: check icon (neutral color), no border highlight, no message
+ * - available: check icon (green), green border, "Disponible" message
+ * - checking: loader icon, neutral border
+ * - taken/invalid: X icon (red), red border, error message
  */
 export const HandleInput = forwardRef<HTMLInputElement, HandleInputProps>(
     (
@@ -37,7 +43,7 @@ export const HandleInput = forwardRef<HTMLInputElement, HandleInputProps>(
             label,
             prefix: customPrefix,
             error,
-            showUrlPreview = true,
+            hasChanged = false,
             className,
             id = "handle",
             placeholder = "tu-linkea",
@@ -62,14 +68,15 @@ export const HandleInput = forwardRef<HTMLInputElement, HandleInputProps>(
 
         // Determine visual state
         const hasError = error || status === "taken" || status === "invalid";
-        const isValid = status === "available";
+        const isAvailable = status === "available";
+        const isCurrent = status === "current";
         const isChecking = status === "checking";
         const showIndicator = value.length >= 3;
 
         // Border color based on state
         const borderClass = hasError
             ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-            : isValid
+            : isAvailable
             ? "border-green-500 focus:border-green-500 focus:ring-green-500/20"
             : "border-neutral-300 dark:border-neutral-600 focus:border-brand-500 focus:ring-brand-500/20";
 
@@ -117,7 +124,14 @@ export const HandleInput = forwardRef<HTMLInputElement, HandleInputProps>(
                                     className="text-neutral-400 animate-spin"
                                 />
                             )}
-                            {isValid && (
+                            {isCurrent && (
+                                <Check
+                                    size={18}
+                                    className="text-neutral-400"
+                                    strokeWidth={3}
+                                />
+                            )}
+                            {isAvailable && (
                                 <Check
                                     size={18}
                                     className="text-green-500"
@@ -131,42 +145,37 @@ export const HandleInput = forwardRef<HTMLInputElement, HandleInputProps>(
                     )}
                 </div>
 
-                {/* Error/validation message */}
-                {error && (
-                    <p className="text-sm text-red-500 animate-in slide-in-from-top-1 fade-in duration-200">
-                        {error}
-                    </p>
-                )}
-                {!error && message && hasError && (
-                    <p className="text-sm text-red-500">{message}</p>
-                )}
+                {/* Messages - keep it simple */}
+                <div className="min-h-[20px]">
+                    {/* Server error */}
+                    {error && (
+                        <p className="text-sm text-red-500 animate-in slide-in-from-top-1 fade-in duration-200">
+                            {error}
+                        </p>
+                    )}
 
-                {/* URL preview - only show when valid or checking */}
-                {showUrlPreview && value && !error && !hasError && (
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        Tu perfil estara en:{" "}
-                        <span
-                            className={`font-medium ${
-                                isValid
-                                    ? "text-green-500"
-                                    : "text-brand-500"
-                            }`}
-                        >
+                    {/* Validation error (taken/invalid) */}
+                    {!error && hasError && message && (
+                        <p className="text-sm text-red-500">{message}</p>
+                    )}
+
+                    {/* Available - show URL preview */}
+                    {!error && isAvailable && (
+                        <p className="text-xs text-green-600 dark:text-green-400">
+                            {message || "Disponible"} · {previewUrl}
+                        </p>
+                    )}
+
+                    {/* Current (unchanged) - just show URL, no extra text */}
+                    {!error && isCurrent && value && (
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
                             {previewUrl}
-                        </span>
-                    </p>
-                )}
-
-                {/* Success message */}
-                {!error && message && isValid && (
-                    <p className="text-xs text-green-600 dark:text-green-400 font-medium">
-                        {message}
-                    </p>
-                )}
+                        </p>
+                    )}
+                </div>
             </div>
         );
     }
 );
 
 HandleInput.displayName = "HandleInput";
-

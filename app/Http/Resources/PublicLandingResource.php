@@ -77,6 +77,13 @@ class PublicLandingResource extends JsonResource
                 'bio' => $options['bio'] ?? '',
             ],
 
+            // Header visibility toggles
+            'showTitle' => $options['show_title'] ?? true,
+            'showBio' => $options['show_bio'] ?? true,
+
+            // Privacy flag for noindex
+            'isPrivate' => (bool) ($options['is_private'] ?? false),
+
             // Relations (when loaded) - transform to plain arrays
             'links' => $this->transformLinks($this->whenLoaded('links')),
             'socialLinks' => $this->transformLinks($this->whenLoaded('socials')),

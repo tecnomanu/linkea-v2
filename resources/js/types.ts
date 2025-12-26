@@ -144,6 +144,10 @@ export interface UserProfile {
     avatar: string;
     bio: string;
 
+    // Header visibility toggles
+    showTitle?: boolean; // Show/hide title (default: true)
+    showBio?: boolean; // Show/hide bio/subtitle (default: true)
+
     // Design Configuration
     // Can be preset ID or 'custom' or saved theme ID (saved_1, saved_2)
     theme: string;
@@ -162,6 +166,9 @@ export interface UserProfile {
     seoDescription?: string;
     googleAnalyticsId?: string;
     facebookPixelId?: string;
+
+    // Privacy
+    isPrivate?: boolean; // Hide profile from search engines (noindex)
 
     // Verification & Legacy
     isVerified?: boolean; // Shows verified badge

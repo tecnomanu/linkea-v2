@@ -29,6 +29,9 @@ interface LandingViewProps {
         slug: string;
         domain_name: string | null;
         verify: boolean;
+        isPrivate?: boolean; // Hide from search engines
+        showTitle?: boolean; // Show/hide title in header
+        showBio?: boolean; // Show/hide bio in header
         logo: { image: string | null; thumb: string | null } | null;
         template_config: {
             title: string | null; // Displayed on page (may be null or invalid like ' .')
@@ -218,6 +221,8 @@ export default function LandingView({ landing }: LandingViewProps) {
             avatarFloating: templateConfig.header?.avatarFloating ?? true,
             showLinkSubtext: templateConfig.showLinkSubtext ?? false,
         },
+        showTitle: landing.showTitle ?? true,
+        showBio: landing.showBio ?? true,
         isVerified: landing.verify,
     };
 
@@ -327,7 +332,14 @@ export default function LandingView({ landing }: LandingViewProps) {
             <Head>
                 <title>{seoTitle}</title>
                 <meta name="description" content={seoDescription} />
-                <meta name="robots" content="index, follow" />
+                <meta
+                    name="robots"
+                    content={
+                        landing.isPrivate
+                            ? "noindex, nofollow"
+                            : "index, follow"
+                    }
+                />
 
                 {/* Canonical URL */}
                 <link rel="canonical" href={canonicalUrl} />

@@ -4,11 +4,18 @@ import { HandleInput } from "@/Components/ui/HandleInput";
 import { Input } from "@/Components/ui/Input";
 import { Label } from "@/Components/ui/Label";
 import { Textarea } from "@/Components/ui/Textarea";
+import { Toggle } from "@/Components/ui/Toggle";
 import { useHandleValidation } from "@/hooks/useHandleValidation";
 import { UserProfile } from "@/types";
-import { sanitizeHandle } from "@/utils/handle";
-import { AtSign, BarChart3, Globe, Lock, Search } from "lucide-react";
-import React, { useCallback, useEffect } from "react";
+import {
+    AtSign,
+    BarChart3,
+    Globe,
+    Lock,
+    RotateCcw,
+    Search,
+} from "lucide-react";
+import React, { useCallback, useState } from "react";
 
 interface SettingsTabProps {
     user: UserProfile;
@@ -24,30 +31,43 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
         ? user.handle.substring(1)
         : user.handle;
 
+    const [isSavingHandle, setIsSavingHandle] = useState(false);
+
     // Handle validation with async availability check
     const handleValidation = useHandleValidation({
         initialValue: initialHandle,
         checkAvailability: true,
         debounceMs: 500,
-        currentHandle: initialHandle, // Exclude current handle from "taken" check
     });
 
-    // Initialize validation on mount
-    useEffect(() => {
-        if (initialHandle && handleValidation.value !== initialHandle) {
-            handleValidation.setValue(initialHandle);
-        }
-    }, []);
-
-    // Handle change - update parent and validation
+    // Handle change - only update input, NOT the backend
     const handleHandleChange = useCallback(
         (value: string) => {
             handleValidation.onChange(value);
-            const sanitized = sanitizeHandle(value);
-            onUpdateUser({ handle: `@${sanitized}` });
+            // Don't call onUpdateUser here - wait for confirmation
         },
-        [handleValidation, onUpdateUser]
+        [handleValidation]
     );
+
+    // Confirm handle change - this actually saves
+    const handleConfirmChange = useCallback(async () => {
+        if (!handleValidation.canSave) return;
+
+        setIsSavingHandle(true);
+        try {
+            // Save the new handle
+            onUpdateUser({ handle: `@${handleValidation.value}` });
+            // Mark as confirmed (updates original value in hook)
+            handleValidation.confirm();
+        } finally {
+            setIsSavingHandle(false);
+        }
+    }, [handleValidation, onUpdateUser]);
+
+    // Reset to original value
+    const handleResetHandle = useCallback(() => {
+        handleValidation.reset();
+    }, [handleValidation]);
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
@@ -60,7 +80,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                     title="Mi nombre de Linkea"
                     subtitle="Reclama tu URL unica."
                 />
-                <CardBody className="space-y-6">
+                <CardBody className="space-y-4">
                     <HandleInput
                         id="username"
                         label="Nombre de usuario"
@@ -68,9 +88,35 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                         onChange={handleHandleChange}
                         status={handleValidation.status}
                         message={handleValidation.message}
-                        showUrlPreview={true}
+                        hasChanged={handleValidation.hasChanged}
                         placeholder="username"
                     />
+
+                    {/* Action buttons - only show when changed */}
+                    {handleValidation.hasChanged && (
+                        <div className="flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                            <Button
+                                size="sm"
+                                onClick={handleConfirmChange}
+                                disabled={
+                                    !handleValidation.canSave || isSavingHandle
+                                }
+                                isLoading={isSavingHandle}
+                            >
+                                Cambiar nombre
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={handleResetHandle}
+                                disabled={isSavingHandle}
+                                className="text-neutral-500"
+                            >
+                                <RotateCcw size={14} className="mr-1" />
+                                Cancelar
+                            </Button>
+                        </div>
+                    )}
                 </CardBody>
             </Card>
 
@@ -165,29 +211,35 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 </CardBody>
             </Card>
 
-            {/* Danger Zone */}
-            <div className="border border-red-100 dark:border-red-900/50 bg-red-50/30 dark:bg-red-900/10 rounded-[32px] p-6 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <div className="p-3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full">
-                        <Lock size={20} />
+            {/* Privacy Settings */}
+            <Card padding="none">
+                <CardHeader
+                    icon={<Lock size={24} />}
+                    iconBg="bg-red-50 dark:bg-red-900/30"
+                    iconColor="text-red-600 dark:text-red-400"
+                    title="Privacidad"
+                    subtitle="Controla quien puede encontrar tu perfil."
+                />
+                <CardBody>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="font-medium text-neutral-900 dark:text-white">
+                                Perfil privado
+                            </p>
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                Oculta tu perfil de Google y otros buscadores
+                            </p>
+                        </div>
+                        <Toggle
+                            checked={user.isPrivate || false}
+                            onChange={(checked) =>
+                                onUpdateUser({ isPrivate: checked })
+                            }
+                            size="md"
+                        />
                     </div>
-                    <div>
-                        <h3 className="font-bold text-red-900 dark:text-red-300">
-                            Perfil privado
-                        </h3>
-                        <p className="text-xs text-red-700/60 dark:text-red-400/60">
-                            Oculta tu perfil de los buscadores.
-                        </p>
-                    </div>
-                </div>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                >
-                    Configurar
-                </Button>
-            </div>
+                </CardBody>
+            </Card>
         </div>
     );
 };
