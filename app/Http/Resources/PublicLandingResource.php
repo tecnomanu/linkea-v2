@@ -25,23 +25,33 @@ class PublicLandingResource extends JsonResource
         $displayTitle = $templateConfig['title'] ?? $this->domain_name ?? 'Linkea';
         $displaySubtitle = $templateConfig['subtitle'] ?? '';
 
-        // SEO fields from options with fallback to display values
-        // seoTitle: options.title → template_config.title → domain_name
-        // seoDescription: options.description → template_config.subtitle → generated
-        $seoTitle = trim($options['title'] ?? '') ?: $displayTitle;
-        $seoDescription = trim($options['description'] ?? '') ?: ($displaySubtitle ?: "Links de {$displayTitle} - Creado con Linkea");
+        // Meta/SEO fields with fallback chain
+        // New structure: options.meta.* with legacy fallback to options.*
+        $meta = $options['meta'] ?? [];
+        
+        // seoTitle: meta.title → options.title (legacy) → template_config.title → domain_name
+        $seoTitle = trim($meta['title'] ?? $options['title'] ?? '') ?: $displayTitle;
+        
+        // seoDescription: meta.description → options.description (legacy) → subtitle → generated
+        $seoDescription = trim($meta['description'] ?? $options['description'] ?? '') 
+            ?: ($displaySubtitle ?: "Links de {$displayTitle} - Creado con Linkea");
+        
+        // seoImage: meta.image → logo (fallback to user's logo for OG image)
+        $logo = StorageHelper::logoUrls($this->logo);
+        $seoImage = $meta['image'] ?? $logo['image'] ?? null;
 
         return [
             'id' => $this->id,
             'name' => $this->name,
             'seoTitle' => $seoTitle, // For browser tab <title>
             'seoDescription' => $seoDescription, // For meta description
+            'seoImage' => $seoImage, // For OG image (custom or logo fallback)
             'slug' => $this->slug,
             'domain_name' => $this->domain_name,
             'verify' => (bool) $this->verify,
 
             // Logo with resolved URLs
-            'logo' => StorageHelper::logoUrls($this->logo),
+            'logo' => $logo,
 
             // Template config for rendering (displayed on page)
             'template_config' => [

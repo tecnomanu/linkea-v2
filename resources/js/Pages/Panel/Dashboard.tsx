@@ -193,14 +193,17 @@ export default function Dashboard({
         lastCustomDesign:
             landing?.template_config?.lastCustomDesign || undefined,
 
-        // SEO & Analytics
-        seoTitle: landing?.options?.title || "",
-        seoDescription: landing?.options?.description || "",
-        // Support both new format and legacy format (options.analytics.*)
-        googleAnalyticsId: landing?.options?.google_analytics_id 
-            || landing?.options?.analytics?.google_code || "",
-        facebookPixelId: landing?.options?.facebook_pixel_id 
-            || landing?.options?.analytics?.facebook_pixel || "",
+        // SEO - new structure: options.meta.*, with legacy fallback
+        seoTitle: landing?.options?.meta?.title 
+            || landing?.options?.title || "",
+        seoDescription: landing?.options?.meta?.description 
+            || landing?.options?.description || "",
+        
+        // Analytics - new structure: options.analytics.*, with legacy fallback
+        googleAnalyticsId: landing?.options?.analytics?.google_code 
+            || landing?.options?.google_analytics_id || "",
+        facebookPixelId: landing?.options?.analytics?.facebook_pixel 
+            || landing?.options?.facebook_pixel_id || "",
         
         // Privacy
         isPrivate: landing?.options?.is_private || false,

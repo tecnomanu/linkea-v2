@@ -278,6 +278,9 @@ class MongoImportSeeder extends Seeder
                 // Keep template_config.title and template_config.subtitle as-is (this is the correct structure)
                 $templateConfig = $this->processLegacyTemplateConfig($landingData['template_config'] ?? []);
 
+                // Process options with new meta structure
+                $options = $this->processLegacyOptions($landingData['options'] ?? []);
+
                 $landing = Landing::create([
                     'name' => $landingData['name'] ?? $domainName, // Internal name
                     'slug' => $slug,
@@ -287,7 +290,7 @@ class MongoImportSeeder extends Seeder
                     'company_id' => $companyId,
                     'user_id' => $userId,
                     'template_config' => $templateConfig, // Contains title & subtitle
-                    'options' => $landingData['options'] ?? [],
+                    'options' => $options,
                     'mongo_id' => $mongoId,
                     'created_at' => $this->parseDate($landingData['created_at'] ?? null),
                     'updated_at' => $this->parseDate($landingData['updated_at'] ?? null),
@@ -553,5 +556,34 @@ class MongoImportSeeder extends Seeder
         }
 
         return $config;
+    }
+
+    /**
+     * Process legacy options to new structure.
+     * Moves title/description to meta object for better organization.
+     *
+     * Legacy: { title: '...', description: '...', analytics: {...} }
+     * New:    { meta: { title: '...', description: '...', image: null }, analytics: {...} }
+     */
+    private function processLegacyOptions(array $options): array
+    {
+        // Extract SEO fields from legacy flat structure
+        $seoTitle = $options['title'] ?? null;
+        $seoDescription = $options['description'] ?? null;
+
+        // Remove legacy flat fields
+        unset($options['title'], $options['description']);
+
+        // Create new meta structure
+        $options['meta'] = [
+            'title' => $seoTitle,
+            'description' => $seoDescription,
+            'image' => null, // Future: custom OG image
+        ];
+
+        // Analytics stays in its current structure (options.analytics.*)
+        // is_private stays at root level
+
+        return $options;
     }
 }

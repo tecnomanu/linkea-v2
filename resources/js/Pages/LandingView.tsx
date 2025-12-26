@@ -27,6 +27,7 @@ interface LandingViewProps {
         name: string;
         seoTitle: string; // For browser tab title (resolved with fallbacks)
         seoDescription: string; // For meta description (resolved with fallbacks)
+        seoImage: string | null; // For OG image (custom or logo fallback)
         slug: string;
         domain_name: string | null;
         verify: boolean;
@@ -228,9 +229,11 @@ export default function LandingView({ landing }: LandingViewProps) {
     // SEO data - fully resolved by backend with proper fallbacks
     const seoTitle = `${landing.seoTitle} | Linkea`;
     const seoDescription = landing.seoDescription as string;
-    const seoImage = user.avatar?.startsWith("http")
-        ? user.avatar
-        : `${appUrl}${user.avatar}`;
+    // seoImage comes from backend: custom image or logo fallback
+    const rawSeoImage = landing.seoImage || user.avatar;
+    const seoImage = rawSeoImage?.startsWith("http")
+        ? rawSeoImage
+        : `${appUrl}${rawSeoImage}`;
     const canonicalUrl = `${appUrl}/${user.handle}`;
 
     // JSON-LD structured data

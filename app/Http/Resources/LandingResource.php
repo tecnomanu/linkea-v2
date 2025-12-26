@@ -40,14 +40,19 @@ class LandingResource extends JsonResource
                 'fontPair' => $this->template_config['typography']['fontPair'] ?? 'modern',
             ],
             
-            // SEO/Settings
-            'seoTitle' => $this->options['title'] ?? '',
-            'seoDescription' => $this->options['description'] ?? '',
-            // Analytics: support both new format and legacy format (options.analytics.*)
-            'googleAnalyticsId' => $this->options['google_analytics_id'] 
-                ?? $this->options['analytics']['google_code'] ?? null,
-            'facebookPixelId' => $this->options['facebook_pixel_id'] 
-                ?? $this->options['analytics']['facebook_pixel'] ?? null,
+            // SEO/Settings - new structure: options.meta.*, with legacy fallback
+            'seoTitle' => $this->options['meta']['title'] 
+                ?? $this->options['title'] ?? '',
+            'seoDescription' => $this->options['meta']['description'] 
+                ?? $this->options['description'] ?? '',
+            'seoImage' => $this->options['meta']['image'] ?? null, // Future: custom OG image
+            
+            // Analytics - new structure: options.analytics.*, with legacy fallback
+            'googleAnalyticsId' => $this->options['analytics']['google_code'] 
+                ?? $this->options['google_analytics_id'] ?? null,
+            'facebookPixelId' => $this->options['analytics']['facebook_pixel'] 
+                ?? $this->options['facebook_pixel_id'] ?? null,
+            
             'isPrivate' => $this->options['is_private'] ?? false,
             
             // Template config (raw for advanced use)

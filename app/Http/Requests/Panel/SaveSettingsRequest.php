@@ -106,13 +106,27 @@ class SaveSettingsRequest extends FormRequest
             $handle = StringHelper::normalizeHandle($handle);
         }
 
-        // Build options array, filtering nulls but preserving booleans
-        $options = array_filter([
+        // Build meta object for SEO fields
+        $meta = array_filter([
             'title' => $data['seoTitle'] ?? null,
             'description' => $data['seoDescription'] ?? null,
-            'google_analytics_id' => $data['googleAnalyticsId'] ?? null,
-            'facebook_pixel_id' => $data['facebookPixelId'] ?? null,
+            // 'image' => $data['seoImage'] ?? null, // Future: custom OG image
         ], fn($v) => $v !== null);
+
+        // Build analytics object
+        $analytics = array_filter([
+            'google_code' => $data['googleAnalyticsId'] ?? null,
+            'facebook_pixel' => $data['facebookPixelId'] ?? null,
+        ], fn($v) => $v !== null);
+
+        // Build options with structured sub-objects
+        $options = [];
+        if (!empty($meta)) {
+            $options['meta'] = $meta;
+        }
+        if (!empty($analytics)) {
+            $options['analytics'] = $analytics;
+        }
 
         // Add boolean fields explicitly (they should always be set when present)
         if (array_key_exists('isPrivate', $data)) {
