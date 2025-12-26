@@ -5,6 +5,8 @@ services:
       context: ./
       dockerfile: Dockerfile
       target: production
+    env_file:
+      - .env
     restart: unless-stopped
     working_dir: /var/www
     expose:

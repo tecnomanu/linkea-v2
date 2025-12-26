@@ -26,4 +26,3 @@ chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 echo "Starting supervisord..."
 exec supervisord -c /etc/supervisor.d/supervisord.ini
-
