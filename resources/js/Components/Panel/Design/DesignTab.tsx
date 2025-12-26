@@ -7,6 +7,7 @@ import { Toggle } from "@/Components/ui/Toggle";
 import { getThemePreset, THEME_PRESETS } from "@/constants/themePresets";
 import {
     ButtonShape,
+    ButtonSize,
     ButtonStyle,
     CustomDesignConfig,
     FontPair,
@@ -64,6 +65,12 @@ const BUTTON_SHAPES: { id: ButtonShape; label: string; class: string }[] = [
     { id: "sharp", label: "Recto", class: "rounded-none" },
     { id: "rounded", label: "Redondeado", class: "rounded-xl" },
     { id: "pill", label: "Pastilla", class: "rounded-full" },
+];
+
+// Button size options
+const BUTTON_SIZES: { id: ButtonSize; label: string }[] = [
+    { id: "compact", label: "Compacto" },
+    { id: "normal", label: "Grande" },
 ];
 
 // Typography options
@@ -359,8 +366,8 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
 
                     {/* Right Side: Toggle + Inputs */}
                     <div className="flex-1 w-full space-y-4">
-                        {/* Round Avatar Toggle */}
-                        <div className="flex items-center justify-between py-2">
+                        {/* Avatar Style Toggles */}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 py-2">
                             <Toggle
                                 checked={
                                     user.customDesign.roundedAvatar !== false
@@ -368,7 +375,21 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                                 onChange={(checked) =>
                                     handleCustomChange("roundedAvatar", checked)
                                 }
-                                label="Redondear imagen"
+                                label="Redondear"
+                                labelPosition="left"
+                                size="md"
+                            />
+                            <Toggle
+                                checked={
+                                    user.customDesign.avatarFloating !== false
+                                }
+                                onChange={(checked) =>
+                                    handleCustomChange(
+                                        "avatarFloating",
+                                        checked
+                                    )
+                                }
+                                label="Flotante"
                                 labelPosition="left"
                                 size="md"
                             />
@@ -746,14 +767,37 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                             {hasBackgroundImage && (
                                 <button
                                     onClick={() => {
-                                        handleCustomChange(
-                                            "backgroundImage",
-                                            undefined
-                                        );
-                                        handleCustomChange(
-                                            "backgroundEnabled",
-                                            false
-                                        );
+                                        // Update both props at once to avoid multiple re-renders
+                                        const newCustomDesign = {
+                                            ...user.customDesign,
+                                            backgroundImage: undefined,
+                                            backgroundEnabled: false,
+                                        };
+                                        onUpdateUser({
+                                            theme: currentSavedTheme
+                                                ? user.theme
+                                                : "custom",
+                                            customDesign: newCustomDesign,
+                                            ...(currentSavedTheme
+                                                ? {
+                                                      savedCustomThemes:
+                                                          user.savedCustomThemes?.map(
+                                                              (t) =>
+                                                                  t.id ===
+                                                                  currentSavedTheme.id
+                                                                      ? {
+                                                                            ...t,
+                                                                            customDesign:
+                                                                                newCustomDesign,
+                                                                        }
+                                                                      : t
+                                                          ),
+                                                  }
+                                                : {
+                                                      lastCustomDesign:
+                                                          newCustomDesign,
+                                                  }),
+                                        });
                                     }}
                                     className="absolute top-3 right-3 p-2 bg-red-500 hover:bg-red-600 text-white rounded-xl shadow-lg transition-colors z-10"
                                     title="Eliminar imagen de fondo"
@@ -777,26 +821,40 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                                     value={undefined}
                                     onChange={(imageData) => {
                                         if (imageData) {
-                                            handleCustomChange(
-                                                "backgroundImage",
-                                                `url("${imageData.base64}")`
-                                            );
-                                            handleCustomChange(
-                                                "backgroundEnabled",
-                                                true
-                                            );
-                                            handleCustomChange(
-                                                "backgroundSize",
-                                                "cover"
-                                            );
-                                            handleCustomChange(
-                                                "backgroundPosition",
-                                                "center"
-                                            );
-                                            handleCustomChange(
-                                                "backgroundRepeat",
-                                                "no-repeat"
-                                            );
+                                            // Update all background props at once to avoid multiple re-renders
+                                            const newCustomDesign = {
+                                                ...user.customDesign,
+                                                backgroundImage: `url("${imageData.base64}")`,
+                                                backgroundEnabled: true,
+                                                backgroundSize: "cover",
+                                                backgroundPosition: "center",
+                                                backgroundRepeat: "no-repeat",
+                                            };
+                                            onUpdateUser({
+                                                theme: currentSavedTheme
+                                                    ? user.theme
+                                                    : "custom",
+                                                customDesign: newCustomDesign,
+                                                ...(currentSavedTheme
+                                                    ? {
+                                                          savedCustomThemes:
+                                                              user.savedCustomThemes?.map(
+                                                                  (t) =>
+                                                                      t.id ===
+                                                                      currentSavedTheme.id
+                                                                          ? {
+                                                                                ...t,
+                                                                                customDesign:
+                                                                                    newCustomDesign,
+                                                                            }
+                                                                          : t
+                                                              ),
+                                                      }
+                                                    : {
+                                                          lastCustomDesign:
+                                                              newCustomDesign,
+                                                      }),
+                                            });
                                         }
                                     }}
                                     rounded={false}
@@ -1080,28 +1138,120 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                         </div>
                     </div>
 
+                    {/* Button Size */}
+                    <div className="grid md:grid-cols-[200px_1fr] gap-6 items-start">
+                        <div className="pt-2">
+                            <label className="font-semibold text-neutral-800 dark:text-neutral-200 block">
+                                Tamanio de Boton
+                            </label>
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                                Altura y espaciado interno
+                            </p>
+                        </div>
+                        <div className="flex gap-2 bg-neutral-50 dark:bg-neutral-800 p-1.5 rounded-2xl w-fit border border-neutral-100 dark:border-neutral-700">
+                            {BUTTON_SIZES.map((size) => (
+                                <button
+                                    key={size.id}
+                                    onClick={() =>
+                                        handleCustomChange(
+                                            "buttonSize",
+                                            size.id
+                                        )
+                                    }
+                                    className={`
+                                        px-4 py-2 rounded-xl text-sm font-medium transition-all
+                                        ${
+                                            (user.customDesign.buttonSize ||
+                                                "compact") === size.id
+                                                ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-md"
+                                                : "bg-transparent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                                        }
+                                    `}
+                                >
+                                    {size.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     {/* Button Colors */}
                     <div className="grid md:grid-cols-[200px_1fr] gap-6 items-start">
-                        <label className="font-semibold text-neutral-800 dark:text-neutral-200 pt-2">
-                            Colores de Boton
-                        </label>
-                        <div className="flex gap-8">
-                            <ColorPicker
-                                value={user.customDesign.buttonColor}
-                                onChange={(color) =>
-                                    handleCustomChange("buttonColor", color)
-                                }
-                                label="Fondo / Borde"
-                                size="md"
-                            />
-                            <ColorPicker
-                                value={user.customDesign.buttonTextColor}
-                                onChange={(color) =>
-                                    handleCustomChange("buttonTextColor", color)
-                                }
-                                label="Texto / Icono"
-                                size="md"
-                            />
+                        <div className="pt-2">
+                            <label className="font-semibold text-neutral-800 dark:text-neutral-200 block">
+                                Colores de Boton
+                            </label>
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                                Fondo, texto y borde opcional
+                            </p>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="flex gap-8 flex-wrap">
+                                <ColorPicker
+                                    value={user.customDesign.buttonColor}
+                                    onChange={(color) =>
+                                        handleCustomChange("buttonColor", color)
+                                    }
+                                    label="Fondo"
+                                    size="md"
+                                />
+                                <ColorPicker
+                                    value={user.customDesign.buttonTextColor}
+                                    onChange={(color) =>
+                                        handleCustomChange(
+                                            "buttonTextColor",
+                                            color
+                                        )
+                                    }
+                                    label="Texto / Icono"
+                                    size="md"
+                                />
+                                <div className="flex flex-col gap-1">
+                                    <ColorPicker
+                                        value={
+                                            user.customDesign
+                                                .buttonBorderColor ||
+                                            user.customDesign.buttonColor
+                                        }
+                                        onChange={(color) =>
+                                            handleCustomChange(
+                                                "buttonBorderColor",
+                                                color
+                                            )
+                                        }
+                                        label="Borde"
+                                        size="md"
+                                        disabled={
+                                            !user.customDesign.buttonBorderColor
+                                        }
+                                    />
+                                    {user.customDesign.buttonBorderColor && (
+                                        <button
+                                            onClick={() =>
+                                                handleCustomChange(
+                                                    "buttonBorderColor",
+                                                    undefined
+                                                )
+                                            }
+                                            className="text-xs text-red-500 hover:text-red-600"
+                                        >
+                                            Quitar borde
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                            {!user.customDesign.buttonBorderColor && (
+                                <button
+                                    onClick={() =>
+                                        handleCustomChange(
+                                            "buttonBorderColor",
+                                            user.customDesign.buttonColor
+                                        )
+                                    }
+                                    className="text-sm text-brand-500 hover:text-brand-600 font-medium"
+                                >
+                                    + Agregar color de borde diferente
+                                </button>
+                            )}
                         </div>
                     </div>
 

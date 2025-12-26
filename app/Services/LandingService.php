@@ -224,6 +224,7 @@ class LandingService
     {
         return [
             'image_rounded' => true,
+            'image_floating' => true, // Default: floating avatar with shadow/border
             'title' => '@' . $username,
             'subtitle' => '',
             'background' => [
@@ -235,11 +236,17 @@ class LandingService
             ],
             'textColor' => '#fff',
             'buttons' => [
+                'style' => 'solid',
+                'shape' => 'rounded',
+                'size' => 'compact', // Default: compact size
                 'backgroundColor' => '#607d8b',
                 'backgroundHoverColor' => '#fe9c53',
                 'textColor' => '#fff',
                 'textHoverColor' => '#fff',
+                'showIcons' => true,
+                'iconAlignment' => 'left',
             ],
+            'showLinkSubtext' => true, // Default: show URLs for new landings
             'icons' => [
                 'show' => true,
                 'position' => 'left',

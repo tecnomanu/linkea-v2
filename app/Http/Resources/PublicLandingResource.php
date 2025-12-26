@@ -53,10 +53,13 @@ class PublicLandingResource extends JsonResource
                     'controls' => $bgConfig['controls'] ?? null,
                 ],
                 'buttons' => [
-                    'style' => $buttons['style'] ?? 'solid',
+                    'style' => $this->resolveButtonStyle($buttons),
                     'shape' => $buttons['shape'] ?? 'rounded',
+                    'size' => $buttons['size'] ?? 'compact', // Default to compact (legacy)
                     'backgroundColor' => $buttons['backgroundColor'] ?? ($buttons['color'] ?? '#000000'),
                     'textColor' => $buttons['textColor'] ?? '#ffffff',
+                    // Legacy border support: when borderShow is true, use borderColor
+                    'borderColor' => $this->resolveBorderColor($buttons),
                     'showIcons' => $buttons['showIcons'] ?? true,
                     'iconAlignment' => $buttons['iconAlignment'] ?? 'left',
                 ],
@@ -64,6 +67,7 @@ class PublicLandingResource extends JsonResource
                 'fontPair' => $templateConfig['fontPair'] ?? 'modern',
                 'header' => [
                     'roundedAvatar' => $header['roundedAvatar'] ?? ($templateConfig['image_rounded'] ?? true),
+                    'avatarFloating' => $header['avatarFloating'] ?? ($templateConfig['image_floating'] ?? true),
                 ],
                 'showLinkSubtext' => $templateConfig['showLinkSubtext'] ?? false,
             ],
@@ -141,6 +145,50 @@ class PublicLandingResource extends JsonResource
             })
             ->values()
             ->toArray();
+    }
+
+    /**
+     * Resolve button style from legacy config.
+     * Legacy uses borderShow boolean; new uses style string.
+     */
+    protected function resolveButtonStyle(array $buttons): string
+    {
+        // If style is already set, use it
+        if (!empty($buttons['style'])) {
+            return $buttons['style'];
+        }
+
+        // Legacy: borderShow = true means outline style
+        if (!empty($buttons['borderShow'])) {
+            return 'outline';
+        }
+
+        return 'solid';
+    }
+
+    /**
+     * Resolve border color from legacy config.
+     * Returns border color only when different from background (legacy support).
+     */
+    protected function resolveBorderColor(array $buttons): ?string
+    {
+        // Legacy mode: borderShow + borderColor
+        if (!empty($buttons['borderShow']) && !empty($buttons['borderColor'])) {
+            $borderColor = $buttons['borderColor'];
+            $bgColor = $buttons['backgroundColor'] ?? ($buttons['color'] ?? '#000000');
+
+            // Only return if border color is different from background
+            if (strtolower($borderColor) !== strtolower($bgColor)) {
+                return $borderColor;
+            }
+        }
+
+        // New mode: explicit borderColor field
+        if (!empty($buttons['borderColor']) && empty($buttons['borderShow'])) {
+            return $buttons['borderColor'];
+        }
+
+        return null;
     }
 
     /**

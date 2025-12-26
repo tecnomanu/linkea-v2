@@ -270,6 +270,9 @@ class MongoImportSeeder extends Seeder
                 // Sanitize slug for URLs (preserves . _ - but removes special chars)
                 $slug = $this->sanitizeSlugForUrl($landingData['slug'] ?? $domainName);
 
+                // Process template_config with legacy defaults
+                $templateConfig = $this->processLegacyTemplateConfig($landingData['template_config'] ?? []);
+
                 $landing = Landing::create([
                     'name' => $landingData['name'] ?? $domainName, // Keep original name with special chars
                     'slug' => $slug,
@@ -278,7 +281,7 @@ class MongoImportSeeder extends Seeder
                     'verify' => $landingData['verify'] ?? false,
                     'company_id' => $companyId,
                     'user_id' => $userId,
-                    'template_config' => $landingData['template_config'] ?? [],
+                    'template_config' => $templateConfig,
                     'options' => $landingData['options'] ?? [],
                     'mongo_id' => $mongoId,
                     'created_at' => $this->parseDate($landingData['created_at'] ?? null),
@@ -507,5 +510,34 @@ class MongoImportSeeder extends Seeder
         $slug = trim($slug, '-_.');
 
         return $slug ?: 'page-' . Str::random(6);
+    }
+
+    /**
+     * Process legacy template_config with migration defaults.
+     * Sets legacy-specific values to preserve original appearance.
+     */
+    private function processLegacyTemplateConfig(array $config): array
+    {
+        // Legacy landings: flat avatar (no floating effect)
+        $config['image_floating'] = false;
+
+        // Legacy landings: don't show URL subtexts
+        $config['showLinkSubtext'] = false;
+
+        // Ensure header config exists with legacy defaults
+        if (!isset($config['header'])) {
+            $config['header'] = [];
+        }
+        $config['header']['avatarFloating'] = false;
+
+        // Ensure buttons config exists and set size to compact (legacy default)
+        if (!isset($config['buttons'])) {
+            $config['buttons'] = [];
+        }
+        if (!isset($config['buttons']['size'])) {
+            $config['buttons']['size'] = 'compact';
+        }
+
+        return $config;
     }
 }

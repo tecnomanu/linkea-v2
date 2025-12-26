@@ -48,8 +48,10 @@ interface LandingViewProps {
             buttons: {
                 style: string;
                 shape: string;
+                size?: string;
                 backgroundColor: string;
                 textColor: string;
+                borderColor?: string | null;
                 showIcons: boolean;
                 iconAlignment: string;
             };
@@ -57,6 +59,7 @@ interface LandingViewProps {
             fontPair: string;
             header: {
                 roundedAvatar: boolean;
+                avatarFloating?: boolean;
             };
             showLinkSubtext: boolean;
         };
@@ -118,8 +121,10 @@ export default function LandingView({ landing }: LandingViewProps) {
         buttons: {
             style: "solid",
             shape: "rounded",
+            size: "compact",
             backgroundColor: "#000000",
             textColor: "#ffffff",
+            borderColor: null,
             showIcons: true,
             iconAlignment: "left",
         },
@@ -195,14 +200,20 @@ export default function LandingView({ landing }: LandingViewProps) {
                 buttons.style as UserProfile["customDesign"]["buttonStyle"],
             buttonShape:
                 buttons.shape as UserProfile["customDesign"]["buttonShape"],
+            buttonSize:
+                (buttons.size as UserProfile["customDesign"]["buttonSize"]) ||
+                "compact",
             buttonColor: buttons.backgroundColor,
             buttonTextColor: buttons.textColor,
+            buttonBorderColor: buttons.borderColor || undefined,
             showButtonIcons: buttons.showIcons,
             buttonIconAlignment: buttons.iconAlignment as "left" | "right",
             fontPair:
                 templateConfig.fontPair as UserProfile["customDesign"]["fontPair"],
             textColor: templateConfig.textColor || undefined,
             roundedAvatar: templateConfig.header?.roundedAvatar ?? true,
+            avatarFloating: templateConfig.header?.avatarFloating ?? true,
+            showLinkSubtext: templateConfig.showLinkSubtext ?? false,
         },
         isVerified: landing.verify,
     };
@@ -373,6 +384,7 @@ export default function LandingView({ landing }: LandingViewProps) {
             <CookieConsent
                 googleAnalyticsIds={["G-FH87DE17XF"]}
                 accentColor={user.customDesign.buttonColor}
+                textColor={user.customDesign.textColor}
             />
         </>
     );

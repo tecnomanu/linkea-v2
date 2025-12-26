@@ -3,6 +3,8 @@
  *
  * Migrated from legacy manage-cookies.js to React.
  * Handles cookie consent banner with Google Analytics and Facebook Pixel tracking.
+ *
+ * Styling matches legacy: subtle prebanner with theme color, dark modal banner.
  */
 
 import { X } from "lucide-react";
@@ -56,7 +58,10 @@ interface CookieConsentProps {
     /** @deprecated Use googleAnalyticsIds instead */
     googleAnalyticsId?: string;
     facebookPixelId?: string;
+    /** Primary color for accept button (defaults to theme button color) */
     accentColor?: string;
+    /** Text color for the prebanner - matches landing text color for contrast */
+    textColor?: string;
     policyLink?: string;
     position?: "left" | "right";
     hideAfterClick?: boolean;
@@ -69,7 +74,8 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({
     googleAnalyticsIds,
     googleAnalyticsId, // deprecated, for backwards compatibility
     facebookPixelId,
-    accentColor = "#FE6A16",
+    accentColor = "#253b48",
+    textColor,
     policyLink = "/privacy",
     position = "left",
     hideAfterClick = false,
@@ -220,79 +226,81 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({
 
     return (
         <>
-            {/* Mini Banner - Shows after decision (legacy style: dark, subtle) */}
+            {/* Mini Banner - Subtle, no background, uses theme text color (legacy style) */}
+            {/* On mobile: centered at bottom. On desktop: positioned left/right */}
             {showMiniBanner && (
-                <button
-                    onClick={handleOpenBanner}
-                    className={`fixed bottom-4 ${
-                        position === "left" ? "left-4" : "right-4"
-                    } z-50 flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-lg transition-all duration-200 hover:scale-[0.97] animate-in slide-in-from-bottom-4 fade-in bg-neutral-800/90 backdrop-blur-sm text-white border border-neutral-700/50`}
-                >
-                    <svg
-                        fill="currentColor"
-                        height="14"
-                        viewBox="0 0 512 512"
-                        className="opacity-80"
+                <div className="fixed bottom-2 sm:bottom-4 left-0 right-0 sm:left-auto sm:right-auto z-50 flex justify-center sm:block">
+                    <button
+                        onClick={handleOpenBanner}
+                        className={`flex items-center gap-1.5 py-2 transition-all duration-200 hover:scale-[0.97] animate-in slide-in-from-bottom-4 fade-in sm:fixed sm:bottom-4 ${
+                            position === "left" ? "sm:left-4" : "sm:right-4"
+                        }`}
+                        style={{ color: textColor || "inherit" }}
                     >
-                        <path d="M510.52 255.82c-69.97-.85-126.47-57.69-126.47-127.86-70.17 0-127-56.49-127.86-126.45-27.26-4.14-55.13.3-79.72 12.82l-69.13 35.22a132.221 132.221 0 0 0-57.79 57.81l-35.1 68.88a132.645 132.645 0 0 0-12.82 80.95l12.08 76.27a132.521 132.521 0 0 0 37.16 72.96l54.77 54.76a132.036 132.036 0 0 0 72.71 37.06l76.71 12.15c27.51 4.36 55.7-.11 80.53-12.76l69.13-35.21a132.273 132.273 0 0 0 57.79-57.81l35.1-68.88c12.56-24.64 17.01-52.58 12.91-79.91zM176 368c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32zm32-160c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32zm160 128c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32z" />
-                    </svg>
-                    <span className="text-xs font-semibold">{t.manageText}</span>
-                </button>
+                        <svg
+                            fill="currentColor"
+                            height="15"
+                            viewBox="0 0 512 512"
+                            className="mt-0.5"
+                        >
+                            <path d="M510.52 255.82c-69.97-.85-126.47-57.69-126.47-127.86-70.17 0-127-56.49-127.86-126.45-27.26-4.14-55.13.3-79.72 12.82l-69.13 35.22a132.221 132.221 0 0 0-57.79 57.81l-35.1 68.88a132.645 132.645 0 0 0-12.82 80.95l12.08 76.27a132.521 132.521 0 0 0 37.16 72.96l54.77 54.76a132.036 132.036 0 0 0 72.71 37.06l76.71 12.15c27.51 4.36 55.7-.11 80.53-12.76l69.13-35.21a132.273 132.273 0 0 0 57.79-57.81l35.1-68.88c12.56-24.64 17.01-52.58 12.91-79.91zM176 368c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32zm32-160c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32zm160 128c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32z" />
+                        </svg>
+                        <span className="text-sm font-bold">{t.manageText}</span>
+                    </button>
+                </div>
             )}
 
-            {/* Main Banner */}
+            {/* Main Banner - Dark themed with accent color buttons (legacy style) */}
+            {/* On mobile: full width with margins, stacked buttons. On desktop: fixed width, side buttons */}
             {showBanner && (
                 <div
-                    className={`fixed bottom-4 ${
-                        position === "left" ? "left-4" : "right-4"
-                    } z-50 max-w-sm w-full bg-white rounded-2xl shadow-2xl border border-neutral-200 overflow-hidden ${
-                        isAnimating
-                            ? "animate-in slide-in-from-bottom-4 fade-in duration-300"
-                            : ""
-                    }`}
+                    className={`fixed z-50 bg-neutral-800 rounded-2xl shadow-2xl overflow-hidden
+                        bottom-0 left-0 right-0 mx-2 mb-2
+                        sm:bottom-4 sm:left-auto sm:right-auto sm:mx-0 sm:max-w-sm sm:w-full
+                        ${position === "left" ? "sm:left-4" : "sm:right-4"}
+                        ${isAnimating ? "animate-in slide-in-from-bottom-4 fade-in duration-300" : ""}`}
                 >
                     {/* Close button */}
                     <button
                         onClick={handleReject}
-                        className="absolute top-3 right-3 p-1 rounded-full hover:bg-neutral-100 transition-colors"
+                        className="absolute top-3 right-3 p-1 rounded-full hover:bg-neutral-700 transition-colors"
                     >
                         <X size={18} className="text-neutral-400" />
                     </button>
 
-                    <div className="p-5">
+                    <div className="p-4 sm:p-5">
                         {/* Heading */}
                         {t.bannerHeading && (
-                            <h3 className="font-bold text-neutral-900 mb-2 pr-6">
+                            <h3 className="font-bold text-white mb-2 pr-6 text-base sm:text-lg">
                                 {t.bannerHeading}
                             </h3>
                         )}
 
                         {/* Description */}
-                        <p className="text-sm text-neutral-600 mb-4">
+                        <p className="text-sm text-neutral-300 mb-4 leading-relaxed">
                             {t.bannerDescription}{" "}
                             <a
                                 href={policyLink}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="underline hover:text-neutral-900 transition-colors"
-                                style={{ color: accentColor }}
+                                className="underline font-bold hover:text-white transition-colors text-white"
                             >
                                 {t.bannerLinkText}
                             </a>
                         </p>
 
-                        {/* Buttons */}
-                        <div className="flex gap-2">
+                        {/* Buttons - Stacked on mobile, side by side on desktop */}
+                        <div className="flex flex-col sm:flex-row gap-2.5">
                             <button
                                 onClick={handleAccept}
-                                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all duration-200 hover:opacity-90 hover:scale-[1.02]"
+                                className="flex-1 px-4 py-3 sm:py-2.5 rounded-xl text-sm font-bold text-white transition-all duration-200 hover:brightness-90 hover:scale-[1.02]"
                                 style={{ backgroundColor: accentColor }}
                             >
                                 {t.acceptBtnText}
                             </button>
                             <button
                                 onClick={handleReject}
-                                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-neutral-100 text-neutral-700 transition-all duration-200 hover:bg-neutral-200 hover:scale-[1.02]"
+                                className="flex-1 px-4 py-3 sm:py-2.5 rounded-xl text-sm font-bold bg-neutral-200 text-neutral-700 transition-all duration-200 hover:bg-neutral-300 hover:scale-[1.02]"
                             >
                                 {t.rejectBtnText}
                             </button>

@@ -17,7 +17,6 @@ import {
 } from "@/utils/iconHelper";
 import {
     Calendar,
-    ExternalLink,
     Ghost,
     Globe,
     MessageCircle,
@@ -27,7 +26,8 @@ import {
     X as XIcon,
     Youtube,
 } from "lucide-react";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
+import ShareModal from "./ShareModal";
 import {
     CalendarBlock,
     EmailBlock,
@@ -158,6 +158,7 @@ export const LandingContent: React.FC<LandingContentProps> = ({
     isPreview = false,
     fullScreen = false,
 }) => {
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const activeSocialLinks = socialLinks.filter((s) => s.active);
     // Filter links that are enabled AND have complete/valid data
     const activeLinks = links.filter((l) => l.isEnabled && isLinkComplete(l));
@@ -291,17 +292,32 @@ export const LandingContent: React.FC<LandingContentProps> = ({
 
     const getButtonStyles = () => {
         const shape = getRounding();
-        const base = `block w-full p-1.5 transition-all duration-300 hover:scale-[1.01] active:scale-95 group mb-3 last:mb-0 ${shape}`;
+        // Button size: compact (legacy default) vs normal (larger)
+        const sizeClass = design.buttonSize === "normal" ? "p-1.5" : "p-0.5";
+        const base = `block w-full ${sizeClass} transition-all duration-300 hover:scale-[1.01] active:scale-95 group mb-3 last:mb-0 ${shape}`;
         let style: React.CSSProperties = {};
         let className = base;
+
+        // Check if we have a separate border color (legacy support)
+        const hasSeparateBorder = !!design.buttonBorderColor;
 
         switch (design.buttonStyle) {
             case "outline":
                 className += ` border-2`;
-                style = {
-                    borderColor: design.buttonColor,
-                    color: design.buttonTextColor,
-                };
+                if (hasSeparateBorder) {
+                    // Legacy mode: border color + background color + text color all separate
+                    style = {
+                        borderColor: design.buttonBorderColor,
+                        backgroundColor: design.buttonColor,
+                        color: design.buttonTextColor,
+                    };
+                } else {
+                    // Standard outline: transparent bg, border = buttonColor
+                    style = {
+                        borderColor: design.buttonColor,
+                        color: design.buttonTextColor,
+                    };
+                }
                 break;
             case "soft":
                 className += ` shadow-sm backdrop-blur-md`;
@@ -309,13 +325,21 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                     backgroundColor: `${design.buttonColor}CC`,
                     color: design.buttonTextColor,
                 };
+                if (hasSeparateBorder) {
+                    className += ` border-2`;
+                    style.borderColor = design.buttonBorderColor;
+                }
                 break;
             case "hard":
                 className += ` border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:scale-100`;
                 style = {
                     backgroundColor: design.buttonColor,
                     color: design.buttonTextColor,
-                    borderColor: isDarkTheme ? "white" : "black",
+                    borderColor: hasSeparateBorder
+                        ? design.buttonBorderColor
+                        : isDarkTheme
+                        ? "white"
+                        : "black",
                     boxShadow: isDarkTheme
                         ? "4px 4px 0px 0px rgba(255,255,255,1)"
                         : "4px 4px 0px 0px rgba(0,0,0,1)",
@@ -328,6 +352,10 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                     backgroundColor: design.buttonColor,
                     color: design.buttonTextColor,
                 };
+                if (hasSeparateBorder) {
+                    className += ` border-2`;
+                    style.borderColor = design.buttonBorderColor;
+                }
                 break;
         }
         return { className, style };
@@ -364,10 +392,14 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                     <img
                         src={user.avatar}
                         alt={user.name}
-                        className={`relative w-28 h-28 object-cover shadow-xl border-4 border-white/20 transition-all duration-300 ${
+                        className={`relative w-28 h-28 object-cover transition-all duration-300 ${
                             design.roundedAvatar !== false
                                 ? "rounded-full"
                                 : "rounded-xl"
+                        } ${
+                            design.avatarFloating !== false
+                                ? "shadow-xl border-4 border-white/20"
+                                : ""
                         }`}
                     />
                 </div>
@@ -462,22 +494,29 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                 )}
             </div>
 
-            {/* Action Row */}
-            <div className="flex justify-center gap-4 mb-10 animate-in slide-in-from-bottom-5 duration-700 fade-in fill-mode-backwards delay-100">
-                {[Share2, ExternalLink].map((Icon, i) => (
-                    <button
-                        key={i}
-                        className={btnClassName.replace(
-                            "w-full",
-                            "w-12 h-12 flex items-center justify-center"
-                        )}
-                        style={btnStyle}
-                        onClick={(e) => isPreview && e.preventDefault()}
-                    >
-                        <Icon size={20} />
-                    </button>
-                ))}
-            </div>
+            {/* Floating Share Button - Top Right */}
+            {/* In preview mode: always icon-only, positioned lower to avoid mock status bar */}
+            {/* In public page: responsive - icon-only on mobile, icon+text on sm+ screens */}
+            <button
+                onClick={() => !isPreview && setIsShareModalOpen(true)}
+                className={`fixed z-50 flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 backdrop-blur-md border border-white/20 rounded-full ${
+                    isPreview
+                        ? "cursor-default top-16 right-4 w-11 h-11"
+                        : "top-4 right-4 w-11 h-11 sm:w-auto sm:h-auto sm:gap-2 sm:px-4 sm:py-2.5"
+                }`}
+                style={{
+                    backgroundColor: `${design.buttonColor}E6`,
+                    color: design.buttonTextColor,
+                }}
+                title="Compartir"
+            >
+                <Share2 size={18} />
+                {!isPreview && (
+                    <span className="hidden sm:inline text-sm font-semibold">
+                        Compartir
+                    </span>
+                )}
+            </button>
 
             {/* Links Stack */}
             <div
@@ -763,6 +802,10 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                         );
                     };
 
+                    // Inner padding based on button size
+                    const innerPadding =
+                        design.buttonSize === "normal" ? "p-3" : "p-2";
+
                     return (
                         <a
                             key={link.id}
@@ -777,21 +820,30 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                             }}
                         >
                             <div
-                                className={`flex items-center p-3 ${
+                                className={`flex items-center ${innerPadding} ${
                                     iconAlignment === "right" ? "relative" : ""
                                 }`}
                             >
                                 {/* Left icon - separate column */}
                                 {showIcons && iconAlignment === "left" && (
                                     <div
-                                        className={`w-11 h-11 flex items-center justify-center mr-4 shrink-0 transition-colors duration-300 ${getRounding()} ${
-                                            design.buttonStyle === "outline"
+                                        className={`${
+                                            design.buttonSize === "normal"
+                                                ? "w-11 h-11 mr-4"
+                                                : "w-9 h-9 mr-3"
+                                        } flex items-center justify-center shrink-0 transition-colors duration-300 ${getRounding()} ${
+                                            design.buttonStyle === "outline" &&
+                                            !design.buttonBorderColor
                                                 ? ""
                                                 : "bg-white/20"
                                         }`}
                                         style={getIconContainerStyle()}
                                     >
-                                        {renderIcon(22)}
+                                        {renderIcon(
+                                            design.buttonSize === "normal"
+                                                ? 22
+                                                : 18
+                                        )}
                                     </div>
                                 )}
 
@@ -810,13 +862,26 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                                         iconAlignment === "inline" &&
                                         renderIcon(18)}
                                     <div className="min-w-0">
-                                        <h3 className="text-base font-bold truncate">
+                                        <h3
+                                            className={`${
+                                                design.buttonSize === "normal"
+                                                    ? "text-base"
+                                                    : "text-sm"
+                                            } font-bold truncate`}
+                                        >
                                             {link.title}
                                         </h3>
                                         {showSubtext &&
                                             subLabel &&
                                             iconAlignment !== "inline" && (
-                                                <p className="text-xs truncate opacity-70">
+                                                <p
+                                                    className={`${
+                                                        design.buttonSize ===
+                                                        "normal"
+                                                            ? "text-xs"
+                                                            : "text-[11px]"
+                                                    } truncate opacity-70`}
+                                                >
                                                     {subLabel}
                                                 </p>
                                             )}
@@ -826,14 +891,23 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                                 {/* Right icon - absolute positioned */}
                                 {showIcons && iconAlignment === "right" && (
                                     <div
-                                        className={`absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center shrink-0 ${getRounding()} ${
-                                            design.buttonStyle === "outline"
+                                        className={`absolute ${
+                                            design.buttonSize === "normal"
+                                                ? "right-4 w-10 h-10"
+                                                : "right-3 w-8 h-8"
+                                        } top-1/2 -translate-y-1/2 flex items-center justify-center shrink-0 ${getRounding()} ${
+                                            design.buttonStyle === "outline" &&
+                                            !design.buttonBorderColor
                                                 ? ""
                                                 : "bg-white/20"
                                         }`}
                                         style={getIconContainerStyle()}
                                     >
-                                        {renderIcon(20)}
+                                        {renderIcon(
+                                            design.buttonSize === "normal"
+                                                ? 20
+                                                : 16
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -842,10 +916,10 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                 })}
             </div>
 
-            {/* Footer */}
+            {/* Footer - Uses theme text color for consistency */}
             <div className="mt-auto pt-6 pb-10 flex flex-col items-center gap-2">
                 <div
-                    className={`flex items-center gap-2 text-xs opacity-60 hover:opacity-100 transition-opacity ${
+                    className={`flex items-center gap-2 text-xs ${
                         isThemePreset ? subTextColor : ""
                     }`}
                     style={
@@ -860,6 +934,7 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                         rel="noopener noreferrer"
                         onClick={(e) => isPreview && e.preventDefault()}
                         className="hover:underline"
+                        style={{ color: "inherit" }}
                     >
                         Politica de Privacidad
                     </a>
@@ -872,12 +947,27 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                             rel="noopener noreferrer"
                             onClick={(e) => isPreview && e.preventDefault()}
                             className="font-bold hover:underline"
+                            style={{ color: "inherit" }}
                         >
                             Linkea
                         </a>
                     </span>
                 </div>
             </div>
+
+            {/* Share Modal */}
+            {!isPreview && (
+                <ShareModal
+                    isOpen={isShareModalOpen}
+                    onClose={() => setIsShareModalOpen(false)}
+                    user={user}
+                    shareUrl={
+                        typeof window !== "undefined"
+                            ? window.location.href
+                            : `https://linkea.ar/${user.handle}`
+                    }
+                />
+            )}
         </div>
     );
 };

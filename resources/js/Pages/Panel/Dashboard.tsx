@@ -184,6 +184,8 @@ export default function Dashboard({
             textColor: landing?.template_config?.textColor || undefined,
             roundedAvatar:
                 landing?.template_config?.header?.roundedAvatar ?? true,
+            avatarFloating:
+                landing?.template_config?.header?.avatarFloating ?? true,
         },
 
         // Saved custom themes (max 2)
@@ -376,6 +378,7 @@ export default function Dashboard({
             customDesign: {
                 ...user.customDesign,
                 roundedAvatar: user.customDesign.roundedAvatar ?? true,
+                avatarFloating: user.customDesign.avatarFloating ?? true,
             },
             savedCustomThemes: user.savedCustomThemes,
             lastCustomDesign: user.lastCustomDesign,

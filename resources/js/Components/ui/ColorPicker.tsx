@@ -19,6 +19,8 @@ interface ColorPickerProps {
     showHex?: boolean;
     /** Additional class for container */
     className?: string;
+    /** Disabled state (read-only visual) */
+    disabled?: boolean;
 }
 
 const sizeClasses = {
@@ -34,9 +36,10 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
     size = "md",
     showHex = false,
     className,
+    disabled = false,
 }) => {
     return (
-        <div className={cn("space-y-2", className)}>
+        <div className={cn("space-y-2", disabled && "opacity-50", className)}>
             {label && (
                 <span className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
                     {label}
@@ -46,14 +49,16 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                 <div
                     className={cn(
                         "relative rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-700 shadow-sm",
-                        sizeClasses[size]
+                        sizeClasses[size],
+                        disabled && "pointer-events-none"
                     )}
                 >
                     <input
                         type="color"
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
-                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] p-0 cursor-pointer border-0"
+                        disabled={disabled}
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] p-0 cursor-pointer border-0 disabled:cursor-not-allowed"
                     />
                 </div>
                 {showHex && (
@@ -67,4 +72,3 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
 };
 
 ColorPicker.displayName = "ColorPicker";
-

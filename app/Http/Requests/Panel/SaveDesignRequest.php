@@ -32,8 +32,10 @@ class SaveDesignRequest extends FormRequest
             // Button properties
             'customDesign.buttonStyle' => 'nullable|string|in:solid,outline,soft,hard',
             'customDesign.buttonShape' => 'nullable|string|in:sharp,rounded,pill',
+            'customDesign.buttonSize' => 'nullable|string|in:compact,normal',
             'customDesign.buttonColor' => 'nullable|string|max:50',
             'customDesign.buttonTextColor' => 'nullable|string|max:50',
+            'customDesign.buttonBorderColor' => 'nullable|string|max:50', // Optional separate border color
             'customDesign.showButtonIcons' => 'nullable|boolean',
             'customDesign.buttonIconAlignment' => 'nullable|string|in:left,inline,right',
             'customDesign.showLinkSubtext' => 'nullable|boolean',
@@ -42,14 +44,15 @@ class SaveDesignRequest extends FormRequest
             // Text color for page content (auto-calculated if not set)
             'customDesign.textColor' => 'nullable|string|max:50',
             'customDesign.roundedAvatar' => 'nullable|boolean',
-            
+            'customDesign.avatarFloating' => 'nullable|boolean', // Floating avatar with shadow (default: true)
+
             // Saved custom themes (max 2)
             'savedCustomThemes' => 'nullable|array|max:2',
             'savedCustomThemes.*.id' => 'required|string|max:50',
             'savedCustomThemes.*.name' => 'required|string|max:50',
             'savedCustomThemes.*.customDesign' => 'required|array',
             'savedCustomThemes.*.createdAt' => 'required|string',
-            
+
             // Last custom design backup (for restore when switching back from preset)
             'lastCustomDesign' => 'nullable|array',
         ];
@@ -68,7 +71,7 @@ class SaveDesignRequest extends FormRequest
             'bgName' => $data['theme'] ?? 'custom',
             'backgroundColor' => $customDesign['backgroundColor'] ?? '#ffffff',
         ];
-        
+
         // Include backgroundImage if provided (SVG patterns, gradients, etc.)
         // Image is always stored, backgroundEnabled controls visibility
         if (isset($customDesign['backgroundImage']) && $customDesign['backgroundImage']) {
@@ -79,7 +82,7 @@ class SaveDesignRequest extends FormRequest
             $backgroundConfig['backgroundRepeat'] = $customDesign['backgroundRepeat'] ?? 'no-repeat';
             $backgroundConfig['backgroundAttachment'] = $customDesign['backgroundAttachment'] ?? 'scroll';
         }
-        
+
         // Background enabled switch (defaults to true if image exists)
         if (isset($customDesign['backgroundEnabled'])) {
             $backgroundConfig['backgroundEnabled'] = $customDesign['backgroundEnabled'];
@@ -97,10 +100,12 @@ class SaveDesignRequest extends FormRequest
         $buttonsConfig = array_filter([
             'style' => $customDesign['buttonStyle'] ?? null,
             'shape' => $customDesign['buttonShape'] ?? null,
+            'size' => $customDesign['buttonSize'] ?? null,
             'backgroundColor' => $customDesign['buttonColor'] ?? null,
             'textColor' => $customDesign['buttonTextColor'] ?? null,
+            'borderColor' => $customDesign['buttonBorderColor'] ?? null, // Separate border color
         ]);
-        
+
         // Add icon options (use isset to preserve false/explicit values)
         if (isset($customDesign['showButtonIcons'])) {
             $buttonsConfig['showIcons'] = $customDesign['showButtonIcons'];
@@ -124,6 +129,7 @@ class SaveDesignRequest extends FormRequest
                 'showLinkSubtext' => $customDesign['showLinkSubtext'] ?? false,
                 'header' => [
                     'roundedAvatar' => $customDesign['roundedAvatar'] ?? true,
+                    'avatarFloating' => $customDesign['avatarFloating'] ?? true,
                 ],
                 // Saved custom themes (max 2 slots)
                 'savedCustomThemes' => $data['savedCustomThemes'] ?? null,

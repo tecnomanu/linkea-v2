@@ -36,6 +36,7 @@ export type CalendarDisplayMode = 'button' | 'inline'; // button = link to exter
 
 export type ButtonStyle = 'solid' | 'outline' | 'soft' | 'hard';
 export type ButtonShape = 'sharp' | 'rounded' | 'pill';
+export type ButtonSize = 'compact' | 'normal';
 export type FontPair = 'modern' | 'elegant' | 'mono';
 
 // Saved custom theme slot (max 2 allowed)
@@ -68,8 +69,10 @@ export interface CustomDesignConfig {
     
     buttonStyle: ButtonStyle;
     buttonShape: ButtonShape;
+    buttonSize?: ButtonSize;
     buttonColor: string;
     buttonTextColor: string;
+    buttonBorderColor?: string; // Optional: separate border color (legacy support)
     
     showButtonIcons?: boolean;
     buttonIconAlignment?: 'left' | 'inline' | 'right';
@@ -78,6 +81,7 @@ export interface CustomDesignConfig {
     fontPair: FontPair;
     textColor?: string;
     roundedAvatar?: boolean;
+    avatarFloating?: boolean; // true = floating with shadow/border (default), false = flat/plain (legacy)
 }
 
 export interface LinkBlock {

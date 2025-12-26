@@ -146,22 +146,23 @@ export function AutoSaveProvider({ children }: { children: ReactNode }) {
                 currentDataStr !== initialStateRef.current[section];
 
             setPendingChangesState((prev) => {
+                let newState: PendingChanges;
+                
                 if (isChanged) {
-                    return { ...prev, [section]: data };
+                    newState = { ...prev, [section]: data };
+                } else {
+                    // No change from baseline - remove from pending
+                    const { [section]: _, ...rest } = prev;
+                    newState = rest;
                 }
-                // No change from baseline - remove from pending
-                const { [section]: _, ...rest } = prev;
-                return rest;
-            });
-
-            // Update hasChanges based on all sections
-            setPendingChangesState((current) => {
-                const willHaveChanges = isChanged
-                    ? true
-                    : Object.keys(current).filter((k) => k !== section).length >
-                      0;
-                setHasChanges(willHaveChanges);
-                return current;
+                
+                // Schedule hasChanges update after setState completes
+                // Using setTimeout to avoid "setState during render" warning
+                setTimeout(() => {
+                    setHasChanges(Object.keys(newState).length > 0);
+                }, 0);
+                
+                return newState;
             });
         },
         []

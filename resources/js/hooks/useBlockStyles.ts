@@ -5,13 +5,15 @@
  * across all block types. Eliminates prop drilling from LandingContent.
  */
 
-import { ButtonShape, ButtonStyle, UserProfile } from "@/types";
+import { ButtonShape, ButtonSize, ButtonStyle, UserProfile } from "@/types";
 
 export interface BlockDesign {
     buttonColor: string;
     buttonTextColor: string;
+    buttonBorderColor?: string; // Optional separate border color (legacy support)
     buttonStyle: ButtonStyle;
     buttonShape: ButtonShape;
+    buttonSize?: ButtonSize;
     showButtonIcons?: boolean;
     showLinkSubtext?: boolean;
 }
@@ -66,18 +68,33 @@ export const getButtonStyles = (
     isDarkTheme = false
 ): ButtonStyleResult => {
     const rounding = getRoundingClass(design.buttonShape, position);
-    const base = `block w-full p-1.5 transition-all duration-300 hover:scale-[1.01] active:scale-95 group ${rounding}`;
+    // Button size: compact (legacy default) vs normal (larger)
+    const sizeClass = design.buttonSize === "normal" ? "p-1.5" : "p-0.5";
+    const base = `block w-full ${sizeClass} transition-all duration-300 hover:scale-[1.01] active:scale-95 group ${rounding}`;
 
     let className = base;
     let style: React.CSSProperties = {};
 
+    // Check if we have a separate border color (legacy support)
+    const hasSeparateBorder = !!design.buttonBorderColor;
+
     switch (design.buttonStyle) {
         case "outline":
             className += " border-2";
-            style = {
-                borderColor: design.buttonColor,
-                color: design.buttonTextColor,
-            };
+            if (hasSeparateBorder) {
+                // Legacy mode: border color + background color + text color all separate
+                style = {
+                    borderColor: design.buttonBorderColor,
+                    backgroundColor: design.buttonColor,
+                    color: design.buttonTextColor,
+                };
+            } else {
+                // Standard outline: transparent bg, border = buttonColor
+                style = {
+                    borderColor: design.buttonColor,
+                    color: design.buttonTextColor,
+                };
+            }
             break;
 
         case "soft":
@@ -86,11 +103,17 @@ export const getButtonStyles = (
                 backgroundColor: `${design.buttonColor}CC`,
                 color: design.buttonTextColor,
             };
+            if (hasSeparateBorder) {
+                className += " border-2";
+                style.borderColor = design.buttonBorderColor;
+            }
             break;
 
         case "hard":
             // Brutalist style - border and shadow
-            const borderColor = isDarkTheme ? "white" : "black";
+            const hardBorderColor = hasSeparateBorder 
+                ? design.buttonBorderColor 
+                : (isDarkTheme ? "white" : "black");
             const shadowColor = isDarkTheme
                 ? "rgba(255,255,255,1)"
                 : "rgba(0,0,0,1)";
@@ -99,7 +122,7 @@ export const getButtonStyles = (
             style = {
                 backgroundColor: design.buttonColor,
                 color: design.buttonTextColor,
-                borderColor,
+                borderColor: hardBorderColor,
                 boxShadow: `4px 4px 0px 0px ${shadowColor}`,
             };
             break;
@@ -111,6 +134,10 @@ export const getButtonStyles = (
                 backgroundColor: design.buttonColor,
                 color: design.buttonTextColor,
             };
+            if (hasSeparateBorder) {
+                className += " border-2";
+                style.borderColor = design.buttonBorderColor;
+            }
             break;
     }
 
@@ -179,13 +206,17 @@ export const getIconContainerStyles = (
     design: BlockDesign
 ): { className: string; style: React.CSSProperties } => {
     const rounding = getRoundingClass(design.buttonShape, "full");
+    // Size based on buttonSize: compact (legacy) vs normal
+    const sizeClass = design.buttonSize === "normal" ? "w-11 h-11 mr-4" : "w-9 h-9 mr-3";
+    // For outline without separate border, use subtle bg; otherwise use white/20
+    const hasBg = design.buttonStyle !== "outline" || !!design.buttonBorderColor;
 
     return {
-        className: `w-11 h-11 flex items-center justify-center mr-4 shrink-0 ${rounding} ${
-            design.buttonStyle === "outline" ? "" : "bg-white/20"
+        className: `${sizeClass} flex items-center justify-center shrink-0 ${rounding} ${
+            hasBg ? "bg-white/20" : ""
         }`,
         style:
-            design.buttonStyle === "outline"
+            design.buttonStyle === "outline" && !design.buttonBorderColor
                 ? { backgroundColor: `${design.buttonColor}15` }
                 : {},
     };
@@ -201,8 +232,10 @@ export const useBlockStyles = (
     const blockDesign: BlockDesign = {
         buttonColor: design.buttonColor,
         buttonTextColor: design.buttonTextColor,
+        buttonBorderColor: design.buttonBorderColor,
         buttonStyle: design.buttonStyle,
         buttonShape: design.buttonShape,
+        buttonSize: design.buttonSize,
         showButtonIcons: design.showButtonIcons,
         showLinkSubtext: design.showLinkSubtext,
     };
