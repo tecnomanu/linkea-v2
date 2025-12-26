@@ -43,8 +43,11 @@ class LandingResource extends JsonResource
             // SEO/Settings
             'seoTitle' => $this->options['title'] ?? '',
             'seoDescription' => $this->options['description'] ?? '',
-            'googleAnalyticsId' => $this->options['google_analytics_id'] ?? null,
-            'facebookPixelId' => $this->options['facebook_pixel_id'] ?? null,
+            // Analytics: support both new format and legacy format (options.analytics.*)
+            'googleAnalyticsId' => $this->options['google_analytics_id'] 
+                ?? $this->options['analytics']['google_code'] ?? null,
+            'facebookPixelId' => $this->options['facebook_pixel_id'] 
+                ?? $this->options['analytics']['facebook_pixel'] ?? null,
             'isPrivate' => $this->options['is_private'] ?? false,
             
             // Template config (raw for advanced use)

@@ -193,9 +193,17 @@ export default function Dashboard({
         lastCustomDesign:
             landing?.template_config?.lastCustomDesign || undefined,
 
-        // SEO Defaults
+        // SEO & Analytics
         seoTitle: landing?.options?.title || "",
         seoDescription: landing?.options?.description || "",
+        // Support both new format and legacy format (options.analytics.*)
+        googleAnalyticsId: landing?.options?.google_analytics_id 
+            || landing?.options?.analytics?.google_code || "",
+        facebookPixelId: landing?.options?.facebook_pixel_id 
+            || landing?.options?.analytics?.facebook_pixel || "",
+        
+        // Privacy
+        isPrivate: landing?.options?.is_private || false,
 
         // Verification & Legacy
         isVerified: landing?.verify || false,
@@ -405,6 +413,7 @@ export default function Dashboard({
             seoDescription: user.seoDescription,
             googleAnalyticsId: user.googleAnalyticsId,
             facebookPixelId: user.facebookPixelId,
+            isPrivate: user.isPrivate,
         }),
         [
             user.handle,
@@ -412,6 +421,7 @@ export default function Dashboard({
             user.seoDescription,
             user.googleAnalyticsId,
             user.facebookPixelId,
+            user.isPrivate,
         ]
     );
 

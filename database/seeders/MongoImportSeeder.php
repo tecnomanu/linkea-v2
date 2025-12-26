@@ -529,6 +529,15 @@ class MongoImportSeeder extends Seeder
         // Legacy landings: don't show URL subtexts
         $config['showLinkSubtext'] = false;
 
+        // Legacy landings: always showed title and subtitle (no toggles existed)
+        // Set to true by default so imported landings display correctly
+        if (!isset($config['showTitle'])) {
+            $config['showTitle'] = true;
+        }
+        if (!isset($config['showSubtitle'])) {
+            $config['showSubtitle'] = true;
+        }
+
         // Ensure header config exists with legacy defaults
         if (!isset($config['header'])) {
             $config['header'] = [];
