@@ -25,12 +25,13 @@ interface LandingViewProps {
     landing: {
         id: string;
         name: string;
+        seoTitle: string; // For browser tab title (from options.title)
         slug: string;
         domain_name: string | null;
         verify: boolean;
         logo: { image: string | null; thumb: string | null } | null;
         template_config: {
-            title: string;
+            title: string | null; // Displayed on page (may be null or invalid like ' .')
             subtitle: string;
             background: {
                 bgName: string;
@@ -173,8 +174,9 @@ export default function LandingView({ landing }: LandingViewProps) {
         }));
 
     // Build user profile
+    // Note: templateConfig.title is what's displayed on page (may be ' .' etc)
     const user: UserProfile = {
-        name: templateConfig.title || landing.name,
+        name: templateConfig.title ?? landing.name,
         handle: landing.slug || landing.domain_name || "linkea",
         avatar: landing.logo?.image || "/images/logo_only.png",
         bio: templateConfig.subtitle || landing.options?.bio || "",
@@ -205,8 +207,8 @@ export default function LandingView({ landing }: LandingViewProps) {
         isVerified: landing.verify,
     };
 
-    // SEO data
-    const seoTitle = `${user.name} | Linkea`;
+    // SEO data - use seoTitle from backend (options.title) for browser tab
+    const seoTitle = `${landing.seoTitle || user.name} | Linkea`;
     const seoDescription =
         user.bio || `Links de ${user.name} - Creado con Linkea`;
     const seoImage = user.avatar?.startsWith("http")
@@ -316,15 +318,22 @@ export default function LandingView({ landing }: LandingViewProps) {
                 {/* Canonical URL */}
                 <link rel="canonical" href={canonicalUrl} />
 
-                {/* Favicon - use landing logo if available, otherwise default */}
+                {/* 
+                  Favicon - Currently uses Linkea's default favicon.
+                  TODO: Future feature - allow users to customize landing favicon 
+                  (e.g. use landing logo: user.avatar)
+                */}
                 <link
                     rel="icon"
                     type="image/png"
-                    href={user.avatar || "/favicon.ico"}
+                    sizes="32x32"
+                    href="/favicon-32x32.png"
                 />
+                <link rel="shortcut icon" href="/favicon-32x32.png" />
                 <link
                     rel="apple-touch-icon"
-                    href={user.avatar || "/assets/images/logo_only.png"}
+                    sizes="180x180"
+                    href="/apple-touch-icon.png"
                 />
 
                 {/* Open Graph */}

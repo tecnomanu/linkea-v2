@@ -371,18 +371,9 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                         }`}
                     />
                 </div>
-                <h2
-                    className={`text-2xl font-bold mb-1 tracking-tight ${
-                        isThemePreset ? baseTextColor : ""
-                    }`}
-                    style={
-                        !isThemePreset ? { color: computedTextColors.text } : {}
-                    }
-                >
-                    {user.name}
-                </h2>
+                {/* Handle badge - displayed first after avatar */}
                 <p
-                    className={`text-sm font-medium mb-3 px-3 py-1 rounded-full backdrop-blur-sm border border-white/10 ${
+                    className={`text-sm font-medium mb-2 px-3 py-1 rounded-full backdrop-blur-sm border border-white/10 ${
                         isThemePreset ? subTextColor : ""
                     }`}
                     style={
@@ -407,9 +398,21 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                         />
                     )}
                 </p>
+                {/* Title - displayed after handle badge */}
+                <h2
+                    className={`text-2xl font-bold mb-1 tracking-tight ${
+                        isThemePreset ? baseTextColor : ""
+                    }`}
+                    style={
+                        !isThemePreset ? { color: computedTextColors.text } : {}
+                    }
+                >
+                    {user.name}
+                </h2>
+                {/* Subtitle - displayed after title */}
                 {user.bio && (
                     <p
-                        className={`text-sm max-w-[260px] leading-relaxed ${
+                        className={`text-sm max-w-[280px] leading-relaxed ${
                             isThemePreset ? subTextColor : ""
                         }`}
                         style={

@@ -21,15 +21,13 @@ class PublicLandingResource extends JsonResource
         $header = $templateConfig['header'] ?? [];
         $options = $this->options ?? [];
 
-        // Resolve title with proper fallback chain:
-        // 1. options.title (SEO title, often the "real" title)
-        // 2. template_config.title (if valid - not just spaces/punctuation)
-        // 3. landing name
-        $title = $this->resolveTitle($options, $templateConfig);
+        // SEO title for browser tab: options.title -> landing name
+        $seoTitle = $this->resolveSeoTitle($options);
 
         return [
             'id' => $this->id,
-            'name' => $title,
+            'name' => $this->name,
+            'seoTitle' => $seoTitle, // For browser tab <title>
             'slug' => $this->slug,
             'domain_name' => $this->domain_name,
             'verify' => (bool) $this->verify,
@@ -37,9 +35,9 @@ class PublicLandingResource extends JsonResource
             // Logo with resolved URLs
             'logo' => StorageHelper::logoUrls($this->logo),
 
-            // Template config for rendering
+            // Template config for rendering (displayed on page)
             'template_config' => [
-                'title' => $title,
+                'title' => $templateConfig['title'] ?? null, // Displayed on page as-is
                 'subtitle' => $templateConfig['subtitle'] ?? ($options['bio'] ?? ''),
                 'background' => [
                     'bgName' => $bgConfig['bgName'] ?? 'custom',
@@ -82,38 +80,18 @@ class PublicLandingResource extends JsonResource
     }
 
     /**
-     * Resolve the display title with proper fallback chain.
+     * Resolve SEO title for browser tab.
+     * Uses options.title (SEO field) with fallback to landing name.
      */
-    protected function resolveTitle(array $options, array $templateConfig): string
+    protected function resolveSeoTitle(array $options): string
     {
-        // Priority 1: options.title (SEO title, usually the intended display title)
-        $optionsTitle = trim($options['title'] ?? '');
-        if ($optionsTitle && $this->isValidTitle($optionsTitle)) {
-            return $optionsTitle;
-        }
-
-        // Priority 2: template_config.title (if valid)
-        $configTitle = trim($templateConfig['title'] ?? '');
-        if ($configTitle && $this->isValidTitle($configTitle)) {
-            return $configTitle;
-        }
-
-        // Priority 3: landing name
-        return $this->name ?? 'Linkea';
-    }
-
-    /**
-     * Check if title is valid (not just punctuation/spaces).
-     */
-    protected function isValidTitle(string $title): bool
-    {
-        // Remove all whitespace and common punctuation
-        $cleaned = preg_replace('/[\s.,;:!?\-_]+/', '', $title);
-        return !empty($cleaned);
+        $seoTitle = trim($options['title'] ?? '');
+        return !empty($seoTitle) ? $seoTitle : ($this->name ?? 'Linkea');
     }
 
     /**
      * Transform links collection to plain array.
+     * Filters out empty social links (no url and no icon).
      */
     protected function transformLinks($links): array
     {
@@ -121,36 +99,48 @@ class PublicLandingResource extends JsonResource
             return [];
         }
 
-        return $links->map(function ($link) {
-            $config = $link->config ?? [];
+        return $links
+            ->filter(function ($link) {
+                // Filter out empty social links (no url and no icon)
+                if ($link->type === 'social') {
+                    $hasUrl = !empty($link->link);
+                    $hasIcon = !empty($link->icon);
+                    return $hasUrl || $hasIcon;
+                }
+                return true;
+            })
+            ->map(function ($link) {
+                $config = $link->config ?? [];
 
-            return [
-                'id' => $link->id,
-                'title' => $link->text,
-                'url' => $link->link,
-                'type' => $link->type ?? 'link',
-                'isEnabled' => (bool) $link->state,
-                'order' => (int) $link->order,
-                'icon' => $link->icon,
-                'headerSize' => $config['header_size'] ?? 'medium',
-                'showInlinePlayer' => $config['show_inline_player'] ?? false,
-                'autoPlay' => $config['auto_play'] ?? false,
-                'startMuted' => $config['start_muted'] ?? true,
-                'playerSize' => $config['player_size'] ?? 'normal',
-                'phoneNumber' => $config['phone_number'] ?? null,
-                'predefinedMessage' => $config['predefined_message'] ?? null,
-                'calendarProvider' => $config['calendar_provider'] ?? null,
-                'calendarDisplayMode' => $config['calendar_display_mode'] ?? null,
-                'emailAddress' => $config['email_address'] ?? null,
-                'emailSubject' => $config['email_subject'] ?? null,
-                'emailBody' => $config['email_body'] ?? null,
-                'mapAddress' => $config['map_address'] ?? null,
-                'mapQuery' => $config['map_query'] ?? null,
-                'mapZoom' => $config['map_zoom'] ?? null,
-                'mapDisplayMode' => $config['map_display_mode'] ?? null,
-                'mapShowAddress' => $config['map_show_address'] ?? false,
-            ];
-        })->values()->toArray();
+                return [
+                    'id' => $link->id,
+                    'title' => $link->text,
+                    'url' => $link->link,
+                    'type' => $link->type ?? 'link',
+                    'isEnabled' => (bool) $link->state,
+                    'order' => (int) $link->order,
+                    'icon' => $link->icon,
+                    'headerSize' => $config['header_size'] ?? 'medium',
+                    'showInlinePlayer' => $config['show_inline_player'] ?? false,
+                    'autoPlay' => $config['auto_play'] ?? false,
+                    'startMuted' => $config['start_muted'] ?? true,
+                    'playerSize' => $config['player_size'] ?? 'normal',
+                    'phoneNumber' => $config['phone_number'] ?? null,
+                    'predefinedMessage' => $config['predefined_message'] ?? null,
+                    'calendarProvider' => $config['calendar_provider'] ?? null,
+                    'calendarDisplayMode' => $config['calendar_display_mode'] ?? null,
+                    'emailAddress' => $config['email_address'] ?? null,
+                    'emailSubject' => $config['email_subject'] ?? null,
+                    'emailBody' => $config['email_body'] ?? null,
+                    'mapAddress' => $config['map_address'] ?? null,
+                    'mapQuery' => $config['map_query'] ?? null,
+                    'mapZoom' => $config['map_zoom'] ?? null,
+                    'mapDisplayMode' => $config['map_display_mode'] ?? null,
+                    'mapShowAddress' => $config['map_show_address'] ?? false,
+                ];
+            })
+            ->values()
+            ->toArray();
     }
 
     /**

@@ -245,8 +245,8 @@ class MongoImportSeeder extends Seeder
                 }
             }
 
-            // Keep domain_name as-is from MongoDB (preserves legacy slugs like "mambar_.s")
-            $domainName = strtolower(trim($landingData['domain_name'] ?? $landingData['slug'] ?? ''));
+            // Sanitize domain_name for URLs (preserves . _ - but removes special chars like ¥)
+            $domainName = $this->sanitizeSlugForUrl($landingData['domain_name'] ?? $landingData['slug'] ?? '');
             if (empty($domainName)) {
                 $domainName = 'landing-' . substr($mongoId, -8);
             }
@@ -267,11 +267,11 @@ class MongoImportSeeder extends Seeder
             }
 
             try {
-                // Keep slug as-is from MongoDB (preserves legacy slugs)
-                $slug = strtolower(trim($landingData['slug'] ?? $domainName));
+                // Sanitize slug for URLs (preserves . _ - but removes special chars)
+                $slug = $this->sanitizeSlugForUrl($landingData['slug'] ?? $domainName);
 
                 $landing = Landing::create([
-                    'name' => $landingData['name'] ?? $domainName,
+                    'name' => $landingData['name'] ?? $domainName, // Keep original name with special chars
                     'slug' => $slug,
                     'domain_name' => $domainName,
                     'logo' => $logo,
@@ -302,9 +302,16 @@ class MongoImportSeeder extends Seeder
     {
         $links = $this->loadJson('links.json');
         $count = 0;
+        $skippedDeleted = 0;
 
         foreach ($links as $linkData) {
             $mongoId = $linkData['_id'];
+
+            // Skip soft-deleted links from MongoDB (they have deleted_at set)
+            if (!empty($linkData['deleted_at'])) {
+                $skippedDeleted++;
+                continue;
+            }
 
             // Skip if already exists
             if (Link::where('mongo_id', $mongoId)->exists()) {
@@ -357,7 +364,7 @@ class MongoImportSeeder extends Seeder
             }
         }
 
-        $this->command->info("Imported {$count} links");
+        $this->command->info("Imported {$count} links (skipped {$skippedDeleted} deleted)");
     }
 
     /**
@@ -433,7 +440,7 @@ class MongoImportSeeder extends Seeder
     }
 
     /**
-     * Sanitize slug/domain_name.
+     * Sanitize slug/domain_name for companies (used internally).
      * Allows dots (.) for compatibility with legacy slugs like "mambar_.s"
      */
     private function sanitizeSlug(string $slug): string
@@ -443,6 +450,61 @@ class MongoImportSeeder extends Seeder
         $slug = preg_replace('/[^a-z0-9_.-]/', '', $slug);
         $slug = preg_replace('/-+/', '-', $slug); // Remove multiple hyphens
         $slug = trim($slug, '-');
+
+        return $slug ?: 'page-' . Str::random(6);
+    }
+
+    /**
+     * Sanitize slug/domain_name for URLs.
+     * - Converts accented chars to ASCII (ñ->n, á->a, etc.)
+     * - Removes special symbols (¥, ©, etc.) instead of transliterating
+     * - Preserves dots (.) for legacy slugs like "mambar_.s"
+     */
+    private function sanitizeSlugForUrl(string $slug): string
+    {
+        // Lowercase and trim
+        $slug = mb_strtolower(trim($slug));
+
+        // Convert accented letters to ASCII (á->a, ñ->n, etc.)
+        // but NOT symbols like ¥ which would become "yenn"
+        $transliterations = [
+            'á' => 'a',
+            'à' => 'a',
+            'ä' => 'a',
+            'â' => 'a',
+            'ã' => 'a',
+            'é' => 'e',
+            'è' => 'e',
+            'ë' => 'e',
+            'ê' => 'e',
+            'í' => 'i',
+            'ì' => 'i',
+            'ï' => 'i',
+            'î' => 'i',
+            'ó' => 'o',
+            'ò' => 'o',
+            'ö' => 'o',
+            'ô' => 'o',
+            'õ' => 'o',
+            'ú' => 'u',
+            'ù' => 'u',
+            'ü' => 'u',
+            'û' => 'u',
+            'ñ' => 'n',
+            'ç' => 'c',
+        ];
+        $slug = strtr($slug, $transliterations);
+
+        // Remove any non-URL chars (keep a-z, 0-9, _, -, .)
+        $slug = preg_replace('/[^a-z0-9_.-]/', '', $slug);
+
+        // Clean up multiple consecutive special chars
+        $slug = preg_replace('/-{2,}/', '-', $slug);
+        $slug = preg_replace('/\.{2,}/', '.', $slug);
+        $slug = preg_replace('/_{2,}/', '_', $slug);
+
+        // Trim special chars from start/end
+        $slug = trim($slug, '-_.');
 
         return $slug ?: 'page-' . Str::random(6);
     }
