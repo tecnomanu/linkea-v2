@@ -9,8 +9,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Contracts\Auth\CanResetPassword;
-use Carbon\Carbon;
 use Laravel\Sanctum\HasApiTokens;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -32,9 +30,12 @@ class User extends Authenticatable
         "password",
         "company_id",
         "mautic_id",
+        "sendernet_id",
         "verified_at",
         "verification_code",
-        "mongo_id"
+        "mongo_id",
+        "google_id",
+        "apple_id"
     ];
 
     protected $hidden = [
@@ -60,8 +61,8 @@ class User extends Authenticatable
     protected function avatar(): Attribute
     {
         return Attribute::make(
-            get: fn ($value) => StorageHelper::url($value),
-            set: fn ($value) => $value,
+            get: fn($value) => StorageHelper::url($value),
+            set: fn($value) => $value,
         );
     }
 

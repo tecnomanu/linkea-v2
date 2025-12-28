@@ -1,4 +1,6 @@
 import { Button } from "@/Components/ui/Button";
+import { router } from "@inertiajs/react";
+import { useEffect, useState } from "react";
 
 interface SocialLoginButtonsProps {
     onGoogleClick?: () => void;
@@ -6,15 +8,127 @@ interface SocialLoginButtonsProps {
     disabled?: boolean;
 }
 
+declare global {
+    interface Window {
+        google?: {
+            accounts: {
+                id: {
+                    initialize: (config: any) => void;
+                    prompt: (callback?: (notification: any) => void) => void;
+                    renderButton: (element: HTMLElement, config: any) => void;
+                };
+            };
+        };
+        googleScriptLoading?: boolean;
+        googleScriptLoaded?: boolean;
+    }
+}
+
 /**
  * Social login buttons for Google and Apple
- * These would need actual OAuth implementation to work
  */
 export function SocialLoginButtons({
     onGoogleClick,
     onAppleClick,
     disabled = false,
 }: SocialLoginButtonsProps) {
+    const [isLoading, setIsLoading] = useState(false);
+    const [isReady, setIsReady] = useState(false);
+    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID; // Use Vite env
+
+    // Load Google Script
+    useEffect(() => {
+        if (!googleClientId) {
+            console.warn("VITE_GOOGLE_CLIENT_ID not found");
+            return;
+        }
+
+        const handleResponse = async (response: any) => {
+            if (response.credential) {
+                setIsLoading(true);
+
+                // Manual decode to get profile info (optional, just for logging or basic checks)
+                // In production, we send the raw credential to backend to be secure
+                // const payload = JSON.parse(atob(response.credential.split('.')[1]));
+
+                // Send to backend via Inertia
+                router.post(
+                    route("auth.social.callback", "google"),
+                    {
+                        token: response.credential,
+                        // If we want to mimic the user's other project "implicit" style, we could decode here
+                        // But sending token is cleaner and secure.
+                        // The backend will decode using Socialite.
+                    },
+                    {
+                        onFinish: () => setIsLoading(false),
+                        onError: () => setIsLoading(false),
+                    }
+                );
+            }
+        };
+
+        const setupGoogle = () => {
+            if (!window.google?.accounts?.id) return;
+
+            window.google.accounts.id.initialize({
+                client_id: googleClientId,
+                callback: handleResponse,
+                auto_select: false,
+                cancel_on_tap_outside: true,
+                ux_mode: "popup",
+            });
+            setIsReady(true);
+        };
+
+        if (window.google?.accounts?.id) {
+            setupGoogle();
+            return;
+        }
+
+        if (
+            !document.querySelector(
+                'script[src*="accounts.google.com/gsi/client"]'
+            )
+        ) {
+            const script = document.createElement("script");
+            script.src = "https://accounts.google.com/gsi/client";
+            script.async = true;
+            script.defer = true;
+            script.onload = setupGoogle;
+            document.head.appendChild(script);
+        } else {
+            // If script exists but not loaded, wait a bit
+            // Simplified for this context
+            const interval = setInterval(() => {
+                if (window.google?.accounts?.id) {
+                    clearInterval(interval);
+                    setupGoogle();
+                }
+            }, 100);
+            return () => clearInterval(interval);
+        }
+    }, [googleClientId]);
+
+    const handleGoogleBtnClick = () => {
+        if (onGoogleClick) {
+            onGoogleClick(); // Previous behavior if passed
+            return;
+        }
+
+        if (!isReady || !window.google) return;
+
+        setIsLoading(true);
+        window.google.accounts.id.prompt((notification) => {
+            if (
+                notification.isNotDisplayed() ||
+                notification.isSkippedMoment()
+            ) {
+                setIsLoading(false);
+            }
+        });
+    };
+
     return (
         <div className="flex flex-col gap-3">
             {/* Google button */}
@@ -22,10 +136,14 @@ export function SocialLoginButtons({
                 type="button"
                 variant="outline"
                 className="w-full py-5 rounded-xl text-sm font-medium"
-                onClick={onGoogleClick}
-                disabled={disabled}
+                onClick={handleGoogleBtnClick}
+                disabled={disabled || isLoading || !isReady}
             >
-                <GoogleIcon className="w-5 h-5 mr-3" />
+                {isLoading ? (
+                    <span className="w-5 h-5 border-2 border-neutral-400 border-t-neutral-800 rounded-full animate-spin mr-3"></span>
+                ) : (
+                    <GoogleIcon className="w-5 h-5 mr-3" />
+                )}
                 Continuar con Google
             </Button>
 
@@ -35,7 +153,7 @@ export function SocialLoginButtons({
                 variant="outline"
                 className="w-full py-5 rounded-xl text-sm font-medium"
                 onClick={onAppleClick}
-                disabled={disabled}
+                disabled={disabled || isLoading}
             >
                 <AppleIcon className="w-5 h-5 mr-3" />
                 Continuar con Apple
@@ -75,4 +193,3 @@ function AppleIcon({ className }: { className?: string }) {
         </svg>
     );
 }
-

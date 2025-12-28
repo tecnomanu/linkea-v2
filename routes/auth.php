@@ -13,6 +13,7 @@
  */
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\SocialAuthController;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -43,6 +44,10 @@ Route::prefix('auth')->group(function () {
         // Password Reset - Reset with token
         Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
         Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.store');
+
+        // Social Login
+        Route::get('/{provider}/redirect', [SocialAuthController::class, 'redirect'])->name('auth.social.redirect');
+        Route::match(['get', 'post'], '/{provider}/callback', [SocialAuthController::class, 'callback'])->name('auth.social.callback');
     });
 
     /**

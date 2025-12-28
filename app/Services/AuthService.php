@@ -8,11 +8,14 @@ use App\Constants\UserRoles;
 use App\Jobs\Mautic\AddToMautic;
 use App\Jobs\Mautic\SetVerifyMautic;
 use App\Jobs\Mautic\UpdateLastActiveMautic;
+use App\Jobs\SenderNet\AddToSenderNet;
+use App\Jobs\SenderNet\SetVerifySenderNet;
 use App\Models\Company;
 use App\Models\Landing;
 use App\Models\Role;
 use App\Models\User;
 use App\Notifications\VerifyUserCode;
+use App\Notifications\WelcomeMessage;
 use App\Repositories\Contracts\UserRepository;
 use App\Support\Helpers\StringHelper;
 use Carbon\Carbon;
@@ -150,8 +153,9 @@ class AuthService
             // Generate token
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            // Dispatch Mautic job to add contact (queued)
+            // Dispatch CRM/Marketing jobs (queued)
             AddToMautic::dispatch($user);
+            AddToSenderNet::dispatch($user);
 
             return [
                 'user' => $user->fresh(),
@@ -187,8 +191,12 @@ class AuthService
 
         $user->update(['verified_at' => Carbon::now()]);
 
-        // Dispatch Mautic job to mark as verified (queued)
+        // Send welcome email notification (queued)
+        $user->notify(new WelcomeMessage());
+
+        // Dispatch CRM/Marketing jobs to mark as verified (queued)
         SetVerifyMautic::dispatch($user);
+        SetVerifySenderNet::dispatch($user);
 
         return true;
     }

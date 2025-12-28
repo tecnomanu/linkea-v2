@@ -41,4 +41,43 @@ return [
         'password' => env('MAUTIC_PASSWORD'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Sender.net Email Marketing Integration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for Sender.net API integration.
+    | Get your API token from: https://app.sender.net/settings/tokens
+    |
+    | Groups are resolved dynamically by name and cached.
+    | Available groups: users, newsletter, anonymous
+    |
+    */
+    'sendernet' => [
+        'enabled' => env('SENDERNET_ENABLED', true),
+        'api_token' => env('SENDERNET_API_TOKEN'),
+
+        // Cache duration for group IDs (in seconds)
+        // Default: 24 hours
+        'cache_ttl' => env('SENDERNET_CACHE_TTL', 86400),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Social Identity Providers
+    |--------------------------------------------------------------------------
+    */
+
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URL'),
+    ],
+
+    'apple' => [
+        'client_id' => env('APPLE_CLIENT_ID'),
+        'client_secret' => env('APPLE_CLIENT_SECRET'),
+        'redirect' => env('APPLE_REDIRECT_URL'),
+    ],
+
 ];

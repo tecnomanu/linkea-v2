@@ -47,7 +47,12 @@ export default function Register() {
         const passwordsMatch = data.password === data.password_confirmation;
         const passwordLongEnough = data.password.length >= 8;
 
-        return hasRequiredFields && isUsernameValid && passwordsMatch && passwordLongEnough;
+        return (
+            hasRequiredFields &&
+            isUsernameValid &&
+            passwordsMatch &&
+            passwordLongEnough
+        );
     }, [data, handleValidation.isValid]);
 
     const submit: FormEventHandler = (e) => {
@@ -57,15 +62,10 @@ export default function Register() {
         });
     };
 
-    // Social login handlers (placeholder - needs OAuth implementation)
-    const handleGoogleLogin = () => {
-        // TODO: Implement Google OAuth
-        console.log("Google login clicked");
-    };
-
+    // Social login handlers
+    // Social login handlers
     const handleAppleLogin = () => {
-        // TODO: Implement Apple OAuth
-        console.log("Apple login clicked");
+        window.location.href = route("auth.social.redirect", "apple") as string;
     };
 
     return (
@@ -136,7 +136,9 @@ export default function Register() {
                     label="Confirmar contrasena"
                     placeholder="Repeti tu contrasena"
                     value={data.password_confirmation}
-                    onChange={(e) => setData("password_confirmation", e.target.value)}
+                    onChange={(e) =>
+                        setData("password_confirmation", e.target.value)
+                    }
                     error={errors.password_confirmation}
                 />
 
@@ -153,8 +155,8 @@ export default function Register() {
             <AuthDivider />
 
             {/* Social login options */}
+            {/* Social login options */}
             <SocialLoginButtons
-                onGoogleClick={handleGoogleLogin}
                 onAppleClick={handleAppleLogin}
                 disabled={processing}
             />

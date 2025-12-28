@@ -14,18 +14,12 @@ export default function Login() {
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        post(route("login"));
+        post(route("login") as string);
     };
 
-    // Social login handlers (placeholder - needs OAuth implementation)
-    const handleGoogleLogin = () => {
-        // TODO: Implement Google OAuth
-        console.log("Google login clicked");
-    };
-
+    // Social login handlers
     const handleAppleLogin = () => {
-        // TODO: Implement Apple OAuth
-        console.log("Apple login clicked");
+        window.location.href = route("auth.social.redirect", "apple") as string;
     };
 
     return (
@@ -69,8 +63,8 @@ export default function Login() {
             <AuthDivider />
 
             {/* Social login options */}
+            {/* Social login options */}
             <SocialLoginButtons
-                onGoogleClick={handleGoogleLogin}
                 onAppleClick={handleAppleLogin}
                 disabled={processing}
             />
@@ -79,7 +73,7 @@ export default function Login() {
             <div className="mt-8 space-y-3">
                 <div className="flex items-center justify-center gap-2 text-sm">
                     <Link
-                        href={route("password.request")}
+                        href={route("password.request") as string}
                         className="text-neutral-500 dark:text-neutral-400 hover:text-brand-500 dark:hover:text-brand-400 transition-colors"
                     >
                         Olvidaste tu contrasena?
@@ -89,7 +83,7 @@ export default function Login() {
                 <div className="text-center text-sm text-neutral-500 dark:text-neutral-400">
                     No tenes una cuenta?{" "}
                     <Link
-                        href={route("register")}
+                        href={route("register") as string}
                         className="text-brand-500 hover:text-brand-600 font-semibold transition-colors"
                     >
                         Registrate
