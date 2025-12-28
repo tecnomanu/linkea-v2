@@ -360,7 +360,7 @@ export default function FeaturesSection() {
                 </div>
 
                 {/* Desktop Layout - Grid enables proper sticky behavior */}
-                <div className="hidden lg:grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                <div className="hidden lg:grid lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
                     {/* Phone Preview (Sticky) - sticky applied directly to grid cell */}
                     <div className="sticky top-24 self-start flex flex-col items-center justify-self-end">
                         <PhonePreview
