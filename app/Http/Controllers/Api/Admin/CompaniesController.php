@@ -9,6 +9,7 @@ use App\Traits\HasApiResponse;
 use App\Traits\RESTActions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class CompaniesController extends Controller
 {
@@ -44,5 +45,48 @@ class CompaniesController extends Controller
                 'total' => $companies->total(),
             ],
         ]);
+    }
+
+    /**
+     * Create a new company.
+     */
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'owner_id' => 'required|exists:users,id',
+        ]);
+
+        $company = Company::create($validated);
+
+        return $this->created(new CompanyResource($company));
+    }
+
+    /**
+     * Update a company.
+     */
+    public function update(Request $request, string $id): JsonResponse
+    {
+        $company = Company::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'owner_id' => 'sometimes|exists:users,id',
+        ]);
+
+        $company->update($validated);
+
+        return $this->success(new CompanyResource($company));
+    }
+
+    /**
+     * Soft delete a company.
+     */
+    public function destroy(string $id): JsonResponse
+    {
+        $company = Company::findOrFail($id);
+        $company->delete();
+
+        return $this->success(null, 'Company deleted successfully');
     }
 }
