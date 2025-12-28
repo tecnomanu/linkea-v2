@@ -181,27 +181,29 @@ class PublicLandingResource extends JsonResource
     }
 
     /**
-     * Resolve border color from legacy config.
-     * Returns border color only when different from background (legacy support).
+     * Resolve border color from config.
+     * Handles both legacy (borderShow + borderColor) and new (direct borderColor) formats.
      */
     protected function resolveBorderColor(array $buttons): ?string
     {
-        // Legacy mode: borderShow + borderColor
-        if (!empty($buttons['borderShow']) && !empty($buttons['borderColor'])) {
-            $borderColor = $buttons['borderColor'];
-            $bgColor = $buttons['backgroundColor'] ?? ($buttons['color'] ?? '#000000');
+        $borderColor = $buttons['borderColor'] ?? null;
 
-            // Only return if border color is different from background
-            if (strtolower($borderColor) !== strtolower($bgColor)) {
-                return $borderColor;
-            }
+        if (empty($borderColor)) {
+            return null;
         }
 
-        // New mode: explicit borderColor field
-        // We ensure 'style' and 'shape' are present to avoid picking up legacy artifacts where borderColor exists but borderShow is missing.
-        // Legacy data typically lacks 'shape'.
-        if (!empty($buttons['borderColor']) && empty($buttons['borderShow']) && !empty($buttons['style']) && !empty($buttons['shape'])) {
-            return $buttons['borderColor'];
+        // Return borderColor if it's set and different from backgroundColor
+        $bgColor = $buttons['backgroundColor'] ?? ($buttons['color'] ?? '#000000');
+
+        if (strtolower($borderColor) !== strtolower($bgColor)) {
+            return $borderColor;
+        }
+
+        // If borderColor equals backgroundColor, only return it for outline style
+        // (outline needs the color even if same, for the border itself)
+        $style = $buttons['style'] ?? 'solid';
+        if ($style === 'outline') {
+            return $borderColor;
         }
 
         return null;
