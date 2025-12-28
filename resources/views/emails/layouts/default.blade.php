@@ -134,7 +134,7 @@
                                                 <td style="padding: {{ $paddingTop }} 30px {{ $paddingBottom }}; text-align: center; vertical-align: top;">
                                                     <!-- Logo -->
                                                     <a href="{{ config('app.url') }}" style="text-decoration: none; display: inline-block;">
-                                                        <img src="{{ asset('images/logo-dark.png') }}" alt="Linkea" height="40" style="display: block; margin: 0 auto;">
+                                                        <img src="{{ asset('images/logos/logo-white.webp') }}" alt="Linkea" height="40" style="display: block; margin: 0 auto;">
                                                     </a>
                                                     
                                                     <!-- Title -->
@@ -170,7 +170,7 @@
                                                         <tr>
                                                             <td style="vertical-align: top; padding-bottom: 15px;">
                                                                 <a href="{{ config('app.url') }}" style="display: inline-block; text-decoration: none;">
-                                                                    <img src="{{ asset('images/logo-dark.png') }}" alt="Linkea" height="30" style="display: block;">
+                                                                    <img src="{{ asset('images/logos/logo-white.webp') }}" alt="Linkea" height="30" style="display: block;">
                                                                 </a>
                                                             </td>
                                                         </tr>
@@ -216,7 +216,7 @@
                                             <tr>
                                                 <td style="padding: 40px 50px; text-align: center;">
                                                     <a href="{{ config('app.url') }}" style="text-decoration: none;">
-                                                        <img src="{{ asset('images/logo-dark.png') }}" alt="Linkea" height="38" style="display: block; margin: 0 auto;">
+                                                        <img src="{{ asset('images/logos/logo-white.webp') }}" alt="Linkea" height="38" style="display: block; margin: 0 auto;">
                                                     </a>
                                                 </td>
                                             </tr>

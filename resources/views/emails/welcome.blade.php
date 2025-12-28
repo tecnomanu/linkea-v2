@@ -11,24 +11,24 @@
 
     <!-- Steps -->
     <p style="font-size: 16px; color: #1e293b; font-weight: bold; margin-bottom: 20px;">
-        Comenzá tu Linkea en tres simples pasos:
+        Continúa con tu Linkea en dos simples pasos:
     </p>
 
     <table width="100%" cellspacing="0" cellpadding="0" border="0">
-        <!-- Step 1 -->
+        <!-- Step 1 - Completed -->
         <tr>
             <td style="padding: 10px 0; vertical-align: top;" width="50">
-                <div style="width: 36px; height: 36px; background: #fff7ed; border-radius: 50%; text-align: center; line-height: 36px; font-size: 16px; color: #F87435; font-weight: 700;">1</div>
+                <div style="width: 36px; height: 36px; background: #dcfce7; border-radius: 50%; text-align: center; line-height: 36px; font-size: 18px; color: #16a34a; font-weight: 700;">✓</div>
             </td>
             <td style="padding: 10px 0; vertical-align: middle;">
-                <p style="margin: 0 0 4px; font-size: 16px; color: #1e293b; font-weight: 600;">Verifica tu email</p>
-                <p style="margin: 0; font-size: 14px; color: #64748b;">Confirma tu dirección de correo para activar todas las funciones.</p>
+                <p style="margin: 0 0 4px; font-size: 16px; color: #16a34a; font-weight: 600; text-decoration: line-through;">Email verificado</p>
+                <p style="margin: 0; font-size: 14px; color: #86efac;">¡Tu dirección de correo ha sido confirmada exitosamente!</p>
             </td>
         </tr>
         <!-- Step 2 -->
         <tr>
             <td style="padding: 10px 0; vertical-align: top;" width="50">
-                <div style="width: 36px; height: 36px; background: #fff7ed; border-radius: 50%; text-align: center; line-height: 36px; font-size: 16px; color: #F87435; font-weight: 700;">2</div>
+                <div style="width: 36px; height: 36px; background: #fff7ed; border-radius: 50%; text-align: center; line-height: 36px; font-size: 16px; color: #F87435; font-weight: 700;">1</div>
             </td>
             <td style="padding: 10px 0; vertical-align: middle;">
                 <p style="margin: 0 0 4px; font-size: 16px; color: #1e293b; font-weight: 600;">Crea tu primer enlace</p>
@@ -38,7 +38,7 @@
         <!-- Step 3 -->
         <tr>
             <td style="padding: 10px 0; vertical-align: top;" width="50">
-                <div style="width: 36px; height: 36px; background: #fff7ed; border-radius: 50%; text-align: center; line-height: 36px; font-size: 16px; color: #F87435; font-weight: 700;">3</div>
+                <div style="width: 36px; height: 36px; background: #fff7ed; border-radius: 50%; text-align: center; line-height: 36px; font-size: 16px; color: #F87435; font-weight: 700;">2</div>
             </td>
             <td style="padding: 10px 0; vertical-align: middle;">
                 <p style="margin: 0 0 4px; font-size: 16px; color: #1e293b; font-weight: 600;">Comparte tu Linkea</p>
@@ -52,11 +52,11 @@
     </div>
 
     <p style="font-size: 15px; color: #475569; margin-top: 30px;">
-        ¡Bienvenido! Estamos acá para ayudarte a crear la mejor landing de enlaces.
+        Si tenés alguna pregunta o necesitás ayuda, no dudes en escribirnos. Estamos acá para ayudarte a crear la mejor landing de enlaces.
     </p>
 
     <p style="font-size: 14px; color: #64748b; margin-top: 20px;">
-        Saludos,<br>
+        ¡Éxitos! 🚀<br>
         <strong>Equipo de Linkea</strong>
     </p>
 @endsection

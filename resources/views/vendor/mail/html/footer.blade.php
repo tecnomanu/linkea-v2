@@ -4,7 +4,7 @@
 <tr>
 <td style="padding-bottom: 16px;">
 <a href="{{ config('app.url') }}" style="display: inline-block;">
-<img src="{{ config('app.url') }}/assets/images/logo.svg" alt="Linkea" style="height: 28px; width: auto; opacity: 0.7;">
+<img src="{{ config('app.url') }}/images/logos/logo-gray.webp" alt="Linkea" style="height: 28px; width: auto; opacity: 0.7;">
 </a>
 </td>
 </tr>
