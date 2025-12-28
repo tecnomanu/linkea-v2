@@ -100,14 +100,25 @@ class SaveDesignRequest extends FormRequest
         }
 
         // Build buttons config with icon options
-        $buttonsConfig = array_filter([
+        // We use a custom filter to preserve empty strings ("") which are valid (e.g. to clear a color),
+        // but remove nulls (which mean "not updated").
+        $buttonsConfigRaw = [
             'style' => $customDesign['buttonStyle'] ?? null,
             'shape' => $customDesign['buttonShape'] ?? null,
             'size' => $customDesign['buttonSize'] ?? null,
             'backgroundColor' => $customDesign['buttonColor'] ?? null,
             'textColor' => $customDesign['buttonTextColor'] ?? null,
-            'borderColor' => $customDesign['buttonBorderColor'] ?? null, // Separate border color
-        ]);
+            'borderColor' => $customDesign['buttonBorderColor'] ?? null,
+        ];
+
+        // Explicitly handle borderColor clearing: 
+        // If the key exists in input but is null (or empty), we force it to "" 
+        // to ensure it survives filtering and overwrites the DB value in mergeDeep.
+        if (array_key_exists('buttonBorderColor', $customDesign) && empty($customDesign['buttonBorderColor'])) {
+            $buttonsConfigRaw['borderColor'] = "";
+        }
+
+        $buttonsConfig = array_filter($buttonsConfigRaw, fn($v) => !is_null($v));
 
         // Add icon options (use isset to preserve false/explicit values)
         if (isset($customDesign['showButtonIcons'])) {

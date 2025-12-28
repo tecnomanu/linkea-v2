@@ -1,5 +1,6 @@
 import { ImageUploader } from "@/Components/Shared/ImageUploader";
 import { ColorPicker } from "@/Components/ui/ColorPicker";
+import { Input } from "@/Components/ui/Input";
 import { PositionSelector } from "@/Components/ui/PositionSelector";
 import { Toggle } from "@/Components/ui/Toggle";
 import { ToggleInput, ToggleTextarea } from "@/Components/ui/ToggleInput";
@@ -1235,7 +1236,7 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                                             onClick={() =>
                                                 handleCustomChange(
                                                     "buttonBorderColor",
-                                                    undefined
+                                                    ""
                                                 )
                                             }
                                             className="text-xs text-red-500 hover:text-red-600"
@@ -1250,7 +1251,8 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                                     onClick={() =>
                                         handleCustomChange(
                                             "buttonBorderColor",
-                                            user.customDesign.buttonColor
+                                            user.customDesign.buttonColor ||
+                                                "#000000"
                                         )
                                     }
                                     className="text-sm text-brand-500 hover:text-brand-600 font-medium"
