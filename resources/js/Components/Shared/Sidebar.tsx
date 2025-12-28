@@ -1,3 +1,4 @@
+import { Logo } from "@/Components/Shared/Logo";
 import { Button } from "@/Components/ui/Button";
 import { Link } from "@inertiajs/react";
 import {
@@ -58,13 +59,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return (
         <aside className="hidden md:flex fixed left-0 top-0 h-screen w-[72px] bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 flex-col items-center py-6 z-50 transition-colors duration-300">
             {/* Brand Logo */}
-            <div className="mb-10 w-11 h-11 rounded-2xl flex items-center justify-center shadow-glow cursor-pointer transition-transform hover:scale-105 overflow-hidden bg-brand-500">
-                <img
-                    src="/images/logo_only.png"
-                    alt="Linkea"
-                    className="w-full h-full object-cover"
-                />
-            </div>
+            <Link
+                href={route("panel") as string}
+                className="mb-10 w-11 h-11 rounded-2xl flex items-center justify-center shadow-glow transition-transform hover:scale-105 overflow-hidden"
+            >
+                <Logo variant="icon" size="sm" />
+            </Link>
 
             {/* Navigation */}
             <nav className="flex-1 flex flex-col gap-6 w-full px-2">

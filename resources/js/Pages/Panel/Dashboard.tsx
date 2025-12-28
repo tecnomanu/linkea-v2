@@ -111,7 +111,8 @@ export default function Dashboard({
 
     // Serialize server user/landing to frontend UserProfile format
     // Title and subtitle come from template_config (as in legacy)
-    const displayTitle = landing?.template_config?.title ?? landing?.domain_name ?? "";
+    const displayTitle =
+        landing?.template_config?.title ?? landing?.domain_name ?? "";
     const displaySubtitle = landing?.template_config?.subtitle ?? "";
 
     // Determine if background image should be enabled (default true if image exists)
@@ -130,7 +131,9 @@ export default function Dashboard({
         name: landing?.name || "", // Internal name (not displayed)
         handle: landing?.domain_name || landing?.slug || auth.user.username,
         avatar:
-            landing?.logo?.image || auth.user.avatar || "/images/logo_only.png",
+            landing?.logo?.image ||
+            auth.user.avatar ||
+            "/images/logos/logo-icon.webp",
         title: displayTitle,
         subtitle: displaySubtitle,
         showTitle: landing?.template_config?.showTitle ?? true,
@@ -194,17 +197,23 @@ export default function Dashboard({
             landing?.template_config?.lastCustomDesign || undefined,
 
         // SEO - new structure: options.meta.*, with legacy fallback
-        seoTitle: landing?.options?.meta?.title 
-            || landing?.options?.title || "",
-        seoDescription: landing?.options?.meta?.description 
-            || landing?.options?.description || "",
-        
+        seoTitle:
+            landing?.options?.meta?.title || landing?.options?.title || "",
+        seoDescription:
+            landing?.options?.meta?.description ||
+            landing?.options?.description ||
+            "",
+
         // Analytics - new structure: options.analytics.*, with legacy fallback
-        googleAnalyticsId: landing?.options?.analytics?.google_code 
-            || landing?.options?.google_analytics_id || "",
-        facebookPixelId: landing?.options?.analytics?.facebook_pixel 
-            || landing?.options?.facebook_pixel_id || "",
-        
+        googleAnalyticsId:
+            landing?.options?.analytics?.google_code ||
+            landing?.options?.google_analytics_id ||
+            "",
+        facebookPixelId:
+            landing?.options?.analytics?.facebook_pixel ||
+            landing?.options?.facebook_pixel_id ||
+            "",
+
         // Privacy
         isPrivate: landing?.options?.is_private || false,
 

@@ -6,6 +6,7 @@
  * - Guest: WebLayout with website-style UI
  */
 
+import { Logo } from "@/Components/Shared/Logo";
 import { LostIllustration } from "@/Components/Shared/LostIllustration";
 import { PhonePreview } from "@/Components/Shared/PhonePreview";
 import { FeaturedLanding } from "@/Components/Web/Home/HeroSection";
@@ -309,16 +310,12 @@ function GuestNotFound({ landings }: { landings: FeaturedLanding[] }) {
             <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100">
                 <div className="container mx-auto px-4 h-14 flex justify-between items-center">
                     <Link href="/" className="flex items-center">
-                        <img
-                            src="/assets/images/logo.svg"
-                            alt="Linkea"
-                            className="h-7 hidden sm:block"
-                        />
-                        <img
-                            src="/assets/images/logo_only.svg"
-                            alt="Linkea"
-                            className="h-8 sm:hidden"
-                        />
+                        <div className="hidden sm:block">
+                            <Logo variant="full" size="sm" />
+                        </div>
+                        <div className="sm:hidden">
+                            <Logo variant="icon" size="md" />
+                        </div>
                     </Link>
                     <div className="flex items-center gap-3">
                         <Link
@@ -442,14 +439,7 @@ function AuthenticatedNotFound({
             <header className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
                 <div className="container mx-auto px-4 h-14 flex justify-between items-center">
                     <Link href="/panel" className="flex items-center gap-3">
-                        <img
-                            src="/assets/images/logo_only.svg"
-                            alt="Linkea"
-                            className="h-8"
-                        />
-                        <span className="font-bold text-gray-900 dark:text-white hidden sm:block">
-                            Linkea
-                        </span>
+                        <Logo variant="full" size="sm" />
                     </Link>
                     <Link
                         href="/panel"

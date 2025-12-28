@@ -1,4 +1,5 @@
 import { AuthHeroSection } from "@/Components/Auth";
+import { Logo } from "@/Components/Shared/Logo";
 import { Head, Link } from "@inertiajs/react";
 import { PropsWithChildren } from "react";
 
@@ -29,16 +30,12 @@ export default function AuthLayout({
                 {/* Header with logo */}
                 <header className="p-6 lg:p-8">
                     <Link href="/" className="inline-block">
-                        <img
-                            src="/assets/images/logo.svg"
-                            alt="Linkea"
-                            className="h-8 w-auto dark:hidden"
-                        />
-                        <img
-                            src="/assets/images/logo-white.svg"
-                            alt="Linkea"
-                            className="h-8 w-auto hidden dark:block"
-                        />
+                        <div className="dark:hidden">
+                            <Logo variant="full" size="sm" />
+                        </div>
+                        <div className="hidden dark:block">
+                            <Logo variant="full" size="sm" color="white" />
+                        </div>
                     </Link>
                 </header>
 

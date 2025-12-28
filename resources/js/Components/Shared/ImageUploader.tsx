@@ -1,5 +1,17 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { Upload, X, RotateCcw, RotateCw, FlipHorizontal, FlipVertical, ZoomIn, ZoomOut, Check, Loader2, Move } from 'lucide-react';
+import {
+    Check,
+    FlipHorizontal,
+    FlipVertical,
+    Loader2,
+    Move,
+    RotateCcw,
+    RotateCw,
+    Upload,
+    X,
+    ZoomIn,
+    ZoomOut,
+} from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 // ============================================================================
 // Types
@@ -25,7 +37,7 @@ export interface ImageUploaderProps {
     /** Whether upload is disabled */
     disabled?: boolean;
     /** Output image format */
-    outputFormat?: 'png' | 'jpeg' | 'webp';
+    outputFormat?: "png" | "jpeg" | "webp";
     /** Output image quality (0-1) for jpeg/webp */
     outputQuality?: number;
     /** Resize width for output */
@@ -53,30 +65,33 @@ interface CropState {
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
     value,
     onChange,
-    placeholder = '/images/logo_only.png',
+    placeholder = "/images/logos/logo-icon.webp",
     rounded = true,
     size = 112,
     aspectRatio = 1,
     maxSizeKB = 4000,
-    accept = '.jpg,.jpeg,.png,.webp',
+    accept = ".jpg,.jpeg,.png,.webp",
     disabled = false,
-    outputFormat = 'png',
+    outputFormat = "png",
     outputQuality = 0.9,
     resizeWidth = 400,
-    className = '',
+    className = "",
     canDelete = true,
     label,
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const previewContainerRef = useRef<HTMLDivElement>(null);
-    
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [originalImage, setOriginalImage] = useState<string | null>(null);
     const [isLoadingFile, setIsLoadingFile] = useState(false);
     const [isLoadingImage, setIsLoadingImage] = useState(false);
-    const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
-    
+    const [imageDimensions, setImageDimensions] = useState({
+        width: 0,
+        height: 0,
+    });
+
     const [cropState, setCropState] = useState<CropState>({
         scale: 1,
         rotation: 0,
@@ -108,46 +123,52 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     }, [originalImage]);
 
     // Handle file selection
-    const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+    const handleFileSelect = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
 
-        // Validate file size
-        const sizeKB = file.size / 1024;
-        if (sizeKB > maxSizeKB) {
-            const sizeText = maxSizeKB >= 1000 ? `${maxSizeKB / 1000}MB` : `${maxSizeKB}KB`;
-            alert(`No se puede cargar imágenes mayores a ${sizeText}`);
-            return;
-        }
+            // Validate file size
+            const sizeKB = file.size / 1024;
+            if (sizeKB > maxSizeKB) {
+                const sizeText =
+                    maxSizeKB >= 1000
+                        ? `${maxSizeKB / 1000}MB`
+                        : `${maxSizeKB}KB`;
+                alert(`No se puede cargar imágenes mayores a ${sizeText}`);
+                return;
+            }
 
-        // Validate file type
-        if (!file.type.startsWith('image/')) {
-            alert('Por favor seleccione una imagen válida');
-            return;
-        }
+            // Validate file type
+            if (!file.type.startsWith("image/")) {
+                alert("Por favor seleccione una imagen válida");
+                return;
+            }
 
-        setIsLoadingFile(true);
-        setIsModalOpen(true);
-        
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            setOriginalImage(event.target?.result as string);
-            setCropState({
-                scale: 1,
-                rotation: 0,
-                flipH: false,
-                flipV: false,
-                position: { x: 0.5, y: 0.5 },
-            });
-            setIsLoadingFile(false);
-        };
-        reader.readAsDataURL(file);
+            setIsLoadingFile(true);
+            setIsModalOpen(true);
 
-        // Reset input
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
-    }, [maxSizeKB]);
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                setOriginalImage(event.target?.result as string);
+                setCropState({
+                    scale: 1,
+                    rotation: 0,
+                    flipH: false,
+                    flipV: false,
+                    position: { x: 0.5, y: 0.5 },
+                });
+                setIsLoadingFile(false);
+            };
+            reader.readAsDataURL(file);
+
+            // Reset input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+        },
+        [maxSizeKB]
+    );
 
     // Handle click on preview
     const handleClick = () => {
@@ -165,54 +186,67 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     // ========================================================================
     // Drag/Pan handlers
     // ========================================================================
-    
-    const handleDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-        e.preventDefault();
-        setIsDragging(true);
-        
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-        
-        dragStartRef.current = {
-            x: clientX,
-            y: clientY,
-            posX: cropState.position.x,
-            posY: cropState.position.y,
-        };
-    }, [cropState.position]);
 
-    const handleDragMove = useCallback((e: MouseEvent | TouchEvent) => {
-        if (!isDragging || !previewContainerRef.current) return;
-        
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-        
-        const containerRect = previewContainerRef.current.getBoundingClientRect();
-        const containerSize = Math.min(containerRect.width, containerRect.height);
-        
-        // Calculate movement as percentage of container
-        const deltaX = (clientX - dragStartRef.current.x) / containerSize;
-        const deltaY = (clientY - dragStartRef.current.y) / containerSize;
-        
-        // Apply sensitivity based on zoom level (more zoom = more precise movement)
-        const sensitivity = 1 / cropState.scale;
-        
-        // Calculate new position (inverted because we're moving the image, not the viewport)
-        let newX = dragStartRef.current.posX - deltaX * sensitivity;
-        let newY = dragStartRef.current.posY - deltaY * sensitivity;
-        
-        // Clamp position based on scale (allow more movement when zoomed in)
-        const maxOffset = Math.max(0, (cropState.scale - 1) / (2 * cropState.scale) + 0.5);
-        const minOffset = 1 - maxOffset;
-        
-        newX = Math.max(minOffset, Math.min(maxOffset, newX));
-        newY = Math.max(minOffset, Math.min(maxOffset, newY));
-        
-        setCropState(s => ({
-            ...s,
-            position: { x: newX, y: newY }
-        }));
-    }, [isDragging, cropState.scale]);
+    const handleDragStart = useCallback(
+        (e: React.MouseEvent | React.TouchEvent) => {
+            e.preventDefault();
+            setIsDragging(true);
+
+            const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+            const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+
+            dragStartRef.current = {
+                x: clientX,
+                y: clientY,
+                posX: cropState.position.x,
+                posY: cropState.position.y,
+            };
+        },
+        [cropState.position]
+    );
+
+    const handleDragMove = useCallback(
+        (e: MouseEvent | TouchEvent) => {
+            if (!isDragging || !previewContainerRef.current) return;
+
+            const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+            const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+
+            const containerRect =
+                previewContainerRef.current.getBoundingClientRect();
+            const containerSize = Math.min(
+                containerRect.width,
+                containerRect.height
+            );
+
+            // Calculate movement as percentage of container
+            const deltaX = (clientX - dragStartRef.current.x) / containerSize;
+            const deltaY = (clientY - dragStartRef.current.y) / containerSize;
+
+            // Apply sensitivity based on zoom level (more zoom = more precise movement)
+            const sensitivity = 1 / cropState.scale;
+
+            // Calculate new position (inverted because we're moving the image, not the viewport)
+            let newX = dragStartRef.current.posX - deltaX * sensitivity;
+            let newY = dragStartRef.current.posY - deltaY * sensitivity;
+
+            // Clamp position based on scale (allow more movement when zoomed in)
+            const maxOffset = Math.max(
+                0,
+                (cropState.scale - 1) / (2 * cropState.scale) + 0.5
+            );
+            const minOffset = 1 - maxOffset;
+
+            newX = Math.max(minOffset, Math.min(maxOffset, newX));
+            newY = Math.max(minOffset, Math.min(maxOffset, newY));
+
+            setCropState((s) => ({
+                ...s,
+                position: { x: newX, y: newY },
+            }));
+        },
+        [isDragging, cropState.scale]
+    );
 
     const handleDragEnd = useCallback(() => {
         setIsDragging(false);
@@ -221,16 +255,16 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     // Attach global mouse/touch listeners for drag
     useEffect(() => {
         if (isDragging) {
-            window.addEventListener('mousemove', handleDragMove);
-            window.addEventListener('mouseup', handleDragEnd);
-            window.addEventListener('touchmove', handleDragMove);
-            window.addEventListener('touchend', handleDragEnd);
-            
+            window.addEventListener("mousemove", handleDragMove);
+            window.addEventListener("mouseup", handleDragEnd);
+            window.addEventListener("touchmove", handleDragMove);
+            window.addEventListener("touchend", handleDragEnd);
+
             return () => {
-                window.removeEventListener('mousemove', handleDragMove);
-                window.removeEventListener('mouseup', handleDragEnd);
-                window.removeEventListener('touchmove', handleDragMove);
-                window.removeEventListener('touchend', handleDragEnd);
+                window.removeEventListener("mousemove", handleDragMove);
+                window.removeEventListener("mouseup", handleDragEnd);
+                window.removeEventListener("touchmove", handleDragMove);
+                window.removeEventListener("touchend", handleDragEnd);
             };
         }
     }, [isDragging, handleDragMove, handleDragEnd]);
@@ -238,49 +272,55 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     // ========================================================================
     // Crop controls
     // ========================================================================
-    
-    const rotateLeft = () => setCropState(s => ({ ...s, rotation: s.rotation - 90 }));
-    const rotateRight = () => setCropState(s => ({ ...s, rotation: s.rotation + 90 }));
-    const flipHorizontal = () => setCropState(s => ({ ...s, flipH: !s.flipH }));
-    const flipVertical = () => setCropState(s => ({ ...s, flipV: !s.flipV }));
-    const zoomIn = () => setCropState(s => ({ ...s, scale: Math.min(s.scale + 0.1, 3) }));
-    const zoomOut = () => setCropState(s => ({ ...s, scale: Math.max(s.scale - 0.1, 1) }));
-    const resetTransform = () => setCropState({
-        scale: 1,
-        rotation: 0,
-        flipH: false,
-        flipV: false,
-        position: { x: 0.5, y: 0.5 },
-    });
+
+    const rotateLeft = () =>
+        setCropState((s) => ({ ...s, rotation: s.rotation - 90 }));
+    const rotateRight = () =>
+        setCropState((s) => ({ ...s, rotation: s.rotation + 90 }));
+    const flipHorizontal = () =>
+        setCropState((s) => ({ ...s, flipH: !s.flipH }));
+    const flipVertical = () => setCropState((s) => ({ ...s, flipV: !s.flipV }));
+    const zoomIn = () =>
+        setCropState((s) => ({ ...s, scale: Math.min(s.scale + 0.1, 3) }));
+    const zoomOut = () =>
+        setCropState((s) => ({ ...s, scale: Math.max(s.scale - 0.1, 1) }));
+    const resetTransform = () =>
+        setCropState({
+            scale: 1,
+            rotation: 0,
+            flipH: false,
+            flipV: false,
+            position: { x: 0.5, y: 0.5 },
+        });
 
     // ========================================================================
     // Process and save the image
     // ========================================================================
-    
+
     const handleSave = useCallback(() => {
         if (!originalImage || !canvasRef.current) return;
 
         const img = new Image();
         img.onload = () => {
             const canvas = canvasRef.current!;
-            const ctx = canvas.getContext('2d')!;
-            
+            const ctx = canvas.getContext("2d")!;
+
             // Calculate output dimensions
             const outputWidth = resizeWidth;
             const outputHeight = outputWidth / aspectRatio;
-            
+
             canvas.width = outputWidth;
             canvas.height = outputHeight;
 
             // Clear canvas
-            ctx.fillStyle = '#ffffff';
+            ctx.fillStyle = "#ffffff";
             ctx.fillRect(0, 0, outputWidth, outputHeight);
 
             // Calculate dimensions to cover the canvas
             const imgAspect = img.width / img.height;
             const canvasAspect = aspectRatio;
             let drawWidth, drawHeight;
-            
+
             if (imgAspect > canvasAspect) {
                 drawHeight = outputHeight;
                 drawWidth = drawHeight * imgAspect;
@@ -294,17 +334,16 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             drawHeight *= cropState.scale;
 
             // Calculate offset based on position (0.5 = center)
-            const offsetX = (cropState.position.x - 0.5) * (drawWidth - outputWidth);
-            const offsetY = (cropState.position.y - 0.5) * (drawHeight - outputHeight);
+            const offsetX =
+                (cropState.position.x - 0.5) * (drawWidth - outputWidth);
+            const offsetY =
+                (cropState.position.y - 0.5) * (drawHeight - outputHeight);
 
             // Apply transformations
             ctx.save();
             ctx.translate(outputWidth / 2, outputHeight / 2);
             ctx.rotate((cropState.rotation * Math.PI) / 180);
-            ctx.scale(
-                cropState.flipH ? -1 : 1,
-                cropState.flipV ? -1 : 1
-            );
+            ctx.scale(cropState.flipH ? -1 : 1, cropState.flipV ? -1 : 1);
 
             ctx.drawImage(
                 img,
@@ -318,17 +357,25 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             // Get base64
             const mimeType = `image/${outputFormat}`;
             const base64 = canvas.toDataURL(mimeType, outputQuality);
-            
+
             onChange({
                 base64,
                 type: outputFormat,
             });
-            
+
             setIsModalOpen(false);
             setOriginalImage(null);
         };
         img.src = originalImage;
-    }, [originalImage, cropState, aspectRatio, outputFormat, outputQuality, resizeWidth, onChange]);
+    }, [
+        originalImage,
+        cropState,
+        aspectRatio,
+        outputFormat,
+        outputQuality,
+        resizeWidth,
+        onChange,
+    ]);
 
     // Close modal
     const handleCancel = () => {
@@ -340,10 +387,12 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     const getImageTransform = () => {
         const offsetX = (cropState.position.x - 0.5) * 100 * cropState.scale;
         const offsetY = (cropState.position.y - 0.5) * 100 * cropState.scale;
-        
+
         return `
             translate(${-offsetX}%, ${-offsetY}%)
-            scale(${cropState.flipH ? -cropState.scale : cropState.scale}, ${cropState.flipV ? -cropState.scale : cropState.scale})
+            scale(${cropState.flipH ? -cropState.scale : cropState.scale}, ${
+            cropState.flipV ? -cropState.scale : cropState.scale
+        })
             rotate(${cropState.rotation}deg)
         `;
     };
@@ -357,8 +406,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                 <div
                     className={`
                         relative group cursor-pointer overflow-hidden
-                        ${rounded ? 'rounded-full' : 'rounded-xl'}
-                        ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+                        ${rounded ? "rounded-full" : "rounded-xl"}
+                        ${disabled ? "opacity-50 cursor-not-allowed" : ""}
                     `}
                     style={{ width: size, height: size }}
                     onClick={handleClick}
@@ -370,21 +419,26 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                         className={`
                             w-full h-full object-cover border-4 border-neutral-50 shadow-md
                             transition-all duration-300
-                            ${rounded ? 'rounded-full' : 'rounded-xl'}
-                            ${!disabled ? 'group-hover:opacity-80' : ''}
+                            ${rounded ? "rounded-full" : "rounded-xl"}
+                            ${!disabled ? "group-hover:opacity-80" : ""}
                         `}
                     />
-                    
+
                     {/* Overlay on hover */}
                     {!disabled && (
-                        <div className={`
+                        <div
+                            className={`
                             absolute inset-0 flex items-center justify-center
                             opacity-0 group-hover:opacity-100 transition-opacity duration-300
                             bg-black/40
-                            ${rounded ? 'rounded-full' : 'rounded-xl'}
-                        `}>
+                            ${rounded ? "rounded-full" : "rounded-xl"}
+                        `}
+                        >
                             <div className="bg-white/90 backdrop-blur-sm p-2.5 rounded-full shadow-lg">
-                                <Upload size={18} className="text-neutral-700" />
+                                <Upload
+                                    size={18}
+                                    className="text-neutral-700"
+                                />
                             </div>
                         </div>
                     )}
@@ -420,21 +474,28 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             {isModalOpen && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
                     {/* Backdrop */}
-                    <div 
+                    <div
                         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
                         onClick={handleCancel}
                     />
-                    
+
                     {/* Modal */}
                     <div className="relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 fade-in duration-200">
                         {/* Header */}
                         <div className="flex items-center gap-3 px-6 py-4 border-b border-neutral-100 dark:border-neutral-800">
                             <div className="p-2 bg-brand-50 dark:bg-brand-900/30 rounded-xl">
-                                <Upload size={20} className="text-brand-600 dark:text-brand-400" />
+                                <Upload
+                                    size={20}
+                                    className="text-brand-600 dark:text-brand-400"
+                                />
                             </div>
                             <div>
-                                <h3 className="font-bold text-neutral-900 dark:text-white">Herramienta de corte</h3>
-                                <p className="text-sm text-neutral-500">Ajuste su imagen antes de guardar</p>
+                                <h3 className="font-bold text-neutral-900 dark:text-white">
+                                    Herramienta de corte
+                                </h3>
+                                <p className="text-sm text-neutral-500">
+                                    Ajuste su imagen antes de guardar
+                                </p>
                             </div>
                         </div>
 
@@ -442,32 +503,49 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                         <div className="p-6">
                             {isLoading ? (
                                 /* Loading State */
-                                <div 
+                                <div
                                     className={`
                                         mx-auto flex items-center justify-center bg-neutral-100 dark:bg-neutral-800
-                                        ${rounded ? 'rounded-full' : 'rounded-xl'}
+                                        ${
+                                            rounded
+                                                ? "rounded-full"
+                                                : "rounded-xl"
+                                        }
                                     `}
-                                    style={{ 
-                                        width: 280, 
+                                    style={{
+                                        width: 280,
                                         height: 280 / aspectRatio,
                                     }}
                                 >
                                     <div className="flex flex-col items-center gap-3">
-                                        <Loader2 size={32} className="text-brand-500 animate-spin" />
-                                        <span className="text-sm text-neutral-500">Cargando imagen...</span>
+                                        <Loader2
+                                            size={32}
+                                            className="text-brand-500 animate-spin"
+                                        />
+                                        <span className="text-sm text-neutral-500">
+                                            Cargando imagen...
+                                        </span>
                                     </div>
                                 </div>
                             ) : (
                                 /* Crop Preview */
-                                <div 
+                                <div
                                     ref={previewContainerRef}
                                     className={`
                                         relative mx-auto overflow-hidden bg-neutral-100 dark:bg-neutral-800
-                                        ${rounded ? 'rounded-full' : 'rounded-xl'}
-                                        ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}
+                                        ${
+                                            rounded
+                                                ? "rounded-full"
+                                                : "rounded-xl"
+                                        }
+                                        ${
+                                            isDragging
+                                                ? "cursor-grabbing"
+                                                : "cursor-grab"
+                                        }
                                     `}
-                                    style={{ 
-                                        width: 280, 
+                                    style={{
+                                        width: 280,
                                         height: 280 / aspectRatio,
                                     }}
                                     onMouseDown={handleDragStart}
@@ -479,11 +557,11 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                                         className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none"
                                         style={{
                                             transform: getImageTransform(),
-                                            transformOrigin: 'center',
+                                            transformOrigin: "center",
                                         }}
                                         draggable={false}
                                     />
-                                    
+
                                     {/* Drag hint overlay */}
                                     {cropState.scale > 1 && !isDragging && (
                                         <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
@@ -500,32 +578,73 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                         {/* Controls */}
                         <div className="px-6 pb-4">
                             <div className="flex items-center justify-center gap-2 flex-wrap">
-                                <ToolButton icon={RotateCcw} onClick={rotateLeft} tooltip="Rotar izquierda" disabled={isLoading} />
-                                <ToolButton icon={RotateCw} onClick={rotateRight} tooltip="Rotar derecha" disabled={isLoading} />
+                                <ToolButton
+                                    icon={RotateCcw}
+                                    onClick={rotateLeft}
+                                    tooltip="Rotar izquierda"
+                                    disabled={isLoading}
+                                />
+                                <ToolButton
+                                    icon={RotateCw}
+                                    onClick={rotateRight}
+                                    tooltip="Rotar derecha"
+                                    disabled={isLoading}
+                                />
                                 <div className="w-px h-6 bg-neutral-200 dark:bg-neutral-700 mx-1" />
-                                <ToolButton icon={FlipHorizontal} onClick={flipHorizontal} tooltip="Voltear horizontal" active={cropState.flipH} disabled={isLoading} />
-                                <ToolButton icon={FlipVertical} onClick={flipVertical} tooltip="Voltear vertical" active={cropState.flipV} disabled={isLoading} />
+                                <ToolButton
+                                    icon={FlipHorizontal}
+                                    onClick={flipHorizontal}
+                                    tooltip="Voltear horizontal"
+                                    active={cropState.flipH}
+                                    disabled={isLoading}
+                                />
+                                <ToolButton
+                                    icon={FlipVertical}
+                                    onClick={flipVertical}
+                                    tooltip="Voltear vertical"
+                                    active={cropState.flipV}
+                                    disabled={isLoading}
+                                />
                                 <div className="w-px h-6 bg-neutral-200 dark:bg-neutral-700 mx-1" />
-                                <ToolButton icon={ZoomOut} onClick={zoomOut} tooltip="Alejar" disabled={isLoading || cropState.scale <= 1} />
-                                <ToolButton icon={ZoomIn} onClick={zoomIn} tooltip="Acercar" disabled={isLoading || cropState.scale >= 3} />
+                                <ToolButton
+                                    icon={ZoomOut}
+                                    onClick={zoomOut}
+                                    tooltip="Alejar"
+                                    disabled={isLoading || cropState.scale <= 1}
+                                />
+                                <ToolButton
+                                    icon={ZoomIn}
+                                    onClick={zoomIn}
+                                    tooltip="Acercar"
+                                    disabled={isLoading || cropState.scale >= 3}
+                                />
                             </div>
-                            
+
                             {/* Zoom slider */}
                             <div className="mt-4 flex items-center gap-3">
-                                <span className="text-xs text-neutral-500 w-12">Zoom</span>
+                                <span className="text-xs text-neutral-500 w-12">
+                                    Zoom
+                                </span>
                                 <input
                                     type="range"
                                     min="1"
                                     max="3"
                                     step="0.1"
                                     value={cropState.scale}
-                                    onChange={(e) => setCropState(s => ({ ...s, scale: parseFloat(e.target.value) }))}
+                                    onChange={(e) =>
+                                        setCropState((s) => ({
+                                            ...s,
+                                            scale: parseFloat(e.target.value),
+                                        }))
+                                    }
                                     className="flex-1 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-brand-500"
                                     disabled={isLoading}
                                 />
-                                <span className="text-xs text-neutral-500 w-12 text-right">{Math.round(cropState.scale * 100)}%</span>
+                                <span className="text-xs text-neutral-500 w-12 text-right">
+                                    {Math.round(cropState.scale * 100)}%
+                                </span>
                             </div>
-                            
+
                             {/* Hint text */}
                             {cropState.scale > 1 && !isLoading && (
                                 <p className="text-xs text-center text-neutral-400 mt-3">
@@ -556,7 +675,10 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                                 className="px-5 py-2.5 text-sm font-bold text-white bg-brand-500 hover:bg-brand-600 rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isLoading ? (
-                                    <Loader2 size={16} className="animate-spin" />
+                                    <Loader2
+                                        size={16}
+                                        className="animate-spin"
+                                    />
                                 ) : (
                                     <Check size={16} />
                                 )}
@@ -585,18 +707,29 @@ interface ToolButtonProps {
     active?: boolean;
 }
 
-const ToolButton: React.FC<ToolButtonProps> = ({ icon: Icon, onClick, tooltip, disabled, active }) => (
+const ToolButton: React.FC<ToolButtonProps> = ({
+    icon: Icon,
+    onClick,
+    tooltip,
+    disabled,
+    active,
+}) => (
     <button
         onClick={onClick}
         disabled={disabled}
         title={tooltip}
         className={`
             w-10 h-10 flex items-center justify-center rounded-xl transition-all
-            ${active 
-                ? 'bg-brand-500 text-white' 
-                : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700'
+            ${
+                active
+                    ? "bg-brand-500 text-white"
+                    : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"
             }
-            ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}
+            ${
+                disabled
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:scale-105 active:scale-95"
+            }
         `}
     >
         <Icon size={18} />

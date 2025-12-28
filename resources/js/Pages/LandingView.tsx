@@ -188,7 +188,7 @@ export default function LandingView({ landing }: LandingViewProps) {
     const user: UserProfile = {
         name: landing.name, // Internal name (not displayed)
         handle: landing.domain_name || landing.slug || "linkea",
-        avatar: landing.logo?.image || "/images/logo_only.png",
+        avatar: landing.logo?.image || "/images/logos/logo-icon.webp",
         title: templateConfig.title,
         subtitle: templateConfig.subtitle,
         showTitle: templateConfig.showTitle ?? true,

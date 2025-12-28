@@ -1,3 +1,4 @@
+import { Logo } from "@/Components/Shared/Logo";
 import { NavLink } from "@/Components/Shared/NavLink";
 import { UserAvatar } from "@/Components/Shared/UserAvatar";
 import { Button } from "@/Components/ui/Button";
@@ -93,17 +94,8 @@ export const AdminMobileNav: React.FC<AdminMobileNavProps> = ({
             <div className="flex justify-between items-center px-4 py-2">
                 {/* Logo */}
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-red-500 shadow-lg shadow-red-500/30 overflow-hidden">
-                        <img
-                            src="/images/logo_only.png"
-                            alt="Linkea Admin"
-                            className="w-full h-full object-cover"
-                            onError={(e) =>
-                                (e.currentTarget.style.display = "none")
-                            }
-                        />
-                    </div>
-                    <span className="font-bold text-base text-neutral-900 dark:text-white tracking-tight">
+                    <Logo variant="icon" size="sm" />
+                    <span className="font-sans font-bold text-base text-neutral-900 dark:text-white tracking-tight">
                         Admin
                     </span>
                 </div>

@@ -12,6 +12,7 @@ import {
     User,
 } from "lucide-react";
 import React from "react";
+import { Logo } from "./Logo";
 import { MobileNavLink } from "./NavLink";
 import { UserAvatar } from "./UserAvatar";
 
@@ -73,19 +74,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
             {/* Top Row: Logo & User Menu */}
             <div className="flex justify-between items-center px-4 py-2 border-b border-neutral-100 dark:border-neutral-800/50">
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-brand-500 shadow-glow overflow-hidden">
-                        <img
-                            src="/images/logo_only.png"
-                            alt="Linkea"
-                            className="w-full h-full object-cover"
-                            onError={(e) =>
-                                (e.currentTarget.style.display = "none")
-                            }
-                        />
-                    </div>
-                    <span className="font-bold text-base text-neutral-900 dark:text-white tracking-tight">
-                        Linkea
-                    </span>
+                    <Logo variant="full" size="xs" />
                 </div>
 
                 {/* User Menu */}

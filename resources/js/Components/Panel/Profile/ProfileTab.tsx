@@ -1,8 +1,7 @@
 import { Button } from "@/Components/ui/Button";
-import { Card, CardBody, CardHeader } from "@/Components/ui/Card";
 import { Input } from "@/Components/ui/Input";
 import { useForm } from "@inertiajs/react";
-import { Camera, Lock, Mail, Save, User } from "lucide-react";
+import { Camera, Lock, Save, User } from "lucide-react";
 import React, { useState } from "react";
 
 interface ProfileTabProps {
@@ -22,7 +21,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ user }) => {
         });
 
     const [avatarPreview, setAvatarPreview] = useState(
-        user.avatar || "/images/logo_only.png"
+        user.avatar || "/images/logos/logo-icon.webp"
     );
 
     const handleSubmit = (e: React.FormEvent) => {

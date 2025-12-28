@@ -99,7 +99,7 @@ export const BlockSelector: React.FC<BlockSelectorProps> = ({
                 </div>
 
                 {/* Grid */}
-                <DialogBody className="p-6 max-h-[50vh] overflow-y-auto">
+                <DialogBody className="p-6 max-h-[50vh] overflow-y-scroll custom-scrollbar">
                     {filteredBlocks.length === 0 ? (
                         <div className="text-center py-8">
                             <p className="text-neutral-500 dark:text-neutral-400">
@@ -120,7 +120,7 @@ export const BlockSelector: React.FC<BlockSelectorProps> = ({
                                         className="group flex items-center gap-4 p-4 rounded-2xl border border-neutral-100 dark:border-neutral-800 hover:border-brand-200 dark:hover:border-brand-500/50 hover:bg-brand-50/30 dark:hover:bg-brand-900/10 hover:shadow-lg hover:shadow-brand-500/5 transition-all duration-300 text-left bg-white dark:bg-neutral-900"
                                     >
                                         <div
-                                            className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-3 ${config.colorClass}`}
+                                            className={`w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-3 ${config.colorClass}`}
                                         >
                                             {renderBlockTypeIcon(type, 24)}
                                         </div>

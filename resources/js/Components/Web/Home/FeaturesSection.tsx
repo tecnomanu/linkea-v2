@@ -15,7 +15,7 @@ interface DemoProfile {
 }
 
 const DEMO_PROFILES: DemoProfile[] = [
-    // Musician
+    // Musician - Showcases Spotify embeds
     {
         id: "musician",
         label: "Musico",
@@ -23,7 +23,8 @@ const DEMO_PROFILES: DemoProfile[] = [
             name: "Lucas Beats",
             handle: "lucasbeats",
             avatar: "https://ui-avatars.com/api/?name=Lucas+B&background=7c3aed&color=fff&size=200",
-            bio: "Productor Musical & DJ",
+            title: "Lucas Beats",
+            subtitle: "Productor Musical & DJ",
             theme: "midnight",
             customDesign: {
                 backgroundColor: "#1e1b4b",
@@ -48,19 +49,22 @@ const DEMO_PROFILES: DemoProfile[] = [
             {
                 id: "2",
                 title: "Escucha en Spotify",
-                url: "https://spotify.com",
+                url: "https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT",
                 isEnabled: true,
                 clicks: 1250,
-                type: "link",
+                type: "spotify",
+                mediaDisplayMode: "preview",
+                playerSize: "compact",
                 sparklineData: [],
             },
             {
                 id: "3",
                 title: "Nuevo EP disponible",
-                url: "https://linkea.ar",
+                url: "https://open.spotify.com/album/4LH4d3cOWNNsVw41Gqt2kv",
                 isEnabled: true,
                 clicks: 890,
-                type: "link",
+                type: "spotify",
+                mediaDisplayMode: "both",
                 sparklineData: [],
             },
             {
@@ -78,12 +82,13 @@ const DEMO_PROFILES: DemoProfile[] = [
                 url: "mailto:lucas@beats.com",
                 isEnabled: true,
                 clicks: 234,
-                type: "link",
+                type: "email",
+                emailAddress: "lucas@beats.com",
                 sparklineData: [],
             },
         ],
     },
-    // Fitness Coach
+    // Fitness Coach - Showcases Calendar + WhatsApp
     {
         id: "fitness",
         label: "Fitness",
@@ -91,7 +96,8 @@ const DEMO_PROFILES: DemoProfile[] = [
             name: "Sofia Martinez",
             handle: "sofimart",
             avatar: "https://ui-avatars.com/api/?name=Sofia+M&background=ec4899&color=fff&size=200",
-            bio: "Fitness Coach & Content Creator",
+            title: "Sofia Martinez",
+            subtitle: "Fitness Coach & Content Creator",
             theme: "sunset",
             customDesign: {
                 backgroundColor: "#fef3c7",
@@ -115,11 +121,13 @@ const DEMO_PROFILES: DemoProfile[] = [
             },
             {
                 id: "2",
-                title: "Clases personalizadas",
-                url: "https://linkea.ar",
+                title: "Agenda tu clase",
+                url: "https://calendly.com/sofimart",
                 isEnabled: true,
-                clicks: 234,
-                type: "link",
+                clicks: 345,
+                type: "calendar",
+                calendarProvider: "calendly",
+                calendarDisplayMode: "button",
                 sparklineData: [],
             },
             {
@@ -133,26 +141,28 @@ const DEMO_PROFILES: DemoProfile[] = [
             },
             {
                 id: "4",
-                title: "Reserva tu turno",
-                url: "https://linkea.ar",
+                title: "Mis rutinas en YouTube",
+                url: "https://youtube.com/watch?v=dQw4w9WgXcQ",
                 isEnabled: true,
-                clicks: 156,
-                type: "link",
+                clicks: 567,
+                type: "youtube",
+                mediaDisplayMode: "both",
                 sparklineData: [],
             },
             {
                 id: "5",
                 title: "Escribime por WhatsApp",
-                url: "https://wa.me/123456",
+                url: "https://wa.me/5491112345678",
                 isEnabled: true,
                 clicks: 312,
                 type: "whatsapp",
                 phoneNumber: "5491112345678",
+                predefinedMessage: "Hola! Quiero info sobre clases",
                 sparklineData: [],
             },
         ],
     },
-    // Streamer
+    // Streamer - Showcases Twitch + YouTube embeds
     {
         id: "streamer",
         label: "Streamer",
@@ -160,7 +170,8 @@ const DEMO_PROFILES: DemoProfile[] = [
             name: "NightWolf Gaming",
             handle: "nightwolfgg",
             avatar: "https://ui-avatars.com/api/?name=NW&background=6366f1&color=fff&size=200",
-            bio: "Streamer & Content Creator",
+            title: "NightWolf Gaming",
+            subtitle: "Streamer & Content Creator",
             theme: "ocean",
             customDesign: {
                 backgroundColor: "#0f172a",
@@ -184,26 +195,28 @@ const DEMO_PROFILES: DemoProfile[] = [
             },
             {
                 id: "2",
-                title: "Canal de Twitch",
-                url: "https://twitch.tv",
+                title: "En vivo en Twitch",
+                url: "https://twitch.tv/nightwolfgg",
                 isEnabled: true,
                 clicks: 3420,
-                type: "link",
+                type: "twitch",
+                mediaDisplayMode: "preview",
                 sparklineData: [],
             },
             {
                 id: "3",
-                title: "Videos en YouTube",
-                url: "https://youtube.com",
+                title: "Ultimo video",
+                url: "https://youtube.com/watch?v=dQw4w9WgXcQ",
                 isEnabled: true,
                 clicks: 2100,
-                type: "link",
+                type: "youtube",
+                mediaDisplayMode: "preview",
                 sparklineData: [],
             },
             {
                 id: "4",
                 title: "Discord comunidad",
-                url: "https://discord.gg",
+                url: "https://discord.gg/nightwolf",
                 isEnabled: true,
                 clicks: 1560,
                 type: "link",
@@ -212,7 +225,7 @@ const DEMO_PROFILES: DemoProfile[] = [
             {
                 id: "5",
                 title: "Tienda de merch",
-                url: "https://linkea.ar",
+                url: "https://linkea.ar/merch",
                 isEnabled: true,
                 clicks: 780,
                 type: "link",

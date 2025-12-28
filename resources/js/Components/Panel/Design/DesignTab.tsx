@@ -350,7 +350,7 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                                 onUpdateUser({ avatar: imageData.base64 });
                             } else {
                                 onUpdateUser({
-                                    avatar: "/images/logo_only.png",
+                                    avatar: "/images/logos/logo-icon.webp",
                                 });
                             }
                         }}
@@ -412,7 +412,9 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                         <ToggleTextarea
                             id="landing-subtitle"
                             value={user.subtitle}
-                            onChange={(value) => onUpdateUser({ subtitle: value })}
+                            onChange={(value) =>
+                                onUpdateUser({ subtitle: value })
+                            }
                             enabled={user.showSubtitle !== false}
                             onEnabledChange={(enabled) =>
                                 onUpdateUser({ showSubtitle: enabled })

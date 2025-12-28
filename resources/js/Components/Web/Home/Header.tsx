@@ -1,3 +1,4 @@
+import { Logo } from "@/Components/Shared/Logo";
 import { UserAvatar } from "@/Components/Shared/UserAvatar";
 import { Link, router, usePage } from "@inertiajs/react";
 import {
@@ -38,17 +39,15 @@ export default function Header() {
         <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100">
             <div className="container mx-auto px-4 h-14 flex justify-between items-center">
                 {/* Logo */}
-                <Link href="/" className="flex items-center flex-shrink-0">
-                    <img
-                        src="/assets/images/logo.svg"
-                        alt="Linkea"
-                        className="h-7 hidden sm:block"
-                    />
-                    <img
-                        src="/assets/images/logo_only.svg"
-                        alt="Linkea"
-                        className="h-8 sm:hidden"
-                    />
+                <Link href="/" className="flex items-center shrink-0">
+                    {/* Desktop: Full logo (icon + text) */}
+                    <div className="hidden sm:block">
+                        <Logo variant="full" size="sm" />
+                    </div>
+                    {/* Mobile: Icon only */}
+                    <div className="sm:hidden">
+                        <Logo variant="icon" size="md" />
+                    </div>
                 </Link>
 
                 {/* Nav - Always visible, responsive sizing */}
