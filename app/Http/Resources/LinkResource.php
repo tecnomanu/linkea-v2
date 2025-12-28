@@ -30,8 +30,25 @@ class LinkResource extends JsonResource
             'playerSize' => $this->config['player_size'] ?? null,
             'phoneNumber' => $this->config['phone_number'] ?? null,
             'predefinedMessage' => $this->config['predefined_message'] ?? null,
+
+            // Media specific
+            'mediaDisplayMode' => $this->config['media_display_mode'] ?? null,
+
+            // Calendar specific
+            'calendarProvider' => $this->config['calendar_provider'] ?? null,
+            'calendarDisplayMode' => $this->config['calendar_display_mode'] ?? null,
+
+            // Email specific
+            'emailAddress' => $this->config['email_address'] ?? null,
+            'emailSubject' => $this->config['email_subject'] ?? null,
+            'emailBody' => $this->config['email_body'] ?? null,
+
+            // Map specific
+            'mapAddress' => $this->config['map_address'] ?? null,
+            'mapQuery' => $this->config['map_query'] ?? null,
+            'mapZoom' => $this->config['map_zoom'] ?? null,
+            'mapDisplayMode' => $this->config['map_display_mode'] ?? null,
+            'mapShowAddress' => $this->config['map_show_address'] ?? false,
         ];
     }
 }
-
-

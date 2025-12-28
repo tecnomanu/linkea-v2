@@ -174,8 +174,7 @@ class AuthService
         ]);
 
         // Update user with company
-        $user->company_id = $company->id;
-        $user->save();
+        $user->update(['company_id' => $company->id]);
 
         // Assign admin role
         $this->assignRole($user, UserRoles::ADMIN);

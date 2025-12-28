@@ -451,10 +451,24 @@ class LandingService
         $buttonColor = $buttons['backgroundColor'] ?? $buttons['color'] ?? '#3b82f6';
         $buttonTextColor = $buttons['textColor'] ?? '#ffffff';
 
-        // Determine button style
-        $buttonStyle = 'solid';
+        // Resolve button style
+        $buttonStyle = $buttons['style'] ?? 'solid';
         if (isset($buttons['borderShow']) && $buttons['borderShow']) {
             $buttonStyle = 'outline';
+        }
+
+        // Resolve border color using logic similar to PublicLandingResource
+        // Legacy support: if outline (via borderShow) + borderColor -> use it
+        $buttonBorderColor = null;
+        if (!empty($buttons['borderShow']) && !empty($buttons['borderColor'])) {
+            $borderColor = $buttons['borderColor'];
+            if (strtolower($borderColor) !== strtolower($buttonColor)) {
+                $buttonBorderColor = $borderColor;
+            }
+        }
+        // New mode: explicit borderColor
+        elseif (!empty($buttons['borderColor']) && empty($buttons['borderShow'])) {
+            $buttonBorderColor = $buttons['borderColor'];
         }
 
         // Get background image - resolve to CSS url("...") format using StorageHelper
@@ -476,14 +490,27 @@ class LandingService
                     'backgroundColor' => $bgColor,
                     'buttonStyle' => $buttonStyle,
                     'buttonShape' => $buttons['shape'] ?? 'rounded',
+                    'buttonSize' => $buttons['size'] ?? 'compact',
                     'buttonColor' => $buttonColor,
                     'buttonTextColor' => $buttonTextColor,
-                    'fontPair' => $templateConfig['fontPair'] ?? 'modern',
-                    'roundedAvatar' => $templateConfig['image_rounded'] ?? true,
+                    'buttonBorderColor' => $buttonBorderColor,
+                    'showButtonIcons' => $buttons['showIcons'] ?? true,
+                    'buttonIconAlignment' => $buttons['iconAlignment'] ?? 'left',
+
+                    'fontPair' => $templateConfig['fontPair'] ?? $templateConfig['typography']['fontPair'] ?? 'modern',
+                    'textColor' => $templateConfig['textColor'] ?? null,
+
+                    'roundedAvatar' => $templateConfig['image_rounded'] ?? $templateConfig['header']['roundedAvatar'] ?? true,
+                    'avatarFloating' => $templateConfig['image_floating'] ?? $templateConfig['header']['avatarFloating'] ?? true,
+
                     'backgroundImage' => $backgroundImage,
                     'backgroundEnabled' => $backgroundEnabled,
                     'backgroundSize' => $templateConfig['background']['backgroundSize'] ?? 'cover',
                     'backgroundPosition' => $templateConfig['background']['backgroundPosition'] ?? 'center',
+                    'backgroundRepeat' => $templateConfig['background']['backgroundRepeat'] ?? 'no-repeat',
+                    'backgroundAttachment' => $templateConfig['background']['backgroundAttachment'] ?? 'scroll',
+
+                    'showLinkSubtext' => $templateConfig['showLinkSubtext'] ?? false,
                 ],
             ],
             'links' => $landing->links->map(function ($link) {
