@@ -6,11 +6,11 @@
  * - Button + Preview: Header button with embedded player
  */
 
-import { BlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
+import { renderBlockIcon } from "@/hooks/useBlockIcon";
+import { createBlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
 import { LinkBlock, MediaDisplayMode, UserProfile } from "@/types";
 import { Play, Video } from "lucide-react";
 import React from "react";
-import { renderBlockIcon } from "@/hooks/useBlockIcon";
 import { BlockButton, BlockContainer, BlockPreview } from "./partial";
 
 interface VimeoBlockProps {
@@ -56,17 +56,12 @@ export const VimeoBlock: React.FC<VimeoBlockProps> = ({
     animationDelay = 0,
 }) => {
     const videoId = extractVimeoId(link.url);
-    const embedUrl = videoId ? `https://player.vimeo.com/video/${videoId}?dnt=1` : null;
+    const embedUrl = videoId
+        ? `https://player.vimeo.com/video/${videoId}?dnt=1`
+        : null;
 
-    // Convert design to BlockDesign format
-    const blockDesign: BlockDesign = {
-        buttonColor: design.buttonColor,
-        buttonTextColor: design.buttonTextColor,
-        buttonStyle: design.buttonStyle,
-        buttonShape: design.buttonShape,
-        showButtonIcons: design.showButtonIcons,
-        showLinkSubtext: design.showLinkSubtext,
-    };
+    // Use centralized helper for consistent BlockDesign mapping
+    const blockDesign = createBlockDesign(design);
 
     // Get subtitle based on showLinkSubtext setting
     const subtitle = getBlockSubtitle(blockDesign, "Vimeo", link.url);
@@ -85,7 +80,8 @@ export const VimeoBlock: React.FC<VimeoBlockProps> = ({
         });
 
     const displayMode = getDisplayMode(link);
-    const showPreview = (displayMode === "preview" || displayMode === "both") && embedUrl;
+    const showPreview =
+        (displayMode === "preview" || displayMode === "both") && embedUrl;
 
     // Button only mode
     if (displayMode === "button" || !showPreview) {

@@ -6,11 +6,11 @@
  * Button only - no preview mode.
  */
 
-import { BlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
+import { renderBlockIcon } from "@/hooks/useBlockIcon";
+import { createBlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
 import { LinkBlock, UserProfile } from "@/types";
 import { ExternalLink, Play } from "lucide-react";
 import React from "react";
-import { renderBlockIcon } from "@/hooks/useBlockIcon";
 import { BlockButton } from "./partial";
 
 interface TikTokBlockProps {
@@ -30,20 +30,15 @@ export const TikTokBlock: React.FC<TikTokBlockProps> = ({
     onClick,
     animationDelay = 0,
 }) => {
-    // Convert design to BlockDesign format
-    const blockDesign: BlockDesign = {
-        buttonColor: design.buttonColor,
-        buttonTextColor: design.buttonTextColor,
-        buttonStyle: design.buttonStyle,
-        buttonShape: design.buttonShape,
-        showButtonIcons: design.showButtonIcons,
-        showLinkSubtext: design.showLinkSubtext,
-    };
+    // Use centralized helper for consistent BlockDesign mapping
+    const blockDesign = createBlockDesign(design);
 
     // Render icon: user custom icon takes priority, else fallback to Play
     const icon = renderBlockIcon({
         linkIcon: link.icon,
-        fallbackIcon: <Play size={22} style={{ color: design.buttonTextColor }} />,
+        fallbackIcon: (
+            <Play size={22} style={{ color: design.buttonTextColor }} />
+        ),
         size: 22,
         color: design.buttonTextColor,
     });

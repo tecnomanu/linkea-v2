@@ -5,11 +5,11 @@
  * Uses wa.me deep link format.
  */
 
-import { BlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
+import { renderBlockIcon } from "@/hooks/useBlockIcon";
+import { createBlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
 import { LinkBlock, UserProfile } from "@/types";
 import { MessageCircle } from "lucide-react";
 import React from "react";
-import { renderBlockIcon } from "@/hooks/useBlockIcon";
 import { BlockButton } from "./partial";
 
 interface WhatsAppBlockProps {
@@ -46,15 +46,8 @@ export const WhatsAppBlock: React.FC<WhatsAppBlockProps> = ({
         link.predefinedMessage
     );
 
-    // Convert design to BlockDesign format
-    const blockDesign: BlockDesign = {
-        buttonColor: design.buttonColor,
-        buttonTextColor: design.buttonTextColor,
-        buttonStyle: design.buttonStyle,
-        buttonShape: design.buttonShape,
-        showButtonIcons: design.showButtonIcons,
-        showLinkSubtext: design.showLinkSubtext,
-    };
+    // Use centralized helper for consistent BlockDesign mapping
+    const blockDesign = createBlockDesign(design);
 
     // Format phone number for display
     const displayPhone = link.phoneNumber || "";
@@ -90,4 +83,3 @@ export const WhatsAppBlock: React.FC<WhatsAppBlockProps> = ({
 };
 
 export default WhatsAppBlock;
-

@@ -8,17 +8,11 @@
  * specialized components.
  */
 
-import {
-    getLucideIcon,
-    isLegacyIcon,
-    isLucideIcon,
-    renderLegacyIcon,
-} from "@/hooks/useBlockIcon";
-import { BlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
+import { renderBlockIcon } from "@/hooks/useBlockIcon";
+import { createBlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
 import { LinkBlock, UserProfile } from "@/types";
 import { Ghost, Globe, MessageCircle, X as XIcon } from "lucide-react";
 import React from "react";
-import { renderBlockIcon } from "@/hooks/useBlockIcon";
 import { BlockButton } from "./partial";
 
 interface StandardLinkBlockProps {
@@ -54,21 +48,13 @@ export const StandardLinkBlock: React.FC<StandardLinkBlockProps> = ({
     onClick,
     animationDelay = 0,
 }) => {
-    // Convert design to BlockDesign format
-    const blockDesign: BlockDesign = {
-        buttonColor: design.buttonColor,
-        buttonTextColor: design.buttonTextColor,
-        buttonStyle: design.buttonStyle,
-        buttonShape: design.buttonShape,
-        buttonSize: design.buttonSize,
-        showButtonIcons: design.showButtonIcons,
-        buttonIconAlignment: design.buttonIconAlignment,
-        showLinkSubtext: design.showLinkSubtext,
-        buttonBorderColor: design.buttonBorderColor,
-    };
+    // Use centralized helper for consistent BlockDesign mapping
+    const blockDesign = createBlockDesign(design);
 
     // Get subtitle based on showLinkSubtext setting
-    const subtitle = getBlockSubtitle(blockDesign, link.url, link.url);
+    // Pass empty string as brandName so that if showLinkSubtext is false,
+    // no subtitle is shown (instead of falling back to the URL)
+    const subtitle = getBlockSubtitle(blockDesign, "", link.url);
 
     // Render icon: user custom icon takes priority, then type-based fallback
     const icon = renderBlockIcon({
@@ -95,4 +81,3 @@ export const StandardLinkBlock: React.FC<StandardLinkBlockProps> = ({
 };
 
 export default StandardLinkBlock;
-

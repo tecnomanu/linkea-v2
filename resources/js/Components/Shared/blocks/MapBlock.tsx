@@ -6,11 +6,11 @@
  * - Button + Preview: Header button with embedded map
  */
 
-import { BlockDesign } from "@/hooks/useBlockStyles";
+import { renderBlockIcon } from "@/hooks/useBlockIcon";
+import { createBlockDesign } from "@/hooks/useBlockStyles";
 import { LinkBlock, UserProfile } from "@/types";
 import { MapPin } from "lucide-react";
 import React from "react";
-import { renderBlockIcon } from "@/hooks/useBlockIcon";
 import { BlockButton, BlockContainer, BlockPreview } from "./partial";
 
 interface MapBlockProps {
@@ -64,15 +64,8 @@ export const MapBlock: React.FC<MapBlockProps> = ({
         link.mapZoom
     );
 
-    // Convert design to BlockDesign format
-    const blockDesign: BlockDesign = {
-        buttonColor: design.buttonColor,
-        buttonTextColor: design.buttonTextColor,
-        buttonStyle: design.buttonStyle,
-        buttonShape: design.buttonShape,
-        showButtonIcons: design.showButtonIcons,
-        showLinkSubtext: design.showLinkSubtext,
-    };
+    // Use centralized helper for consistent BlockDesign mapping
+    const blockDesign = createBlockDesign(design);
 
     // Render icon: user custom icon takes priority, else fallback to MapPin
     const icon = renderBlockIcon({

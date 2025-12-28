@@ -9,7 +9,7 @@
  */
 
 import { renderBlockIcon } from "@/hooks/useBlockIcon";
-import { BlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
+import { createBlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
 import { LinkBlock, UserProfile } from "@/types";
 import { Calendar, ExternalLink } from "lucide-react";
 import React from "react";
@@ -81,15 +81,8 @@ export const CalendarBlock: React.FC<CalendarBlockProps> = ({
     const embedUrl = getCalendarEmbedUrl(link.url, provider);
     const providerLabel = getProviderLabel(provider);
 
-    // Convert design to BlockDesign format
-    const blockDesign: BlockDesign = {
-        buttonColor: design.buttonColor,
-        buttonTextColor: design.buttonTextColor,
-        buttonStyle: design.buttonStyle,
-        buttonShape: design.buttonShape,
-        showButtonIcons: design.showButtonIcons,
-        showLinkSubtext: design.showLinkSubtext,
-    };
+    // Use centralized helper for consistent BlockDesign mapping
+    const blockDesign = createBlockDesign(design);
 
     // Render icon: user custom icon takes priority, else fallback to Calendar
     const icon = renderBlockIcon({

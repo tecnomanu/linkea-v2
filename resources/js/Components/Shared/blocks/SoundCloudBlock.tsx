@@ -6,11 +6,11 @@
  * - Button + Preview: Header button with embedded player widget
  */
 
-import { BlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
+import { renderBlockIcon } from "@/hooks/useBlockIcon";
+import { createBlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
 import { LinkBlock, MediaDisplayMode, UserProfile } from "@/types";
 import { Headphones } from "lucide-react";
 import React from "react";
-import { renderBlockIcon } from "@/hooks/useBlockIcon";
 import { BlockButton, BlockContainer, BlockPreview } from "./partial";
 
 interface SoundCloudBlockProps {
@@ -28,7 +28,9 @@ interface SoundCloudBlockProps {
  */
 const buildSoundCloudEmbedUrl = (url: string): string | null => {
     if (!url || !url.includes("soundcloud.com")) return null;
-    return `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23ff5500&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false`;
+    return `https://w.soundcloud.com/player/?url=${encodeURIComponent(
+        url
+    )}&color=%23ff5500&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false`;
 };
 
 /**
@@ -48,15 +50,8 @@ export const SoundCloudBlock: React.FC<SoundCloudBlockProps> = ({
 }) => {
     const embedUrl = buildSoundCloudEmbedUrl(link.url);
 
-    // Convert design to BlockDesign format
-    const blockDesign: BlockDesign = {
-        buttonColor: design.buttonColor,
-        buttonTextColor: design.buttonTextColor,
-        buttonStyle: design.buttonStyle,
-        buttonShape: design.buttonShape,
-        showButtonIcons: design.showButtonIcons,
-        showLinkSubtext: design.showLinkSubtext,
-    };
+    // Use centralized helper for consistent BlockDesign mapping
+    const blockDesign = createBlockDesign(design);
 
     // Get subtitle based on showLinkSubtext setting
     const subtitle = getBlockSubtitle(blockDesign, "SoundCloud", link.url);
@@ -64,13 +59,16 @@ export const SoundCloudBlock: React.FC<SoundCloudBlockProps> = ({
     // Render icon: user custom icon takes priority, else fallback to Headphones
     const icon = renderBlockIcon({
         linkIcon: link.icon,
-        fallbackIcon: <Headphones size={22} style={{ color: design.buttonTextColor }} />,
+        fallbackIcon: (
+            <Headphones size={22} style={{ color: design.buttonTextColor }} />
+        ),
         size: 22,
         color: design.buttonTextColor,
     });
 
     const displayMode = getDisplayMode(link);
-    const showPreview = (displayMode === "preview" || displayMode === "both") && embedUrl;
+    const showPreview =
+        (displayMode === "preview" || displayMode === "both") && embedUrl;
 
     // Button only mode
     if (displayMode === "button" || !showPreview) {

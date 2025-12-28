@@ -14,11 +14,11 @@
  * - When offline: show user's custom icon
  */
 
-import { BlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
+import { renderBlockIcon } from "@/hooks/useBlockIcon";
+import { createBlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
 import { LinkBlock, MediaDisplayMode, UserProfile } from "@/types";
 import { Video } from "lucide-react";
 import React from "react";
-import { renderBlockIcon } from "@/hooks/useBlockIcon";
 import { BlockButton, BlockContainer, BlockPreview } from "./partial";
 
 interface TwitchBlockProps {
@@ -66,15 +66,8 @@ export const TwitchBlock: React.FC<TwitchBlockProps> = ({
           }&muted=true`
         : null;
 
-    // Convert design to BlockDesign format
-    const blockDesign: BlockDesign = {
-        buttonColor: design.buttonColor,
-        buttonTextColor: design.buttonTextColor,
-        buttonStyle: design.buttonStyle,
-        buttonShape: design.buttonShape,
-        showButtonIcons: design.showButtonIcons,
-        showLinkSubtext: design.showLinkSubtext,
-    };
+    // Use centralized helper for consistent BlockDesign mapping
+    const blockDesign = createBlockDesign(design);
 
     // Get subtitle based on showLinkSubtext setting
     const subtitle = getBlockSubtitle(blockDesign, "Twitch", link.url);
@@ -107,8 +100,10 @@ export const TwitchBlock: React.FC<TwitchBlockProps> = ({
     });
 
     const displayMode = getDisplayMode(link);
-    const showButton = displayMode === "button" || displayMode === "both";
-    const showPreview = (displayMode === "preview" || displayMode === "both") && channel && embedUrl;
+    const showPreview =
+        (displayMode === "preview" || displayMode === "both") &&
+        channel &&
+        embedUrl;
 
     // Button only mode
     if (displayMode === "button" || !showPreview) {

@@ -7,11 +7,11 @@
  * - both: Button + Embed (header button with player below)
  */
 
-import { BlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
+import { renderBlockIcon } from "@/hooks/useBlockIcon";
+import { createBlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
 import { LinkBlock, MediaDisplayMode, UserProfile } from "@/types";
 import { Youtube } from "lucide-react";
 import React from "react";
-import { renderBlockIcon } from "@/hooks/useBlockIcon";
 import { BlockButton, BlockContainer, BlockPreview } from "./partial";
 
 interface YouTubeBlockProps {
@@ -58,15 +58,8 @@ export const YouTubeBlock: React.FC<YouTubeBlockProps> = ({
           }&mute=${link.startMuted ? 1 : 0}`
         : null;
 
-    // Convert design to BlockDesign format
-    const blockDesign: BlockDesign = {
-        buttonColor: design.buttonColor,
-        buttonTextColor: design.buttonTextColor,
-        buttonStyle: design.buttonStyle,
-        buttonShape: design.buttonShape,
-        showButtonIcons: design.showButtonIcons,
-        showLinkSubtext: design.showLinkSubtext,
-    };
+    // Use centralized helper for consistent BlockDesign mapping
+    const blockDesign = createBlockDesign(design);
 
     // Get subtitle based on showLinkSubtext setting
     const subtitle = getBlockSubtitle(blockDesign, "Ver en YouTube", link.url);
@@ -168,4 +161,3 @@ export const YouTubeBlock: React.FC<YouTubeBlockProps> = ({
 };
 
 export default YouTubeBlock;
-

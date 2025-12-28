@@ -15,6 +15,7 @@ export interface BlockDesign {
     buttonShape: ButtonShape;
     buttonSize?: ButtonSize;
     showButtonIcons?: boolean;
+    buttonIconAlignment?: "left" | "right" | "inline";
     showLinkSubtext?: boolean;
 }
 
@@ -111,9 +112,11 @@ export const getButtonStyles = (
 
         case "hard":
             // Brutalist style - border and shadow
-            const hardBorderColor = hasSeparateBorder 
-                ? design.buttonBorderColor 
-                : (isDarkTheme ? "white" : "black");
+            const hardBorderColor = hasSeparateBorder
+                ? design.buttonBorderColor
+                : isDarkTheme
+                ? "white"
+                : "black";
             const shadowColor = isDarkTheme
                 ? "rgba(255,255,255,1)"
                 : "rgba(0,0,0,1)";
@@ -207,9 +210,11 @@ export const getIconContainerStyles = (
 ): { className: string; style: React.CSSProperties } => {
     const rounding = getRoundingClass(design.buttonShape, "full");
     // Size based on buttonSize: compact (legacy) vs normal
-    const sizeClass = design.buttonSize === "normal" ? "w-11 h-11 mr-4" : "w-9 h-9 mr-3";
+    const sizeClass =
+        design.buttonSize === "normal" ? "w-11 h-11 mr-4" : "w-9 h-9 mr-3";
     // For outline without separate border, use subtle bg; otherwise use white/20
-    const hasBg = design.buttonStyle !== "outline" || !!design.buttonBorderColor;
+    const hasBg =
+        design.buttonStyle !== "outline" || !!design.buttonBorderColor;
 
     return {
         className: `${sizeClass} flex items-center justify-center shrink-0 ${rounding} ${
@@ -223,22 +228,24 @@ export const getIconContainerStyles = (
 };
 
 /**
+ * Create BlockDesign from UserProfile customDesign
+ *
+ * All block components should use this helper to ensure they receive
+ * the same properties. BlockDesign is a subset of CustomDesignConfig,
+ * so we can directly use the design object.
+ */
+export const createBlockDesign = (
+    design: UserProfile["customDesign"]
+): BlockDesign => design;
+
+/**
  * Hook that provides all block styling utilities
  */
 export const useBlockStyles = (
     design: UserProfile["customDesign"],
     isDarkTheme = false
 ) => {
-    const blockDesign: BlockDesign = {
-        buttonColor: design.buttonColor,
-        buttonTextColor: design.buttonTextColor,
-        buttonBorderColor: design.buttonBorderColor,
-        buttonStyle: design.buttonStyle,
-        buttonShape: design.buttonShape,
-        buttonSize: design.buttonSize,
-        showButtonIcons: design.showButtonIcons,
-        showLinkSubtext: design.showLinkSubtext,
-    };
+    const blockDesign = createBlockDesign(design);
 
     return {
         design: blockDesign,

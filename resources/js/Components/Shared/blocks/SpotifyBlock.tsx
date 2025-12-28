@@ -7,11 +7,11 @@
  * - both: Button + Embed (header button with player below)
  */
 
-import { BlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
+import { renderBlockIcon } from "@/hooks/useBlockIcon";
+import { createBlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
 import { LinkBlock, MediaDisplayMode, UserProfile } from "@/types";
 import { Music } from "lucide-react";
 import React from "react";
-import { renderBlockIcon } from "@/hooks/useBlockIcon";
 import { BlockButton, BlockContainer, BlockPreview } from "./partial";
 
 interface SpotifyBlockProps {
@@ -60,15 +60,8 @@ export const SpotifyBlock: React.FC<SpotifyBlockProps> = ({
     const embedUrl = getSpotifyEmbedUrl(link.url);
     const isCompact = link.playerSize === "compact";
 
-    // Convert design to BlockDesign format
-    const blockDesign: BlockDesign = {
-        buttonColor: design.buttonColor,
-        buttonTextColor: design.buttonTextColor,
-        buttonStyle: design.buttonStyle,
-        buttonShape: design.buttonShape,
-        showButtonIcons: design.showButtonIcons,
-        showLinkSubtext: design.showLinkSubtext,
-    };
+    // Use centralized helper for consistent BlockDesign mapping
+    const blockDesign = createBlockDesign(design);
 
     // Get subtitle based on showLinkSubtext setting
     const subtitle = getBlockSubtitle(
@@ -100,8 +93,7 @@ export const SpotifyBlock: React.FC<SpotifyBlockProps> = ({
         >
             <iframe
                 style={{
-                    borderRadius:
-                        design.buttonShape === "sharp" ? "0" : "12px",
+                    borderRadius: design.buttonShape === "sharp" ? "0" : "12px",
                 }}
                 src={embedUrl!}
                 width="100%"
@@ -164,4 +156,3 @@ export const SpotifyBlock: React.FC<SpotifyBlockProps> = ({
 };
 
 export default SpotifyBlock;
-
