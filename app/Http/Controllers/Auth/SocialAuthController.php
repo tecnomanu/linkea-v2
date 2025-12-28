@@ -64,16 +64,12 @@ class SocialAuthController extends Controller
         }
 
         // 3. Create new user structure (but NOT company/landing yet)
-        $baseUsername = $socialUser->getNickname() ?? explode('@', $socialUser->getEmail())[0];
-        $username = $this->generateUniqueUsername($baseUsername);
-
-        $fullName = $socialUser->getName() ?? $baseUsername;
+        $fullName = $socialUser->getName() ?? $socialUser->getNickname() ?? explode('@', $socialUser->getEmail())[0];
         $nameParts = explode(' ', $fullName, 2);
         $firstName = $nameParts[0];
         $lastName = $nameParts[1] ?? '';
 
         $data = [
-            'username' => $username,
             'email' => $socialUser->getEmail(),
             'password' => Str::random(16),
             'first_name' => $firstName,
@@ -92,9 +88,6 @@ class SocialAuthController extends Controller
 
         return $user;
     }
-
-    // In callback method, redirection logic needs to be updated.
-    // I will return the updated callback method here as well to keep it clean.
 
     public function callback(Request $request, string $provider)
     {
@@ -124,21 +117,5 @@ class SocialAuthController extends Controller
         }
 
         return redirect()->intended('/panel');
-    }
-
-    protected function generateUniqueUsername(string $base): string
-    {
-        $username = Str::slug($base);
-        $username = str_replace(['-', '_'], '', $username);
-
-        $originalUsername = $username;
-        $counter = 1;
-
-        while (User::where('username', $username)->exists()) {
-            $username = $originalUsername . $counter;
-            $counter++;
-        }
-
-        return $username;
     }
 }
