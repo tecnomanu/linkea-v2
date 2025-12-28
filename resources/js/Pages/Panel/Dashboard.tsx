@@ -173,6 +173,8 @@ export default function Dashboard({
                 landing?.template_config?.buttons?.backgroundColor || "#000000",
             buttonTextColor:
                 landing?.template_config?.buttons?.textColor || "#ffffff",
+            buttonBorderColor:
+                landing?.template_config?.buttons?.borderColor || undefined,
             // Button icon options
             showButtonIcons:
                 landing?.template_config?.buttons?.showIcons ?? true,
