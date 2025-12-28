@@ -36,6 +36,6 @@ class RoleMiddleware
             // Our User model has `roles()` relation. loading `roles` collection.
         }
 
-        return response()->json('Unauthorized.', 401);
+        return response()->json(['message' => 'Unauthorized.'], 403);
     }
 }

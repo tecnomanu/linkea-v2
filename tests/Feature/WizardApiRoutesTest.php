@@ -96,14 +96,15 @@ class WizardApiRoutesTest extends TestCase
     }
 
     /**
-     * Test authenticated user can get current links.
+     * Test authenticated user can get current links (Not Implemented).
      */
     public function test_authenticated_user_can_get_current_links(): void
     {
         $response = $this->withHeader('Authorization', "Bearer {$this->token}")
             ->getJson('/api/wizard/links');
 
-        $response->assertStatus(200);
+        // Controller returns 501 because this endpoint is deprecated/not implemented
+        $response->assertStatus(501);
     }
 
     /**

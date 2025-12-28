@@ -60,6 +60,11 @@ trait RESTActions
         return $this->respond(Response::HTTP_NOT_IMPLEMENTED);
     }
 
+    public function put(Request $request, $id)
+    {
+        return $this->respond(Response::HTTP_NOT_IMPLEMENTED);
+    }
+
     // Stub methods that were in legacy RESTActions if strictly needed, mostly used by specific controllers overriding them.
     // Legacy `LandingsController` overrides `get`, `put`.
     // `LinksController` uses `createOrUpdate` instead of `add/put`.
