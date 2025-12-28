@@ -120,6 +120,9 @@ if (app()->environment('local', 'development', 'testing') || config('app.debug')
         Route::get('/email-templates', [EmailPreviewController::class, 'index'])->name('test.email-templates');
         Route::get('/email-templates/{template}', [EmailPreviewController::class, 'show'])->name('test.email-templates.show');
         Route::post('/email-templates/{template}/send', [EmailPreviewController::class, 'sendTest'])->name('test.email-templates.send');
+
+        // Font Test Page - Compare logo with different fonts
+        Route::get('/fonts', fn() => view('test.font-test'))->name('test.fonts');
     });
 }
 

@@ -54,7 +54,7 @@ class LandingSeeder extends Seeder
                     'company_id' => $testCompany->id,
                     'user_id' => $testUser->id,
                     'verify' => true,
-                    'logo' => ['image' => '/images/logo_only.png'],
+                    'logo' => ['image' => '/images/logos/logo-icon.webp'],
                     'template_config' => [
                         'background' => [
                             'bgName' => 'gradient',
@@ -90,7 +90,7 @@ class LandingSeeder extends Seeder
                     'company_id' => $testCompany2->id,
                     'user_id' => $testUser2->id,
                     'verify' => true,
-                    'logo' => ['image' => '/images/logo_only.png'],
+                    'logo' => ['image' => '/images/logos/logo-icon.webp'],
                     'template_config' => [
                         'background' => [
                             'bgName' => 'solid',
