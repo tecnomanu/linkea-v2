@@ -36,6 +36,7 @@ return [
     ],
 
     'mautic' => [
+        'enabled' => env('MAUTIC_ENABLED', false),
         'api_url' => env('MAUTIC_APIURL'),
         'username' => env('MAUTIC_USERNAME'),
         'password' => env('MAUTIC_PASSWORD'),

@@ -20,9 +20,9 @@ class MauticService
 
     public function __construct()
     {
-        $this->apiUrl = rtrim(config('services.mautic.api_url', ''), '/');
-        $this->username = config('services.mautic.username', '');
-        $this->password = config('services.mautic.password', '');
+        $this->apiUrl = rtrim(config('services.mautic.api_url') ?? '', '/');
+        $this->username = config('services.mautic.username') ?? '';
+        $this->password = config('services.mautic.password') ?? '';
     }
 
     /**
@@ -30,6 +30,10 @@ class MauticService
      */
     public function isEnabled(): bool
     {
+        // First check the enabled flag, then check credentials
+        if (!config('services.mautic.enabled', false)) {
+            return false;
+        }
         return !empty($this->apiUrl) && !empty($this->username) && !empty($this->password);
     }
 
@@ -69,7 +73,6 @@ class MauticService
 
             Log::warning('Mautic addContact: unexpected response', ['response' => $response]);
             return null;
-
         } catch (\Exception $e) {
             Log::error('Mautic addContact error: ' . $e->getMessage(), [
                 'user_id' => $user->id,
@@ -114,7 +117,6 @@ class MauticService
             }
 
             return false;
-
         } catch (\Exception $e) {
             Log::error('Mautic setVerified error: ' . $e->getMessage(), [
                 'user_id' => $user->id,
@@ -155,7 +157,6 @@ class MauticService
             }
 
             return false;
-
         } catch (\Exception $e) {
             Log::error('Mautic updateLastActive error: ' . $e->getMessage(), [
                 'user_id' => $user->id,
@@ -218,7 +219,6 @@ class MauticService
             }
 
             return null;
-
         } catch (\Exception $e) {
             Log::error("Mautic getStageByName error for '{$name}': " . $e->getMessage());
             return null;
@@ -256,4 +256,3 @@ class MauticService
         return $response->json() ?? [];
     }
 }
-

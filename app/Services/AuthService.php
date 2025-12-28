@@ -163,30 +163,37 @@ class AuthService
 
     /**
      * Complete the user setup (Company, Landing, Jobs).
+     * 
+     * @param User $user The user to complete setup for
+     * @param string $linkeaHandle The unique Linkea handle (landing slug)
      */
-    public function completeSetup(User $user, string $username): void
+    public function completeSetup(User $user, string $linkeaHandle): void
     {
-        // Create company
+        // Create company with display name (not unique slug)
+        $displayName = $user->first_name ?: ucfirst($linkeaHandle);
         $company = Company::create([
-            'name' => ucfirst($username),
-            'slug' => $username,
+            'name' => $displayName,
+            'slug' => null, // No longer using slug for companies
             'owner_id' => $user->id,
         ]);
 
-        // Update user with company
-        $user->update(['company_id' => $company->id]);
+        // Update user with company (username is optional now)
+        $user->update([
+            'company_id' => $company->id,
+            'username' => $linkeaHandle, // Keep for backwards compat, but not unique
+        ]);
 
         // Assign admin role
         $this->assignRole($user, UserRoles::ADMIN);
 
-        // Create default landing
-        $this->landingService->createDefault($user, $username);
+        // Create default landing with the unique Linkea handle
+        $this->landingService->createDefault($user, $linkeaHandle);
 
         // Send verification email notification (queued)
         if (!$user->verified_at) {
             $user->notify(new VerifyUserCode());
         } else {
-            // If already verified (Social login), maybe send Welcome directly?
+            // If already verified (Social login), send Welcome directly
             $user->notify(new WelcomeMessage());
         }
 
@@ -316,15 +323,18 @@ class AuthService
     }
 
     /**
-     * Check if username is available for registration or handle change.
+     * Check if a Linkea handle (landing slug) is available.
      *
-     * @param string $username The username to check
+     * Only checks the Landing table since that's the only unique identifier.
+     * User.username and Company.slug are no longer unique constraints.
+     *
+     * @param string $handle The Linkea handle to check
      * @param User|null $currentUser The current authenticated user (to exclude their own landing)
      * @return array{available: bool, message: string}
      */
-    public function checkUsernameAvailability(string $username, ?User $currentUser = null): array
+    public function checkUsernameAvailability(string $handle, ?User $currentUser = null): array
     {
-        if (empty($username)) {
+        if (empty($handle)) {
             return [
                 'available' => false,
                 'message' => 'El nombre de usuario es requerido',
@@ -332,7 +342,7 @@ class AuthService
         }
 
         // Validate format first
-        $formatValidation = StringHelper::validateHandle($username);
+        $formatValidation = StringHelper::validateHandle($handle);
         if (!$formatValidation['valid']) {
             return [
                 'available' => false,
@@ -340,33 +350,21 @@ class AuthService
             ];
         }
 
-        $normalizedUsername = StringHelper::normalizeHandle($username);
+        $normalizedHandle = StringHelper::normalizeHandle($handle);
 
         // Check reserved slugs (root users can bypass this)
         $isRoot = $currentUser && $currentUser->hasRole(UserRoles::ROOT);
-        if (!$isRoot && ReservedSlugs::isReserved($normalizedUsername)) {
+        if (!$isRoot && ReservedSlugs::isReserved($normalizedHandle)) {
             return [
                 'available' => false,
                 'message' => 'Este nombre de usuario no esta disponible',
             ];
         }
 
-        // Check if username exists in users table (excluding current user)
-        $userQuery = User::where('username', $normalizedUsername);
-        if ($currentUser) {
-            $userQuery->where('id', '!=', $currentUser->id);
-        }
-        if ($userQuery->exists()) {
-            return [
-                'available' => false,
-                'message' => ResponseMessages::USERNAME_TAKEN,
-            ];
-        }
-
-        // Check collision with existing landing slugs (excluding current user's landings)
-        $landingQuery = Landing::where(function ($q) use ($normalizedUsername) {
-            $q->where('slug', $normalizedUsername)
-                ->orWhere('domain_name', $normalizedUsername);
+        // Check collision with existing landing slugs (the only unique constraint)
+        $landingQuery = Landing::where(function ($q) use ($normalizedHandle) {
+            $q->where('slug', $normalizedHandle)
+                ->orWhere('domain_name', $normalizedHandle);
         });
 
         if ($currentUser) {

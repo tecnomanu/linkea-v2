@@ -11,7 +11,7 @@ class Company extends Model
 {
     use SoftDeletes, HasUuids;
 
-    protected $fillable = ["name", "slug", "owner_id", "membership_id", "mongo_id"];
+    protected $fillable = ["name", "owner_id", "membership_id", "mongo_id"];
 
     protected $appends = ['text'];
 

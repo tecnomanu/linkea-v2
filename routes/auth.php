@@ -66,6 +66,6 @@ Route::prefix('auth')->group(function () {
 
         // Username Setup (Onboarding)
         Route::get('/setup-username', [\App\Http\Controllers\Auth\SetupUsernameController::class, 'show'])->name('auth.setup.username');
-        Route::post('/setup-username', [\App\Http\Controllers\Auth\SetupUsernameController::class, 'store']);
+        Route::post('/setup-username', [\App\Http\Controllers\Auth\SetupUsernameController::class, 'store'])->name('auth.setup.username.store');
     });
 });
