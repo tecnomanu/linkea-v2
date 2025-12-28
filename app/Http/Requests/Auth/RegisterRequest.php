@@ -20,10 +20,10 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // This is the linkea handle (landing slug) - now renamed for clarity
             'username' => [
                 'required',
                 'string',
-                'unique:users',
                 new ValidHandle(), // Centralized validation from StringHelper
             ],
             'email' => [
@@ -45,21 +45,21 @@ class RegisterRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
-            $username = StringHelper::normalizeHandle($this->input('username', ''));
+            $handle = StringHelper::normalizeHandle($this->input('username', ''));
 
-            if (empty($username)) {
+            if (empty($handle)) {
                 return;
             }
 
             // Check reserved slugs
-            if (ReservedSlugs::isReserved($username)) {
+            if (ReservedSlugs::isReserved($handle)) {
                 $validator->errors()->add('username', 'Este nombre de usuario no esta disponible');
                 return;
             }
 
-            // Check collision with existing landing slugs
-            $existingLanding = Landing::where('slug', $username)
-                ->orWhere('domain_name', $username)
+            // Check collision with existing landing slugs (the only unique constraint)
+            $existingLanding = Landing::where('slug', $handle)
+                ->orWhere('domain_name', $handle)
                 ->exists();
 
             if ($existingLanding) {
@@ -72,7 +72,6 @@ class RegisterRequest extends FormRequest
     {
         return [
             'username.required' => ResponseMessages::REQUIRED_FIELD,
-            'username.unique' => ResponseMessages::USERNAME_TAKEN,
             'email.required' => ResponseMessages::REQUIRED_FIELD,
             'email.email' => 'Este email no parece real. Verifica que este bien escrito.',
             'email.unique' => ResponseMessages::EMAIL_TAKEN,
@@ -84,21 +83,24 @@ class RegisterRequest extends FormRequest
 
     /**
      * Get normalized registration data.
+     * 
+     * Note: Frontend sends 'username' but we transform it to 'linkea_handle'
+     * for the service to make it clear this is the landing slug.
      */
     public function toServiceFormat(): array
     {
         $data = $this->validated();
-        $username = StringHelper::normalizeHandle($data['username']);
+        $linkeaHandle = StringHelper::normalizeHandle($data['username']);
 
         return [
-            'username' => $username,
+            'linkea_handle' => $linkeaHandle,
             'email' => strtolower($data['email']),
             'password' => $data['password'],
-            'first_name' => $data['first_name'] ?? ucfirst($username),
+            'first_name' => $data['first_name'] ?? ucfirst($linkeaHandle),
             'last_name' => $data['last_name'] ?? '',
             'name' => isset($data['first_name'])
                 ? trim($data['first_name'] . ' ' . ($data['last_name'] ?? ''))
-                : ucfirst($username),
+                : ucfirst($linkeaHandle),
         ];
     }
 }

@@ -31,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'root' => \App\Http\Middleware\EnsureUserIsRoot::class,
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
             'setup.completed' => \App\Http\Middleware\EnsureSetupCompleted::class,
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
 
         $middleware->web(append: [

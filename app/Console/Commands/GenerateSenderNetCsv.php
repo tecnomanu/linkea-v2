@@ -65,8 +65,9 @@ class GenerateSenderNetCsv extends Command
                     $firstName = implode(' ', $parts);
                 }
             }
-            if (empty($firstName) && !empty($user->username)) {
-                $firstName = $user->username;
+            // Fallback to first_name if still empty
+            if (empty($firstName) && !empty($user->first_name)) {
+                $firstName = $user->first_name;
             }
 
             // Tags logic
@@ -79,7 +80,7 @@ class GenerateSenderNetCsv extends Command
 
             // Custom Fields Data
             $verifiedAt = $user->verified_at ? $user->verified_at->toDateTimeString() : '';
-            $handle = $user->landing->slug ?? $user->username ?? '';
+            $handle = $user->landings()->first()?->slug ?? '';
             $isLegacy = $user->mongo_id ? 'yes' : 'no';
 
             // Status Logic (Force Active unless unsubscribed locally? We assume ACTIVE for import)

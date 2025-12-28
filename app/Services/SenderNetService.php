@@ -192,9 +192,9 @@ class SenderNetService
                 $lastName = $parts['last'];
             }
 
-            // Fallback to username if still empty
-            if (empty($firstName) && !empty($user->username)) {
-                $firstName = $user->username;
+            // Fallback to first_name if still empty
+            if (empty($firstName) && !empty($user->first_name)) {
+                $firstName = $user->first_name;
             }
 
             $data = [
@@ -300,8 +300,9 @@ class SenderNetService
                 $lastName = $parts['last'];
             }
 
-            if (empty($firstName) && !empty($user->username)) {
-                $firstName = $user->username;
+            // Fallback to first_name if still empty
+            if (empty($firstName) && !empty($user->first_name)) {
+                $firstName = $user->first_name;
             }
 
             $updateData = array_merge([
@@ -770,14 +771,16 @@ class SenderNetService
             $fields['{$user_state}'] = $user->verified_at ? 'verified' : 'pending';
         }
 
-        // Add common fields
-        if ($user->username) {
-            $fields['{$username}'] = $user->username;
+        // Get the user's primary landing slug if available
+        $linkeaHandle = '';
+        if ($user->relationLoaded('landings') && $user->landings->isNotEmpty()) {
+            $linkeaHandle = $user->landings->first()?->slug ?? '';
+        } elseif ($landing = $user->landings()->first()) {
+            $linkeaHandle = $landing->slug ?? '';
         }
 
-        // Get the user's primary landing slug if available
-        if ($user->landing) {
-            $fields['{$linkea_handle}'] = $user->landing->slug ?? $user->username;
+        if ($linkeaHandle) {
+            $fields['{$linkea_handle}'] = $linkeaHandle;
         }
 
         // Dates

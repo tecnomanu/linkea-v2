@@ -5,6 +5,12 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
+/**
+ * Controller for setting up Linkea handle (landing slug) after social login.
+ * 
+ * This flow is used when a user signs up via Google/Apple and needs to choose
+ * their unique Linkea handle before accessing the dashboard.
+ */
 class SetupUsernameController extends Controller
 {
     protected $authService;
@@ -23,8 +29,11 @@ class SetupUsernameController extends Controller
             return redirect()->intended('/panel');
         }
 
+        // Suggest initial handle from user's first name or email
+        $initialHandle = $this->suggestHandle($user);
+
         return \Inertia\Inertia::render('Auth/SetupUsername', [
-            'initialUsername' => $user->username,
+            'initialUsername' => $initialHandle,
         ]);
     }
 
@@ -45,22 +54,18 @@ class SetupUsernameController extends Controller
                 return redirect()->to('/panel');
             }
 
-            $username = strtolower($request->username);
-            \Log::info('SetupUsername: Username to set', ['username' => $username]);
+            $linkeaHandle = strtolower($request->username);
+            \Log::info('SetupUsername: Handle to set', ['handle' => $linkeaHandle]);
 
             // Check availability
-            $availability = $this->authService->checkUsernameAvailability($username, $user);
+            $availability = $this->authService->checkUsernameAvailability($linkeaHandle, $user);
             if (!$availability['available']) {
-                \Log::warning('SetupUsername: Username not available', $availability);
+                \Log::warning('SetupUsername: Handle not available', $availability);
                 return back()->withErrors(['username' => $availability['message']]);
             }
 
-            // Update username directly with update method
-            $user->update(['username' => $username]);
-            \Log::info('SetupUsername: Username updated');
-
             // Complete Setup (Company, Landing, Jobs)
-            $this->authService->completeSetup($user, $username);
+            $this->authService->completeSetup($user, $linkeaHandle);
             \Log::info('SetupUsername: Complete setup done', ['new_company_id' => $user->fresh()->company_id]);
 
             // Force redirect to panel (not intended, to avoid loop)
@@ -69,5 +74,29 @@ class SetupUsernameController extends Controller
             \Log::error('SetupUsername: Error', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return back()->withErrors(['username' => 'Error interno: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Suggest an initial handle based on user data.
+     */
+    protected function suggestHandle($user): string
+    {
+        // Try first name
+        if (!empty($user->first_name)) {
+            return strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $user->first_name));
+        }
+
+        // Try full name
+        if (!empty($user->name)) {
+            return strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $user->name));
+        }
+
+        // Try email prefix
+        if (!empty($user->email)) {
+            $emailPrefix = explode('@', $user->email)[0];
+            return strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $emailPrefix));
+        }
+
+        return '';
     }
 }

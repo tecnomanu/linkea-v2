@@ -30,10 +30,7 @@ class CompaniesController extends Controller
             ->with('owner')
             ->orderBy($orderBy, $order)
             ->when($search, function ($query) use ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('slug', 'like', "%{$search}%");
-                });
+                $query->where('name', 'like', "%{$search}%");
             });
 
         $companies = $query->paginate($perPage);
@@ -49,4 +46,3 @@ class CompaniesController extends Controller
         ]);
     }
 }
-

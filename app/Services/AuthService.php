@@ -34,30 +34,10 @@ class AuthService
         protected LandingService $landingService
     ) {}
 
-    /**
-     * Attempt login with credentials (legacy method using username).
-     *
-     * @return array{user: User, token: string}|null
-     */
-    public function login(array $credentials): ?array
-    {
-        $username = strtolower($credentials['username']);
 
-        if (!Auth::attempt(['username' => $username, 'password' => $credentials['password']])) {
-            return null;
-        }
-
-        $user = Auth::user();
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return [
-            'user' => $user,
-            'token' => $token,
-        ];
-    }
 
     /**
-     * Attempt login with identifier (email, username, or landing slug).
+     * Attempt login with identifier (email or landing slug).
      * Supports login with email address OR linkea handle (landing slug).
      */
     public function loginWithIdentifier(string $identifier, string $password): bool
@@ -80,7 +60,7 @@ class AuthService
     }
 
     /**
-     * Find user by email, username, or landing slug.
+     * Find user by email or landing slug.
      */
     protected function findUserByIdentifier(string $identifier): ?User
     {
@@ -89,13 +69,7 @@ class AuthService
             return User::where('email', $identifier)->first();
         }
 
-        // Search by username first
-        $user = User::where('username', $identifier)->first();
-        if ($user) {
-            return $user;
-        }
-
-        // Search by landing slug
+        // Search by landing slug (the unique Linkea handle)
         $landing = Landing::where('slug', $identifier)
             ->orWhere('domain_name', $identifier)
             ->first();
@@ -115,15 +89,14 @@ class AuthService
     public function register(array $data): array
     {
         return DB::transaction(function () use ($data) {
-            $username = strtolower($data['username']);
+            $linkeaHandle = strtolower($data['linkea_handle']);
             $email = strtolower($data['email']);
 
             // Create user
             $user = $this->userRepository->create([
-                'first_name' => $data['first_name'] ?? ucfirst($username),
+                'first_name' => $data['first_name'] ?? ucfirst($linkeaHandle),
                 'last_name' => $data['last_name'] ?? '',
-                'name' => $data['name'] ?? ucfirst($username),
-                'username' => $username,
+                'name' => $data['name'] ?? ucfirst($linkeaHandle),
                 'email' => $email,
                 'password' => Hash::make($data['password']),
                 'verification_code' => $this->generateVerificationCode(),
@@ -131,7 +104,7 @@ class AuthService
             ]);
 
             // Complete the setup (company, landing, etc.)
-            $this->completeSetup($user, $username);
+            $this->completeSetup($user, $linkeaHandle);
 
             // Generate token
             $token = $user->createToken('auth_token')->plainTextToken;
@@ -152,12 +125,10 @@ class AuthService
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'] ?? '',
             'name' => $data['name'],
-            'username' => $data['username'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'verification_code' => $this->generateVerificationCode(),
             'settings' => ['autoSave' => true],
-            // We can add a flag here if needed, or check company_id is null
         ]);
     }
 
@@ -169,18 +140,16 @@ class AuthService
      */
     public function completeSetup(User $user, string $linkeaHandle): void
     {
-        // Create company with display name (not unique slug)
+        // Create company with display name
         $displayName = $user->first_name ?: ucfirst($linkeaHandle);
         $company = Company::create([
             'name' => $displayName,
-            'slug' => null, // No longer using slug for companies
             'owner_id' => $user->id,
         ]);
 
-        // Update user with company (username is optional now)
+        // Update user with company
         $user->update([
             'company_id' => $company->id,
-            'username' => $linkeaHandle, // Keep for backwards compat, but not unique
         ]);
 
         // Assign admin role
@@ -326,7 +295,6 @@ class AuthService
      * Check if a Linkea handle (landing slug) is available.
      *
      * Only checks the Landing table since that's the only unique identifier.
-     * User.username and Company.slug are no longer unique constraints.
      *
      * @param string $handle The Linkea handle to check
      * @param User|null $currentUser The current authenticated user (to exclude their own landing)

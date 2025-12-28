@@ -138,17 +138,20 @@ class ExportUsersToSenderNet extends Command
                 $newCount++;
             }
 
+            // Get linkea handle
+            $handle = $user->landings()->first()?->slug ?? '-';
+
             $table[] = [
                 $user->id,
                 $user->email,
-                $user->username ?? '-',
+                $handle,
                 $user->verified_at ? '✅' : '❌',
                 $status,
             ];
         }
 
         $this->table(
-            ['ID', 'Email', 'Username', 'Verified', 'Status'],
+            ['ID', 'Email', 'Handle', 'Verified', 'Status'],
             $table
         );
 

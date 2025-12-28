@@ -52,8 +52,11 @@ class MauticService
             // Get 'pending' stage ID
             $stagePending = $this->getStageByName('pending');
 
+            // Get linkea handle from user's primary landing
+            $linkeaHandle = $user->landings()->first()?->slug ?? '';
+
             $data = [
-                'title' => $user->username,
+                'title' => $linkeaHandle,
                 'firstname' => $user->first_name,
                 'lastname' => $user->last_name,
                 'email' => $user->email,

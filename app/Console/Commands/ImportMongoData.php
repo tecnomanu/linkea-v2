@@ -250,17 +250,12 @@ class ImportMongoData extends Command
                 $name = $item['username'] ?? $item['email'];
             }
 
-            // Handle duplicate usernames
-            $username = $item['username'] ?? null;
-            if ($username && User::where('username', $username)->exists()) {
-                $username = $username . '_' . substr($mongoId, -6);
-            }
+
 
             $user = new User([
                 'name' => $name,
                 'first_name' => $firstName ?: null,
                 'last_name' => $lastName ?: null,
-                'username' => $username,
                 'email' => $item['email'],
                 'password' => $item['password'] ?? Hash::make('changeme123'),
                 'avatar' => $avatar,
@@ -352,15 +347,10 @@ class ImportMongoData extends Command
                 $membershipId = $this->idMap['memberships'][$item['membership_id']];
             }
 
-            // Handle duplicate slugs by appending mongo_id suffix
-            $slug = $item['slug'] ?? null;
-            if ($slug && Company::where('slug', $slug)->exists()) {
-                $slug = $slug . '_' . substr($mongoId, -6);
-            }
+
 
             $company = new Company([
                 'name' => $item['name'],
-                'slug' => $slug,
                 'owner_id' => $ownerId,
                 'membership_id' => $membershipId,
                 'mongo_id' => $mongoId,

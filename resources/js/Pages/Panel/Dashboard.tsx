@@ -129,7 +129,7 @@ export default function Dashboard({
 
     const initialUser: UserProfile = {
         name: landing?.name || "", // Internal name (not displayed)
-        handle: landing?.domain_name || landing?.slug || auth.user.username,
+        handle: landing?.domain_name || landing?.slug || "",
         avatar:
             landing?.logo?.image ||
             auth.user.avatar ||

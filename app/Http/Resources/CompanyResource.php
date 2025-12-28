@@ -12,7 +12,7 @@ class CompanyResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'slug' => $this->slug,
+
             'owner_id' => $this->owner_id,
             'created_at' => $this->created_at?->toISOString(),
 
