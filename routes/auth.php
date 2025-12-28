@@ -63,5 +63,9 @@ Route::prefix('auth')->group(function () {
         Route::post('/verification-notification', [AuthController::class, 'resendVerificationCode'])
             ->middleware('throttle:6,1')
             ->name('verification.send');
+
+        // Username Setup (Onboarding)
+        Route::get('/setup-username', [\App\Http\Controllers\Auth\SetupUsernameController::class, 'show'])->name('auth.setup.username');
+        Route::post('/setup-username', [\App\Http\Controllers\Auth\SetupUsernameController::class, 'store']);
     });
 });

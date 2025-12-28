@@ -17,6 +17,11 @@ declare global {
                     prompt: (callback?: (notification: any) => void) => void;
                     renderButton: (element: HTMLElement, config: any) => void;
                 };
+                oauth2: {
+                    initTokenClient: (config: any) => {
+                        requestAccessToken: () => void;
+                    };
+                };
             };
         };
         googleScriptLoading?: boolean;
@@ -38,95 +43,58 @@ export function SocialLoginButtons({
 
     // Load Google Script
     useEffect(() => {
-        if (!googleClientId) {
-            console.warn("VITE_GOOGLE_CLIENT_ID not found");
-            return;
-        }
-
-        const handleResponse = async (response: any) => {
-            if (response.credential) {
-                setIsLoading(true);
-
-                // Manual decode to get profile info (optional, just for logging or basic checks)
-                // In production, we send the raw credential to backend to be secure
-                // const payload = JSON.parse(atob(response.credential.split('.')[1]));
-
-                // Send to backend via Inertia
-                router.post(
-                    route("auth.social.callback", "google"),
-                    {
-                        token: response.credential,
-                        // If we want to mimic the user's other project "implicit" style, we could decode here
-                        // But sending token is cleaner and secure.
-                        // The backend will decode using Socialite.
-                    },
-                    {
-                        onFinish: () => setIsLoading(false),
-                        onError: () => setIsLoading(false),
-                    }
-                );
-            }
-        };
+        if (!googleClientId) return;
 
         const setupGoogle = () => {
-            if (!window.google?.accounts?.id) return;
-
-            window.google.accounts.id.initialize({
-                client_id: googleClientId,
-                callback: handleResponse,
-                auto_select: false,
-                cancel_on_tap_outside: true,
-                ux_mode: "popup",
-            });
+            // We just need the script loaded, client is initialized on click
             setIsReady(true);
         };
 
-        if (window.google?.accounts?.id) {
+        if (window.google?.accounts) {
             setupGoogle();
             return;
         }
 
-        if (
-            !document.querySelector(
-                'script[src*="accounts.google.com/gsi/client"]'
-            )
-        ) {
-            const script = document.createElement("script");
-            script.src = "https://accounts.google.com/gsi/client";
-            script.async = true;
-            script.defer = true;
-            script.onload = setupGoogle;
-            document.head.appendChild(script);
-        } else {
-            // If script exists but not loaded, wait a bit
-            // Simplified for this context
-            const interval = setInterval(() => {
-                if (window.google?.accounts?.id) {
-                    clearInterval(interval);
-                    setupGoogle();
-                }
-            }, 100);
-            return () => clearInterval(interval);
-        }
+        const script = document.createElement("script");
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+        script.onload = setupGoogle;
+        document.head.appendChild(script);
     }, [googleClientId]);
 
     const handleGoogleBtnClick = () => {
         if (onGoogleClick) {
-            onGoogleClick(); // Previous behavior if passed
+            onGoogleClick();
             return;
         }
 
-        if (!isReady || !window.google) return;
+        if (!window.google?.accounts) return;
 
         setIsLoading(true);
-        window.google.accounts.id.prompt((notification) => {
-            if (
-                notification.isNotDisplayed() ||
-                notification.isSkippedMoment()
-            ) {
-                setIsLoading(false);
-            }
+
+        const client = window.google.accounts.oauth2.initTokenClient({
+            client_id: googleClientId,
+            scope: "openid profile email",
+            callback: (response: any) => {
+                if (response.access_token) {
+                    router.post(
+                        route("auth.social.callback", "google"),
+                        {
+                            token: response.access_token,
+                        },
+                        {
+                            onFinish: () => setIsLoading(false),
+                            onError: () => setIsLoading(false),
+                        }
+                    );
+                } else {
+                    setIsLoading(false);
+                }
+            },
         });
+
+        client.requestAccessToken();
     };
 
     return (

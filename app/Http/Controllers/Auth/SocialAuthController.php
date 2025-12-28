@@ -33,73 +33,6 @@ class SocialAuthController extends Controller
         return Socialite::driver($provider)->redirect();
     }
 
-    /**
-     * Handle the callback from the provider.
-     * Can be used for:
-     * 1. Authorization Code Flow (standard redirect)
-     * 2. ID Token Flow (POST request from client)
-     */
-    public function callback(Request $request, string $provider)
-    {
-        if (!in_array($provider, ['google', 'apple'])) {
-            abort(404);
-        }
-
-        try {
-            // Check if we received a token directly (Client-side flow)
-            if ($request->has('token')) {
-                // Google Identity Services (GSI) returns an ID Token, not Access Token.
-                // Socialite's userFromToken expects an Access Token.
-                // We must verify the ID Token manually for Google.
-                if ($provider === 'google') {
-                    $response = \Illuminate\Support\Facades\Http::get('https://oauth2.googleapis.com/tokeninfo', [
-                        'id_token' => $request->token,
-                    ]);
-
-                    if (!$response->successful()) {
-                        throw new Exception('Invalid Google Token');
-                    }
-
-                    $data = $response->json();
-
-                    // Verify audience matches our Client ID (security check)
-                    // Note: In some cases aud can be multiple or different, but typically it works.
-                    // if ($data['aud'] !== config('services.google.client_id')) throw new Exception('Invalid Client ID');
-
-                    // Map to Socialite User interface
-                    $socialUser = new \Laravel\Socialite\Two\User();
-                    $socialUser->setRaw($data);
-                    $socialUser->map([
-                        'id' => $data['sub'],
-                        'nickname' => null,
-                        'name' => $data['name'],
-                        'email' => $data['email'],
-                        'avatar' => $data['picture'],
-                        'email_verified' => $data['email_verified'],
-                    ]);
-                } else {
-                    // For Apple or others, userFromToken might work or need specific handling
-                    $socialUser = Socialite::driver($provider)->userFromToken($request->token);
-                }
-            } else {
-                // Standard Authorization Code Flow (GET request with ?code=...)
-                $socialUser = Socialite::driver($provider)->user();
-            }
-        } catch (Exception $e) {
-            // If API logical failure
-            return redirect()->route('login')->withErrors([
-                'email' => 'Error al autenticar con ' . ucfirst($provider) . ': ' . $e->getMessage()
-            ]);
-        }
-
-        $user = $this->findOrCreateUser($socialUser, $provider);
-
-        Auth::login($user);
-
-        request()->session()->regenerate();
-
-        return redirect()->intended('/panel');
-    }
 
     /**
      * Find existing user or create a new one.
@@ -130,7 +63,7 @@ class SocialAuthController extends Controller
             return $user;
         }
 
-        // 3. Create new user
+        // 3. Create new user structure (but NOT company/landing yet)
         $baseUsername = $socialUser->getNickname() ?? explode('@', $socialUser->getEmail())[0];
         $username = $this->generateUniqueUsername($baseUsername);
 
@@ -148,8 +81,8 @@ class SocialAuthController extends Controller
             'name' => $fullName,
         ];
 
-        $result = $this->authService->register($data);
-        $user = $result['user'];
+        // Call createSocialUser instead of register
+        $user = $this->authService->createSocialUser($data);
 
         $user->update([
             $idColumn => $socialUser->getId(),
@@ -158,6 +91,39 @@ class SocialAuthController extends Controller
         ]);
 
         return $user;
+    }
+
+    // In callback method, redirection logic needs to be updated.
+    // I will return the updated callback method here as well to keep it clean.
+
+    public function callback(Request $request, string $provider)
+    {
+        if (!in_array($provider, ['google', 'apple'])) {
+            abort(404);
+        }
+
+        try {
+            if ($request->has('token')) {
+                $socialUser = Socialite::driver($provider)->userFromToken($request->token);
+            } else {
+                $socialUser = Socialite::driver($provider)->user();
+            }
+        } catch (Exception $e) {
+            return redirect()->route('login')->withErrors([
+                'email' => 'Error al autenticar con ' . ucfirst($provider) . ': ' . $e->getMessage()
+            ]);
+        }
+
+        $user = $this->findOrCreateUser($socialUser, $provider);
+        Auth::login($user);
+        request()->session()->regenerate();
+
+        // Check if user has completed setup (has company/landing)
+        if (!$user->company_id) {
+            return redirect()->route('auth.setup.username');
+        }
+
+        return redirect()->intended('/panel');
     }
 
     protected function generateUniqueUsername(string $base): string

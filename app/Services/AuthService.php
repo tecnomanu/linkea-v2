@@ -108,7 +108,7 @@ class AuthService
     }
 
     /**
-     * Register a new user.
+     * Register a new user with full setup (Standard Flow).
      *
      * @return array{user: User, token: string}
      */
@@ -130,38 +130,70 @@ class AuthService
                 'settings' => ['autoSave' => true],
             ]);
 
-            // Create company
-            $company = Company::create([
-                'name' => ucfirst($username),
-                'slug' => $username,
-                'owner_id' => $user->id,
-            ]);
-
-            // Update user with company
-            $user->company_id = $company->id;
-            $user->save();
-
-            // Assign admin role
-            $this->assignRole($user, UserRoles::ADMIN);
-
-            // Create default landing
-            $this->landingService->createDefault($user, $username);
-
-            // Send verification email notification (queued)
-            $user->notify(new VerifyUserCode());
+            // Complete the setup (company, landing, etc.)
+            $this->completeSetup($user, $username);
 
             // Generate token
             $token = $user->createToken('auth_token')->plainTextToken;
-
-            // Dispatch CRM/Marketing jobs (queued)
-            AddToMautic::dispatch($user);
-            AddToSenderNet::dispatch($user);
 
             return [
                 'user' => $user->fresh(),
                 'token' => $token,
             ];
         });
+    }
+
+    /**
+     * Create only the user without company/landing (Social Initial Flow).
+     */
+    public function createSocialUser(array $data): User
+    {
+        return $this->userRepository->create([
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'] ?? '',
+            'name' => $data['name'],
+            'username' => $data['username'],
+            'email' => $data['email'],
+            'password' => Hash::make($data['password']),
+            'verification_code' => $this->generateVerificationCode(),
+            'settings' => ['autoSave' => true],
+            // We can add a flag here if needed, or check company_id is null
+        ]);
+    }
+
+    /**
+     * Complete the user setup (Company, Landing, Jobs).
+     */
+    public function completeSetup(User $user, string $username): void
+    {
+        // Create company
+        $company = Company::create([
+            'name' => ucfirst($username),
+            'slug' => $username,
+            'owner_id' => $user->id,
+        ]);
+
+        // Update user with company
+        $user->company_id = $company->id;
+        $user->save();
+
+        // Assign admin role
+        $this->assignRole($user, UserRoles::ADMIN);
+
+        // Create default landing
+        $this->landingService->createDefault($user, $username);
+
+        // Send verification email notification (queued)
+        if (!$user->verified_at) {
+            $user->notify(new VerifyUserCode());
+        } else {
+            // If already verified (Social login), maybe send Welcome directly?
+            $user->notify(new WelcomeMessage());
+        }
+
+        // Dispatch CRM/Marketing jobs (queued)
+        AddToMautic::dispatch($user);
+        AddToSenderNet::dispatch($user);
     }
 
     /**
