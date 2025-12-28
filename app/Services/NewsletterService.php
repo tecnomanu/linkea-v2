@@ -2,11 +2,13 @@
 
 namespace App\Services;
 
+use App\Jobs\SendNewsletterEmail;
 use App\Models\Newsletter;
 use App\Models\User;
+use App\Notifications\NewsletterMessage;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Service for handling newsletter operations.
@@ -51,11 +53,20 @@ class NewsletterService
 
     /**
      * Send newsletter to all users.
+     * Dispatches jobs for async email sending.
      */
     public function sendToAllUsers(Newsletter $newsletter): Newsletter
     {
         $users = User::all();
 
+        if ($users->isEmpty()) {
+            Log::warning('No users found to send newsletter', [
+                'newsletter_id' => $newsletter->id,
+            ]);
+            return $newsletter;
+        }
+
+        // Attach users to newsletter pivot table
         $pivotData = $users->mapWithKeys(fn($user) => [
             $user->id => [
                 'date' => Carbon::now(),
@@ -66,14 +77,82 @@ class NewsletterService
         ])->toArray();
 
         $newsletter->users()->sync($pivotData);
-        $newsletter->update(['sent' => true, 'status' => 'sent']);
 
-        // TODO: Dispatch email jobs here
-        // foreach ($users as $user) {
-        //     dispatch(new SendNewsletterEmail($newsletter, $user));
-        // }
+        // Dispatch email jobs for each user
+        foreach ($users as $user) {
+            SendNewsletterEmail::dispatch($newsletter, $user);
+        }
+
+        // Mark newsletter as sent
+        $newsletter->update([
+            'sent' => true,
+            'status' => 'sent',
+        ]);
+
+        Log::info('Newsletter queued for sending', [
+            'newsletter_id' => $newsletter->id,
+            'recipients_count' => $users->count(),
+        ]);
 
         return $newsletter->fresh();
+    }
+
+    /**
+     * Send newsletter to root users only (test mode).
+     */
+    public function sendToRootUsers(Newsletter $newsletter, ?string $testEmail = null): Newsletter
+    {
+        $users = User::whereHas('roles', function ($query) {
+            $query->where('type', 'root');
+        })->get();
+
+        if ($users->isEmpty()) {
+            Log::warning('No root users found to send test newsletter', [
+                'newsletter_id' => $newsletter->id,
+            ]);
+            return $newsletter;
+        }
+
+        // Dispatch email jobs for each root user
+        foreach ($users as $user) {
+            SendNewsletterEmail::dispatch($newsletter, $user, $testEmail);
+        }
+
+        Log::info('Newsletter test queued for sending', [
+            'newsletter_id' => $newsletter->id,
+            'recipients_count' => $users->count(),
+            'test_email' => $testEmail,
+        ]);
+
+        return $newsletter;
+    }
+
+    /**
+     * Send test email to a specific address.
+     */
+    public function sendTestToEmail(Newsletter $newsletter, string $email): void
+    {
+        // Find any root user to send as (for template purposes)
+        $user = User::whereHas('roles', function ($query) {
+            $query->where('type', 'root');
+        })->first();
+
+        if (!$user) {
+            $user = User::first();
+        }
+
+        if (!$user) {
+            Log::error('No users available to send test newsletter');
+            return;
+        }
+
+        // Send directly without queuing for immediate feedback
+        $user->notify(new NewsletterMessage($newsletter, $email));
+
+        Log::info('Newsletter test sent directly', [
+            'newsletter_id' => $newsletter->id,
+            'test_email' => $email,
+        ]);
     }
 
     /**
@@ -96,6 +175,22 @@ class NewsletterService
                 'viewed_count' => $currentCount + 1,
                 'ip' => $ip,
             ]);
+
+            Log::debug('Newsletter view recorded', [
+                'newsletter_id' => $newsletterId,
+                'user_id' => $userId,
+                'view_count' => $currentCount + 1,
+            ]);
+        } else {
+            // If user wasn't in pivot (e.g., root user test), create entry
+            if ($user->hasRole('root')) {
+                $newsletter->users()->attach($userId, [
+                    'date' => Carbon::now(),
+                    'sent' => true,
+                    'viewed_count' => 1,
+                    'ip' => $ip,
+                ]);
+            }
         }
     }
 
@@ -136,8 +231,8 @@ class NewsletterService
 
             $saved = $this->imageService->saveImage($imageData, 'newsletters', 'image_' . time());
 
-            if ($saved) {
-                $url = Storage::disk('public')->url($saved['image']);
+            if ($saved && isset($saved['image'])) {
+                $url = asset('storage/' . $saved['image']);
                 return 'src="' . $url . '"';
             }
 
@@ -162,4 +257,3 @@ class NewsletterService
         return true;
     }
 }
-

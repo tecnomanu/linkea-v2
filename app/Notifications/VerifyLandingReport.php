@@ -2,22 +2,18 @@
 
 namespace App\Notifications;
 
+use App\Models\Landing;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
- * Custom reset password notification with Spanish translations.
+ * Notification sent when a landing page is verified (official badge).
  */
-class ResetPasswordNotification extends Notification implements ShouldQueue
+class VerifyLandingReport extends Notification implements ShouldQueue
 {
     use Queueable;
-
-    /**
-     * The password reset token.
-     */
-    public string $token;
 
     /**
      * The number of times the job may be attempted.
@@ -32,9 +28,9 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
     /**
      * Create a new notification instance.
      */
-    public function __construct(string $token)
-    {
-        $this->token = $token;
+    public function __construct(
+        public ?Landing $landing = null
+    ) {
         $this->onQueue('notifications');
     }
 
@@ -53,21 +49,16 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $url = url(route('password.reset', [
-            'token' => $this->token,
-            'email' => $notifiable->getEmailForPasswordReset(),
-        ], false));
+        $appUrl = config('app.url');
 
-        $expireMinutes = config('auth.passwords.users.expire', 60);
+        $landingUrl = $this->landing
+            ? $appUrl . '/' . ($this->landing->slug ?? $this->landing->domain_name)
+            : $appUrl . '/panel';
 
         return (new MailMessage)
-            ->subject('Restablecer contraseña - Linkea')
-            ->view('emails.reset-password', [
-                'url' => $url,
-                'count' => $expireMinutes,
-                'headerImage' => 'images/emails/linky_header.png',
-                'headerTitle' => 'Restablecer Contraseña',
-                'headerSubtitle' => 'Seguí los pasos para recuperar tu cuenta',
+            ->subject('Tu Linkea ahora está verificado - ' . config('app.name'))
+            ->view('emails.verify-landing', [
+                'landingUrl' => $landingUrl,
             ]);
     }
 
@@ -79,7 +70,8 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            'type' => 'reset_password',
+            'type' => 'verify_landing',
+            'landing_id' => $this->landing?->id,
         ];
     }
 }

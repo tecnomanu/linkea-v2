@@ -25,8 +25,16 @@ class AddToMautic implements ShouldQueue
 
     /**
      * The number of seconds to wait before retrying the job.
+     * Uses exponential backoff: 30s, 60s, 120s
+     *
+     * @var array<int, int>
      */
-    public int $backoff = 60;
+    public array $backoff = [30, 60, 120];
+
+    /**
+     * The maximum number of unhandled exceptions to allow before failing.
+     */
+    public int $maxExceptions = 2;
 
     /**
      * Create a new job instance.

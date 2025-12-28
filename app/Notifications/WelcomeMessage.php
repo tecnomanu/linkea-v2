@@ -6,18 +6,14 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Str;
 
 /**
- * Custom reset password notification with Spanish translations.
+ * Welcome notification sent after user verifies their account.
  */
-class ResetPasswordNotification extends Notification implements ShouldQueue
+class WelcomeMessage extends Notification implements ShouldQueue
 {
     use Queueable;
-
-    /**
-     * The password reset token.
-     */
-    public string $token;
 
     /**
      * The number of times the job may be attempted.
@@ -32,9 +28,8 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
     /**
      * Create a new notification instance.
      */
-    public function __construct(string $token)
+    public function __construct()
     {
-        $this->token = $token;
         $this->onQueue('notifications');
     }
 
@@ -53,21 +48,20 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $url = url(route('password.reset', [
-            'token' => $this->token,
-            'email' => $notifiable->getEmailForPasswordReset(),
-        ], false));
-
-        $expireMinutes = config('auth.passwords.users.expire', 60);
+        $firstName = $notifiable->first_name ?? $notifiable->name ?? 'Usuario';
+        $appName = config('app.name');
+        $appUrl = config('app.url');
 
         return (new MailMessage)
-            ->subject('Restablecer contraseña - Linkea')
-            ->view('emails.reset-password', [
-                'url' => $url,
-                'count' => $expireMinutes,
-                'headerImage' => 'images/emails/linky_header.png',
-                'headerTitle' => 'Restablecer Contraseña',
-                'headerSubtitle' => 'Seguí los pasos para recuperar tu cuenta',
+            ->subject('Bienvenido a ' . $appName . ', ' . Str::ucfirst($firstName) . '!')
+            ->view('emails.welcome', [
+                'firstName' => $firstName,
+                'actionUrl' => $appUrl . '/panel',
+                'fullWidthHeaderBg' => 'images/emails/welcome_header.png',
+                'headerTitle' => 'BIENVENIDO',
+                'headerHeight' => '500px',
+                'headerBgPosition' => 'top center',
+                'headerTextAlign' => 'top',
             ]);
     }
 
@@ -79,7 +73,7 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            'type' => 'reset_password',
+            'type' => 'welcome',
         ];
     }
 }

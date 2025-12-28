@@ -2,22 +2,19 @@
 
 namespace App\Notifications;
 
+use App\Models\Newsletter;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
- * Custom reset password notification with Spanish translations.
+ * Notification for sending newsletter emails to users.
+ * Includes tracking pixel for open rate analytics.
  */
-class ResetPasswordNotification extends Notification implements ShouldQueue
+class NewsletterMessage extends Notification implements ShouldQueue
 {
     use Queueable;
-
-    /**
-     * The password reset token.
-     */
-    public string $token;
 
     /**
      * The number of times the job may be attempted.
@@ -32,9 +29,10 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
     /**
      * Create a new notification instance.
      */
-    public function __construct(string $token)
-    {
-        $this->token = $token;
+    public function __construct(
+        public Newsletter $newsletter,
+        public ?string $testEmail = null
+    ) {
         $this->onQueue('notifications');
     }
 
@@ -53,21 +51,18 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $url = url(route('password.reset', [
-            'token' => $this->token,
-            'email' => $notifiable->getEmailForPasswordReset(),
-        ], false));
+        // Build tracking pixel URL
+        $pixelUrl = route('newsletter.pixel', [
+            'newsletter' => $this->newsletter->id,
+            'user' => $notifiable->id,
+        ]);
 
-        $expireMinutes = config('auth.passwords.users.expire', 60);
-
+        // Build the email with HTML content
         return (new MailMessage)
-            ->subject('Restablecer contraseña - Linkea')
-            ->view('emails.reset-password', [
-                'url' => $url,
-                'count' => $expireMinutes,
-                'headerImage' => 'images/emails/linky_header.png',
-                'headerTitle' => 'Restablecer Contraseña',
-                'headerSubtitle' => 'Seguí los pasos para recuperar tu cuenta',
+            ->subject($this->newsletter->subject . ' - ' . config('app.name'))
+            ->view('emails.newsletter', [
+                'newsletter' => $this->newsletter,
+                'pixelUrl' => $pixelUrl
             ]);
     }
 
@@ -79,7 +74,9 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            'type' => 'reset_password',
+            'type' => 'newsletter',
+            'newsletter_id' => $this->newsletter->id,
+            'subject' => $this->newsletter->subject,
         ];
     }
 }

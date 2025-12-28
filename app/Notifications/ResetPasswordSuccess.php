@@ -8,16 +8,11 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
- * Custom reset password notification with Spanish translations.
+ * Notification sent after password has been successfully reset.
  */
-class ResetPasswordNotification extends Notification implements ShouldQueue
+class ResetPasswordSuccess extends Notification implements ShouldQueue
 {
     use Queueable;
-
-    /**
-     * The password reset token.
-     */
-    public string $token;
 
     /**
      * The number of times the job may be attempted.
@@ -32,9 +27,8 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
     /**
      * Create a new notification instance.
      */
-    public function __construct(string $token)
+    public function __construct()
     {
-        $this->token = $token;
         $this->onQueue('notifications');
     }
 
@@ -53,21 +47,14 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $url = url(route('password.reset', [
-            'token' => $this->token,
-            'email' => $notifiable->getEmailForPasswordReset(),
-        ], false));
-
-        $expireMinutes = config('auth.passwords.users.expire', 60);
+        $appName = config('app.name');
 
         return (new MailMessage)
-            ->subject('Restablecer contraseña - Linkea')
-            ->view('emails.reset-password', [
-                'url' => $url,
-                'count' => $expireMinutes,
+            ->subject('Tu contraseña fue cambiada - ' . $appName)
+            ->view('emails.reset-password-success', [
                 'headerImage' => 'images/emails/linky_header.png',
-                'headerTitle' => 'Restablecer Contraseña',
-                'headerSubtitle' => 'Seguí los pasos para recuperar tu cuenta',
+                'headerTitle' => 'Contraseña Actualizada',
+                'headerSubtitle' => 'Tu cuenta está segura',
             ]);
     }
 
@@ -79,7 +66,7 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            'type' => 'reset_password',
+            'type' => 'reset_password_success',
         ];
     }
 }

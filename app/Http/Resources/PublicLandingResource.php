@@ -198,7 +198,9 @@ class PublicLandingResource extends JsonResource
         }
 
         // New mode: explicit borderColor field
-        if (!empty($buttons['borderColor']) && empty($buttons['borderShow'])) {
+        // We ensure 'style' and 'shape' are present to avoid picking up legacy artifacts where borderColor exists but borderShow is missing.
+        // Legacy data typically lacks 'shape'.
+        if (!empty($buttons['borderColor']) && empty($buttons['borderShow']) && !empty($buttons['style']) && !empty($buttons['shape'])) {
             return $buttons['borderColor'];
         }
 

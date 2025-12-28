@@ -17,6 +17,7 @@ use App\Http\Controllers\WebController;
 use App\Http\Controllers\Panel\PanelController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\SystemRouterController;
+use App\Http\Controllers\NewsletterPixelController;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -121,6 +122,18 @@ if (app()->environment('local', 'development', 'testing') || config('app.debug')
         Route::post('/email-templates/{template}/send', [EmailPreviewController::class, 'sendTest'])->name('test.email-templates.send');
     });
 }
+
+/**
+ * =======================================================================
+ * NEWSLETTER TRACKING PIXEL
+ * =======================================================================
+ * 
+ * Returns a 1x1 transparent PNG while recording email opens.
+ * Must be before catch-all route.
+ */
+
+Route::get('/px/{newsletter}/{user}/pixel.png', NewsletterPixelController::class)
+    ->name('newsletter.pixel');
 
 /**
  * =======================================================================

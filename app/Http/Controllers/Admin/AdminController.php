@@ -8,13 +8,15 @@ use App\Models\Newsletter;
 use App\Models\Notification;
 use App\Models\User;
 use App\Services\AdminService;
+use App\Services\NewsletterService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class AdminController extends Controller
 {
     public function __construct(
-        protected AdminService $adminService
+        protected AdminService $adminService,
+        protected NewsletterService $newsletterService
     ) {}
 
     /**
@@ -162,8 +164,13 @@ class AdminController extends Controller
      */
     public function sendNewsletter(Newsletter $newsletter)
     {
-        $this->adminService->sendNewsletter($newsletter);
-        return redirect()->back()->with('success', 'Newsletter enviado correctamente.');
+        if ($newsletter->sent) {
+            return redirect()->back()->with('error', 'Este newsletter ya fue enviado.');
+        }
+
+        $this->newsletterService->sendToAllUsers($newsletter);
+
+        return redirect()->back()->with('success', 'Newsletter enviado correctamente. Los emails se procesaran en segundo plano.');
     }
 
     /**
@@ -175,8 +182,7 @@ class AdminController extends Controller
             'email' => 'required|email',
         ]);
 
-        // TODO: Actually send test email via NewsletterService
-        // Mail::to($validated['email'])->send(new NewsletterMail($newsletter));
+        $this->newsletterService->sendTestToEmail($newsletter, $validated['email']);
 
         return response()->json([
             'success' => true,
