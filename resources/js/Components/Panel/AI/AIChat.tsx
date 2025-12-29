@@ -6,20 +6,42 @@
  */
 
 import { useAI, UIChatMessage } from "@/contexts/AIContext";
-import { Loader2, Send, Sparkles, User } from "lucide-react";
+import { AIAction } from "@/services/aiBlocksPrompt";
+import { Check, Loader2, Palette, Plus, Send, Sparkles, Trash2, User } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 interface ChatMessageProps {
     message: UIChatMessage;
 }
 
+function getActionLabel(action: AIAction): { icon: React.ReactNode; text: string } {
+    switch (action.action) {
+        case "add_block":
+            return {
+                icon: <Plus size={12} />,
+                text: action.title ? `Agregado: ${action.title}` : "Bloque agregado",
+            };
+        case "update_design":
+            const changes = [];
+            if (action.backgroundColor) changes.push("fondo");
+            if (action.buttonColor) changes.push("botones");
+            if (action.buttonTextColor) changes.push("texto");
+            return {
+                icon: <Palette size={12} />,
+                text: changes.length ? `Colores: ${changes.join(", ")}` : "Diseno actualizado",
+            };
+        case "remove_block":
+            return {
+                icon: <Trash2 size={12} />,
+                text: action.title ? `Eliminado: ${action.title}` : "Bloque eliminado",
+            };
+        default:
+            return { icon: <Check size={12} />, text: "Accion ejecutada" };
+    }
+}
+
 function ChatMessageBubble({ message }: ChatMessageProps) {
     const isUser = message.role === "user";
-
-    // Clean content: remove JSON blocks from display but keep the explanation
-    const displayContent = message.content
-        .replace(/```json[\s\S]*?```/g, "")
-        .trim();
 
     return (
         <div
@@ -50,11 +72,11 @@ function ChatMessageBubble({ message }: ChatMessageProps) {
             >
                 {/* Message content */}
                 <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                    {displayContent || (message.isStreaming ? "" : "...")}
+                    {message.content || (message.isLoading ? "" : "...")}
                 </p>
 
-                {/* Streaming indicator */}
-                {message.isStreaming && (
+                {/* Loading indicator */}
+                {message.isLoading && (
                     <span className="inline-flex items-center gap-1 text-brand-500 mt-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse" />
                         <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse delay-75" />
@@ -63,18 +85,11 @@ function ChatMessageBubble({ message }: ChatMessageProps) {
                 )}
 
                 {/* Action indicator */}
-                {message.action && !message.isStreaming && (
+                {message.action && !message.isLoading && (
                     <div className="mt-2 pt-2 border-t border-neutral-200 dark:border-neutral-600">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-600 dark:text-brand-400">
-                            <Sparkles size={12} />
-                            {message.action.action === "add_blocks" &&
-                                `Agregando ${message.action.blocks?.length || 0} bloque(s)`}
-                            {message.action.action === "update_design" &&
-                                "Actualizando diseno"}
-                            {message.action.action === "remove_blocks" &&
-                                `Eliminando ${message.action.titles?.length || 0} bloque(s)`}
-                            {message.action.action === "reorder_blocks" &&
-                                "Reordenando bloques"}
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-green-600 dark:text-green-400">
+                            {getActionLabel(message.action).icon}
+                            {getActionLabel(message.action).text}
                         </span>
                     </div>
                 )}

@@ -6,7 +6,7 @@
  */
 
 import { LinkBlock, UserProfile } from "@/types";
-import { getSystemPrompt, parseAIResponse, AIAction } from "@/services/aiBlocksPrompt";
+import { getSystemPrompt, parseAIResponse, AIAction, AIResponse } from "@/services/aiBlocksPrompt";
 import webllmService, {
     ChatMessage,
     InitProgress,
@@ -248,37 +248,29 @@ export function AIProvider({
                     { role: "user", content },
                 ];
 
-                // Stream the response
-                let fullResponse = "";
-                await webllmService.chatStream(
+                // Get response (non-streaming for better JSON parsing)
+                const fullResponse = await webllmService.chat(
                     chatHistory,
-                    (chunk, full) => {
-                        fullResponse = full;
-                        setMessages((prev) =>
-                            prev.map((msg) =>
-                                msg.id === assistantId
-                                    ? { ...msg, content: full, isLoading: false }
-                                    : msg
-                            )
-                        );
-                    },
-                    { temperature: 0.6, maxTokens: 256 }
+                    { temperature: 0.6, maxTokens: 300 }
                 );
 
-                // Parse and execute action
-                const action = parseAIResponse(fullResponse);
-                if (action && action.action !== "message") {
-                    executeAction(action);
+                // Parse response to get message and action
+                const parsed: AIResponse = parseAIResponse(fullResponse);
+
+                // Execute action if present
+                if (parsed.action) {
+                    executeAction(parsed.action);
                 }
 
-                // Update message with parsed action
+                // Update message with friendly text and action indicator
                 setMessages((prev) =>
                     prev.map((msg) =>
                         msg.id === assistantId
                             ? {
                                   ...msg,
-                                  content: action?.text || fullResponse,
-                                  action: action || undefined,
+                                  content: parsed.message,
+                                  isLoading: false,
+                                  action: parsed.action,
                               }
                             : msg
                     )
