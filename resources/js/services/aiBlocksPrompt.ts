@@ -1,13 +1,29 @@
 /**
- * AI System Prompt for Function Calling
+ * AI System Prompt for JSON-based Actions
  *
- * Simple prompt that provides context. Tools are defined in webllmService.ts
- * with full JSON schemas for function calling.
+ * Since Qwen 2.5 doesn't support native function calling,
+ * we ask the model to respond with structured JSON that we parse.
  */
+
+export interface AIAction {
+    action: "add_block" | "update_design" | "remove_block" | "message";
+    // For add_block
+    type?: string;
+    title?: string;
+    url?: string;
+    phoneNumber?: string;
+    emailAddress?: string;
+    icon?: string;
+    // For update_design
+    backgroundColor?: string;
+    buttonColor?: string;
+    buttonTextColor?: string;
+    // For message (when AI needs to ask/respond)
+    text?: string;
+}
 
 /**
  * Generate the system prompt for the AI assistant
- * Tools handle the structured actions - this just provides context
  */
 export function getSystemPrompt(
     currentBlocks: { type: string; title: string }[] = []
@@ -15,34 +31,63 @@ export function getSystemPrompt(
     const currentBlocksSummary =
         currentBlocks.length > 0
             ? currentBlocks.map((b) => `"${b.title}" (${b.type})`).join(", ")
-            : "none";
+            : "empty";
 
     return `You are Linkea's assistant. Help users create their "link in bio" page.
-Respond in the user's language. Be brief.
+Respond in the user's language.
 
-Current blocks on page: ${currentBlocksSummary}
+Current blocks: ${currentBlocksSummary}
 
-You have tools to:
-- add_block: Add links, headers, WhatsApp buttons, YouTube embeds, etc.
-- update_design: Change colors (background, buttons)
-- remove_block: Delete blocks by title
+RESPOND ONLY WITH JSON. No other text. Use this format:
 
-IMPORTANT RULES:
-1. If user gives a username like @john or john, build the full URL yourself:
-   - Instagram: https://instagram.com/username
-   - TikTok: https://tiktok.com/@username
-   - Twitter: https://twitter.com/username
-   - YouTube: https://youtube.com/@username
-   - Facebook: https://facebook.com/username
-   - LinkedIn: https://linkedin.com/in/username
-   - GitHub: https://github.com/username
+For adding a block:
+{"action":"add_block","type":"link","title":"Mi Instagram","url":"https://instagram.com/user","icon":"instagram"}
 
-2. If required info is MISSING (no username, no phone number), ask before calling tools.
+Block types: link, header, whatsapp, youtube, spotify, email
+Icons: instagram, tiktok, twitter, youtube, facebook, linkedin, github, discord, twitch, spotify
 
-3. For WhatsApp, phone number must include country code (e.g. +5491155667788).
+For WhatsApp (needs phone with country code):
+{"action":"add_block","type":"whatsapp","title":"WhatsApp","phoneNumber":"+5491155667788"}
 
-4. Common colors: yellow=#FFEB3B, red=#F44336, blue=#2196F3, green=#4CAF50, 
-   dark=#1a1a1a, white=#FFFFFF, pink=#E91E63, purple=#9C27B0, orange=#FF9800
+For header:
+{"action":"add_block","type":"header","title":"Mis Redes"}
 
-5. Use tools to execute actions. Keep text responses SHORT.`;
+For changing colors:
+{"action":"update_design","backgroundColor":"#FFEB3B","buttonColor":"#1a1a1a"}
+
+For removing:
+{"action":"remove_block","title":"Mi Instagram"}
+
+To ask or respond (when info is missing):
+{"action":"message","text":"What's your Instagram username?"}
+
+RULES:
+1. If user gives @username, build full URL: instagram.com/username, tiktok.com/@username, etc.
+2. If info is MISSING, use action "message" to ask.
+3. Colors: yellow=#FFEB3B, red=#F44336, blue=#2196F3, green=#4CAF50, dark=#1a1a1a, pink=#E91E63
+4. ONLY output JSON. Never explain.`;
+}
+
+/**
+ * Parse the AI response to extract JSON action
+ */
+export function parseAIResponse(response: string): AIAction | null {
+    try {
+        // Try to find JSON in the response
+        const jsonMatch = response.match(/\{[\s\S]*?\}/);
+        if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            if (parsed.action) {
+                return parsed as AIAction;
+            }
+        }
+    } catch (e) {
+        console.warn("Failed to parse AI response as JSON:", e);
+    }
+
+    // If no valid JSON found, treat as message
+    return {
+        action: "message",
+        text: response.trim(),
+    };
 }

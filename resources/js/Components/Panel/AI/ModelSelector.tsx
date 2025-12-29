@@ -6,13 +6,10 @@
  */
 
 import { useAI } from "@/contexts/AIContext";
-import { ModelId } from "@/services/webllmService";
+import { MODEL_ID, MODEL_SIZE } from "@/services/webllmService";
 import { AlertCircle, Loader2, Sparkles, Wifi } from "lucide-react";
 import { useEffect, useState } from "react";
 
-// Single model - Qwen 2.5 1.5B is a good balance of size and capability
-const MODEL_ID: ModelId = "Qwen2.5-1.5B-Instruct-q4f16_1-MLC";
-const MODEL_SIZE = "900MB";
 const CACHE_KEY = `webllm_cached_${MODEL_ID}`;
 
 // Tips to show during loading - examples of what the AI can do

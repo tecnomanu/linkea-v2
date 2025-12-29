@@ -1,17 +1,16 @@
 /**
  * AI Context - Manages AI chat state and preview changes
  *
- * Uses WebLLM function calling to execute actions directly.
- * @see https://github.com/mlc-ai/web-llm/tree/main/examples/function-calling
+ * Uses WebLLM with Qwen 2.5 1.5B (~900MB) for local AI.
+ * Actions are parsed from JSON responses (no native function calling).
  */
 
 import { LinkBlock, UserProfile } from "@/types";
-import { getSystemPrompt } from "@/services/aiBlocksPrompt";
+import { getSystemPrompt, parseAIResponse, AIAction } from "@/services/aiBlocksPrompt";
 import webllmService, {
     ChatMessage,
     InitProgress,
-    ModelId,
-    ToolResult,
+    MODEL_ID,
 } from "@/services/webllmService";
 import { createBlockDefaults } from "@/Components/Shared/blocks/blockConfig";
 import {
@@ -30,7 +29,7 @@ export interface UIChatMessage {
     content: string;
     timestamp: Date;
     isLoading?: boolean;
-    toolCalls?: ToolResult[];
+    action?: AIAction;
 }
 
 interface AIContextValue {
@@ -51,7 +50,7 @@ interface AIContextValue {
     hasUnsavedChanges: boolean;
 
     // Actions
-    initializeEngine: (modelId?: ModelId) => Promise<void>;
+    initializeEngine: (modelId?: string) => Promise<void>;
     sendMessage: (content: string) => Promise<void>;
     clearChat: () => void;
     applyChanges: () => void;
@@ -123,14 +122,14 @@ export function AIProvider({
     );
 
     // Initialize the WebLLM engine
-    const initializeEngine = useCallback(async (modelId?: ModelId) => {
+    const initializeEngine = useCallback(async (modelId?: string) => {
         setIsEngineLoading(true);
         setEngineError(null);
         setEngineProgress(null);
 
         try {
             await webllmService.initialize(
-                modelId || "Llama-3.2-1B-Instruct-q4f16_1-MLC",
+                modelId || MODEL_ID,
                 (progress) => {
                     setEngineProgress(progress);
                 }
@@ -150,13 +149,11 @@ export function AIProvider({
         }
     }, []);
 
-    // Execute a tool call from the AI
-    const executeToolCall = useCallback((tool: ToolResult) => {
-        const { name, arguments: args } = tool;
-
-        switch (name) {
+    // Execute an action from the AI response
+    const executeAction = useCallback((action: AIAction) => {
+        switch (action.action) {
             case "add_block": {
-                const blockType = args.type as string;
+                const blockType = action.type || "link";
                 const defaults = createBlockDefaults(blockType as any);
                 const newBlock: LinkBlock = {
                     id: Math.random().toString(36).substr(2, 9),
@@ -164,16 +161,16 @@ export function AIProvider({
                     clicks: 0,
                     sparklineData: Array(7).fill(0).map(() => ({ value: 0 })),
                     type: blockType as any,
-                    title: (args.title as string) || "",
-                    url: (args.url as string) || "",
+                    title: action.title || "",
+                    url: action.url || "",
                     ...defaults,
                 };
 
                 // Add type-specific fields
-                if (args.phoneNumber) newBlock.phoneNumber = args.phoneNumber as string;
-                if (args.emailAddress) newBlock.emailAddress = args.emailAddress as string;
-                if (args.icon) {
-                    newBlock.icon = { type: "brands", name: args.icon as string };
+                if (action.phoneNumber) newBlock.phoneNumber = action.phoneNumber;
+                if (action.emailAddress) newBlock.emailAddress = action.emailAddress;
+                if (action.icon) {
+                    newBlock.icon = { type: "brands", name: action.icon };
                 }
 
                 setPreviewLinks((prev) => [newBlock, ...prev]);
@@ -183,24 +180,28 @@ export function AIProvider({
             case "update_design": {
                 setPreviewDesign((prev) => ({
                     ...(prev || {}),
-                    ...(args.backgroundColor && { backgroundColor: args.backgroundColor }),
-                    ...(args.buttonColor && { buttonColor: args.buttonColor }),
-                    ...(args.buttonTextColor && { buttonTextColor: args.buttonTextColor }),
+                    ...(action.backgroundColor && { backgroundColor: action.backgroundColor }),
+                    ...(action.buttonColor && { buttonColor: action.buttonColor }),
+                    ...(action.buttonTextColor && { buttonTextColor: action.buttonTextColor }),
                 }));
                 break;
             }
 
             case "remove_block": {
-                const titleToRemove = (args.title as string).toLowerCase();
-                setPreviewLinks((prev) =>
-                    prev.filter((link) => link.title.toLowerCase() !== titleToRemove)
-                );
+                if (action.title) {
+                    const titleToRemove = action.title.toLowerCase();
+                    setPreviewLinks((prev) =>
+                        prev.filter((link) => link.title.toLowerCase() !== titleToRemove)
+                    );
+                }
                 break;
             }
+
+            // "message" action doesn't need execution - it's just text
         }
     }, []);
 
-    // Send a message to the AI using function calling
+    // Send a message to the AI
     const sendMessage = useCallback(
         async (content: string) => {
             if (!isEngineReady || isGenerating) return;
@@ -240,33 +241,44 @@ export function AIProvider({
 
                 const chatHistory: ChatMessage[] = [
                     { role: "system", content: systemPrompt },
-                    ...messages.map((msg) => ({
+                    ...messages.slice(-6).map((msg) => ({
                         role: msg.role as "user" | "assistant",
                         content: msg.content,
                     })),
                     { role: "user", content },
                 ];
 
-                // Call with function calling
-                const response = await webllmService.chatWithTools(chatHistory, {
-                    temperature: 0.6,
-                    maxTokens: 512,
-                });
+                // Stream the response
+                let fullResponse = "";
+                await webllmService.chatStream(
+                    chatHistory,
+                    (chunk, full) => {
+                        fullResponse = full;
+                        setMessages((prev) =>
+                            prev.map((msg) =>
+                                msg.id === assistantId
+                                    ? { ...msg, content: full, isLoading: false }
+                                    : msg
+                            )
+                        );
+                    },
+                    { temperature: 0.6, maxTokens: 256 }
+                );
 
-                // Execute tool calls
-                for (const tool of response.toolCalls) {
-                    executeToolCall(tool);
+                // Parse and execute action
+                const action = parseAIResponse(fullResponse);
+                if (action && action.action !== "message") {
+                    executeAction(action);
                 }
 
-                // Update assistant message
+                // Update message with parsed action
                 setMessages((prev) =>
                     prev.map((msg) =>
                         msg.id === assistantId
                             ? {
                                   ...msg,
-                                  content: response.content || "",
-                                  isLoading: false,
-                                  toolCalls: response.toolCalls,
+                                  content: action?.text || fullResponse,
+                                  action: action || undefined,
                               }
                             : msg
                     )
@@ -278,7 +290,7 @@ export function AIProvider({
                         msg.id === assistantId
                             ? {
                                   ...msg,
-                                  content: "Error. Please try again.",
+                                  content: "Error. Intenta de nuevo.",
                                   isLoading: false,
                               }
                             : msg
@@ -288,7 +300,7 @@ export function AIProvider({
                 setIsGenerating(false);
             }
         },
-        [isEngineReady, isGenerating, messages, previewLinks, executeToolCall]
+        [isEngineReady, isGenerating, messages, previewLinks, executeAction]
     );
 
     // Clear chat history
@@ -353,6 +365,3 @@ export function useAI(): AIContextValue {
     }
     return context;
 }
-
-export type { ModelId };
-
