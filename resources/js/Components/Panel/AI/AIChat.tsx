@@ -5,8 +5,7 @@
  * Messages from the AI may contain actions that update the preview.
  */
 
-import { useAI, UIChatMessage } from "@/contexts/AIContext";
-import { AIAction } from "@/services/aiBlocksPrompt";
+import { useAI, UIChatMessage, AIAction } from "@/contexts/AIContext";
 import { Check, Loader2, Palette, Plus, Send, Sparkles, Trash2, User } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 

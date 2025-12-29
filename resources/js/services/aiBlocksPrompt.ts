@@ -1,30 +1,9 @@
 /**
- * AI System Prompt for JSON-based Actions
+ * AI System Prompt for Native Function Calling
  *
- * The model responds with JSON containing:
- * - message: Always present - text to show the user
- * - action: Optional - action to execute (add_block, update_design, remove_block)
+ * Hermes models handle function calling natively via tools.
+ * This prompt provides context, the tools are defined in webllmService.ts
  */
-
-export interface AIAction {
-    action: "add_block" | "update_design" | "remove_block";
-    // For add_block
-    type?: string;
-    title?: string;
-    url?: string;
-    phoneNumber?: string;
-    emailAddress?: string;
-    icon?: string;
-    // For update_design
-    backgroundColor?: string;
-    buttonColor?: string;
-    buttonTextColor?: string;
-}
-
-export interface AIResponse {
-    message: string;
-    action?: AIAction;
-}
 
 /**
  * Generate the system prompt for the AI assistant
@@ -40,103 +19,60 @@ export function getSystemPrompt(
     return `You are Linkea's assistant. Help users create their "link in bio" page.
 Respond in the user's language. Be friendly and brief.
 
-Current blocks: ${currentBlocksSummary}
+Current blocks on page: ${currentBlocksSummary}
 
-ALWAYS respond with JSON in this exact format:
-{"message":"Your response text here","action":{...}}
+You have tools to:
+- add_block: Add links, headers, WhatsApp, YouTube, Spotify, email
+- update_design: Change colors (background, buttons)
+- remove_block: Delete blocks by title
 
-The "message" field is REQUIRED - always include a friendly response.
-The "action" field is OPTIONAL - only include when executing an action.
+IMPORTANT RULES:
+1. If user gives a username like @john or john, BUILD THE FULL URL:
+   - Instagram: https://instagram.com/john
+   - TikTok: https://tiktok.com/@john
+   - Twitter: https://twitter.com/john
+   - YouTube: https://youtube.com/@john
+   - Facebook: https://facebook.com/john
+   - LinkedIn: https://linkedin.com/in/john
+   - GitHub: https://github.com/john
 
-EXAMPLES:
+2. If required info is MISSING (no username, no phone), ask before calling tools.
 
-User asks to add Instagram:
-{"message":"Listo! Agregué tu link de Instagram","action":{"action":"add_block","type":"link","title":"Instagram","url":"https://instagram.com/user","icon":"instagram"}}
+3. For WhatsApp, phone must include country code (+5491155667788).
 
-User asks a question:
-{"message":"Claro! Cual es tu usuario de Instagram?"}
+4. For social links, use icon name: instagram, tiktok, twitter, youtube, etc.
 
-User wants yellow background:
-{"message":"Perfecto, cambié el fondo a amarillo!","action":{"action":"update_design","backgroundColor":"#FFEB3B"}}
+5. Common colors: yellow=#FFEB3B, red=#F44336, blue=#2196F3, green=#4CAF50, 
+   dark=#1a1a1a, white=#FFFFFF, pink=#E91E63, purple=#9C27B0
 
-User wants to delete something:
-{"message":"Eliminé el bloque de Instagram","action":{"action":"remove_block","title":"Instagram"}}
-
-ACTION TYPES:
-- add_block: type (link/header/whatsapp/youtube/spotify/email), title, url, icon, phoneNumber, emailAddress
-- update_design: backgroundColor, buttonColor, buttonTextColor (hex colors)
-- remove_block: title
-
-ICONS: instagram, tiktok, twitter, youtube, facebook, linkedin, github, discord, twitch, spotify
-
-RULES:
-1. ALWAYS include "message" with friendly text
-2. If user gives @username, build full URL (instagram.com/username, tiktok.com/@username)
-3. If info is MISSING, ask in message without action
-4. WhatsApp needs phone with country code (+5491155667788)
-5. Colors: yellow=#FFEB3B, red=#F44336, blue=#2196F3, green=#4CAF50, dark=#1a1a1a, pink=#E91E63
-
-ONLY output valid JSON. No other text.`;
+6. Always respond with a brief message after executing tools.`;
 }
 
 /**
- * Parse the AI response to extract message and action
+ * Generate a friendly message from tool results
  */
-export function parseAIResponse(response: string): AIResponse {
-    try {
-        // Try to find JSON in the response
-        const jsonMatch = response.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            const parsed = JSON.parse(jsonMatch[0]);
-            
-            // Extract message (required)
-            const message = parsed.message || generateMessageFromAction(parsed.action || parsed);
-            
-            // Extract action (optional)
-            let action: AIAction | undefined;
-            if (parsed.action && parsed.action.action) {
-                action = parsed.action;
-            } else if (parsed.action && ["add_block", "update_design", "remove_block"].includes(parsed.action)) {
-                // Old format where action was at root level
-                action = parsed as AIAction;
-            }
-
-            return { message, action };
-        }
-    } catch (e) {
-        console.warn("Failed to parse AI response as JSON:", e);
-    }
-
-    // If no valid JSON found, treat response as plain message
-    return {
-        message: response.trim() || "Entendido!",
-    };
-}
-
-/**
- * Generate a friendly message from an action (fallback)
- */
-function generateMessageFromAction(action: AIAction): string {
-    if (!action || !action.action) return "Listo!";
-
-    switch (action.action) {
+export function generateMessageFromTool(
+    toolName: string,
+    args: Record<string, unknown>
+): string {
+    switch (toolName) {
         case "add_block":
-            if (action.type === "whatsapp") return `Agregué un botón de WhatsApp`;
-            if (action.type === "header") return `Agregué el encabezado "${action.title}"`;
-            if (action.type === "email") return `Agregué un link de email`;
-            if (action.icon) return `Agregué tu link de ${action.icon}`;
-            return `Agregué "${action.title || "nuevo bloque"}"`;
-        
+            if (args.type === "whatsapp") return "Listo! Agregue tu WhatsApp";
+            if (args.type === "header") return `Agregue el encabezado "${args.title}"`;
+            if (args.type === "email") return "Agregue un link de email";
+            if (args.icon) return `Listo! Agregue tu link de ${args.icon}`;
+            return `Agregue "${args.title || "nuevo bloque"}"`;
+
         case "update_design":
             const changes = [];
-            if (action.backgroundColor) changes.push("fondo");
-            if (action.buttonColor) changes.push("botones");
-            if (action.buttonTextColor) changes.push("texto");
-            return `Cambié ${changes.join(" y ")}!`;
-        
+            if (args.backgroundColor) changes.push("fondo");
+            if (args.buttonColor) changes.push("botones");
+            if (args.buttonTextColor) changes.push("texto");
+            return changes.length ? `Cambie ${changes.join(" y ")}!` : "Diseno actualizado!";
+
         case "remove_block":
-            return `Eliminé "${action.title}"`;
-        
+            return `Elimine "${args.title}"`;
+
         default:
             return "Listo!";
     }

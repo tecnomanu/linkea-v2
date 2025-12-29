@@ -1,24 +1,23 @@
 /**
  * WebLLM Service - Runs LLM models directly in the browser using WebGPU
  *
- * Uses Qwen 2.5 1.5B - small and efficient model.
- * Note: Function calling is done via JSON parsing (not native tools).
- * Only Hermes models (4GB+) support native tools, which is too heavy.
+ * Uses Hermes-3-Llama-3.2-3B - smallest model with native function calling.
+ * Only Hermes models support tools in WebLLM.
  *
- * @see https://github.com/mlc-ai/web-llm
+ * @see https://github.com/mlc-ai/web-llm/tree/main/examples/function-calling
  */
 
 import * as webllm from "@mlc-ai/web-llm";
 
-// Single model - Qwen 2.5 1.5B is small and capable
-// Note: For native function calling you'd need Hermes-2-Pro-Mistral-7B (~4GB)
-export const MODEL_ID = "Qwen2.5-1.5B-Instruct-q4f16_1-MLC";
-export const MODEL_SIZE = "900MB";
+// Hermes-3-Llama-3.2-3B is the smallest model with function calling support
+export const MODEL_ID = "Hermes-3-Llama-3.2-3B-q4f16_1-MLC";
+export const MODEL_SIZE = "2GB";
 export type ModelId = typeof MODEL_ID;
 
 export interface ChatMessage {
-    role: "system" | "user" | "assistant";
+    role: "system" | "user" | "assistant" | "tool";
     content: string;
+    tool_call_id?: string;
 }
 
 export interface InitProgress {
@@ -27,8 +26,98 @@ export interface InitProgress {
     text: string;
 }
 
+export interface ToolResult {
+    name: string;
+    arguments: Record<string, unknown>;
+}
+
 export type InitProgressCallback = (progress: InitProgress) => void;
 export type StreamCallback = (chunk: string, fullText: string) => void;
+
+// Define the tools for Linkea - OpenAI-compatible format
+export const LINKEA_TOOLS: webllm.ChatCompletionTool[] = [
+    {
+        type: "function",
+        function: {
+            name: "add_block",
+            description:
+                "Add a new block (link, header, whatsapp, youtube, spotify, email) to the landing page",
+            parameters: {
+                type: "object",
+                properties: {
+                    type: {
+                        type: "string",
+                        enum: ["link", "header", "whatsapp", "youtube", "spotify", "email"],
+                        description: "Type of block to add",
+                    },
+                    title: {
+                        type: "string",
+                        description: "Display title/text for the block",
+                    },
+                    url: {
+                        type: "string",
+                        description: "URL for link/youtube/spotify blocks. Build it yourself from username.",
+                    },
+                    phoneNumber: {
+                        type: "string",
+                        description: "Phone number with country code for WhatsApp (e.g. +5491155667788)",
+                    },
+                    emailAddress: {
+                        type: "string",
+                        description: "Email address for email blocks",
+                    },
+                    icon: {
+                        type: "string",
+                        description: "Icon name: instagram, facebook, twitter, tiktok, youtube, linkedin, github, discord, twitch, spotify",
+                    },
+                },
+                required: ["type", "title"],
+            },
+        },
+    },
+    {
+        type: "function",
+        function: {
+            name: "update_design",
+            description: "Change the visual design/colors of the landing page",
+            parameters: {
+                type: "object",
+                properties: {
+                    backgroundColor: {
+                        type: "string",
+                        description: "Background color hex (yellow=#FFEB3B, red=#F44336, blue=#2196F3, green=#4CAF50, dark=#1a1a1a, pink=#E91E63)",
+                    },
+                    buttonColor: {
+                        type: "string",
+                        description: "Button background color in hex format",
+                    },
+                    buttonTextColor: {
+                        type: "string",
+                        description: "Button text color in hex format",
+                    },
+                },
+                required: [],
+            },
+        },
+    },
+    {
+        type: "function",
+        function: {
+            name: "remove_block",
+            description: "Remove a block from the landing page by its title",
+            parameters: {
+                type: "object",
+                properties: {
+                    title: {
+                        type: "string",
+                        description: "Title of the block to remove",
+                    },
+                },
+                required: ["title"],
+            },
+        },
+    },
+];
 
 class WebLLMService {
     private engine: webllm.MLCEngine | null = null;
@@ -61,7 +150,6 @@ class WebLLMService {
         // If already initializing, wait for that to complete
         if (this.initPromise) {
             await this.initPromise;
-            // If same model, we're done
             if (this.currentModel === modelId) {
                 return;
             }
@@ -76,7 +164,6 @@ class WebLLMService {
 
         this.initPromise = (async () => {
             try {
-                // Check WebGPU support first
                 const supported = await this.isWebGPUSupported();
                 if (!supported) {
                     throw new Error(
@@ -84,12 +171,10 @@ class WebLLMService {
                     );
                 }
 
-                // Create engine if not exists
                 if (!this.engine) {
                     this.engine = new webllm.MLCEngine();
                 }
 
-                // Set progress callback
                 if (onProgress) {
                     this.engine.setInitProgressCallback(
                         (report: webllm.InitProgressReport) => {
@@ -102,7 +187,6 @@ class WebLLMService {
                     );
                 }
 
-                // Load the model
                 await this.engine.reload(modelId);
                 this.currentModel = modelId;
             } finally {
@@ -114,65 +198,71 @@ class WebLLMService {
         await this.initPromise;
     }
 
-    /**
-     * Check if the engine is ready for chat
-     */
     isReady(): boolean {
         return this.engine !== null && this.currentModel !== null;
     }
 
-    /**
-     * Check if currently initializing
-     */
     isLoading(): boolean {
         return this.isInitializing;
     }
 
-    /**
-     * Get the current loaded model
-     */
     getCurrentModel(): string | null {
         return this.currentModel;
     }
 
     /**
-     * Send a chat completion request with streaming
+     * Chat with function calling - returns text response and tool calls
      */
-    async chatStream(
+    async chatWithTools(
         messages: ChatMessage[],
-        onStream: StreamCallback,
         options?: {
             temperature?: number;
             maxTokens?: number;
         }
-    ): Promise<string> {
+    ): Promise<{
+        content: string | null;
+        toolCalls: ToolResult[];
+    }> {
         if (!this.engine) {
             throw new Error("Engine not initialized. Call initialize() first.");
         }
 
-        let fullResponse = "";
-
-        const asyncChunkGenerator = await this.engine.chat.completions.create({
+        const response = await this.engine.chat.completions.create({
             messages: messages as webllm.ChatCompletionMessageParam[],
-            temperature: options?.temperature ?? 0.7,
-            max_tokens: options?.maxTokens ?? 2048,
-            stream: true,
-            stream_options: { include_usage: true },
+            temperature: options?.temperature ?? 0.6,
+            max_tokens: options?.maxTokens ?? 512,
+            tools: LINKEA_TOOLS,
+            tool_choice: "auto",
         });
 
-        for await (const chunk of asyncChunkGenerator) {
-            const delta = chunk.choices[0]?.delta?.content || "";
-            if (delta) {
-                fullResponse += delta;
-                onStream(delta, fullResponse);
+        const message = response.choices[0]?.message;
+        const toolCalls: ToolResult[] = [];
+
+        // Parse tool calls if present
+        if (message?.tool_calls) {
+            for (const call of message.tool_calls) {
+                if (call.type === "function") {
+                    try {
+                        const args = JSON.parse(call.function.arguments);
+                        toolCalls.push({
+                            name: call.function.name,
+                            arguments: args,
+                        });
+                    } catch (e) {
+                        console.error("Failed to parse tool call arguments:", e);
+                    }
+                }
             }
         }
 
-        return fullResponse;
+        return {
+            content: message?.content || null,
+            toolCalls,
+        };
     }
 
     /**
-     * Send a chat completion request without streaming
+     * Simple chat without tools (for conversation)
      */
     async chat(
         messages: ChatMessage[],
@@ -188,49 +278,23 @@ class WebLLMService {
         const response = await this.engine.chat.completions.create({
             messages: messages as webllm.ChatCompletionMessageParam[],
             temperature: options?.temperature ?? 0.7,
-            max_tokens: options?.maxTokens ?? 2048,
+            max_tokens: options?.maxTokens ?? 512,
         });
 
         return response.choices[0]?.message?.content || "";
     }
 
-    /**
-     * Reset the chat context (clear conversation history in the model)
-     */
     async resetChat(): Promise<void> {
         if (this.engine) {
             await this.engine.resetChat();
         }
     }
 
-    /**
-     * Unload the model and free resources
-     */
     async unload(): Promise<void> {
         if (this.engine) {
             await this.engine.unload();
             this.currentModel = null;
         }
-    }
-
-    /**
-     * Get GPU memory usage (if available)
-     */
-    async getMemoryUsage(): Promise<{ used: number; total: number } | null> {
-        try {
-            // @ts-ignore - experimental API
-            if (navigator.gpu && navigator.gpu.requestAdapter) {
-                // @ts-ignore
-                const adapter = await navigator.gpu.requestAdapter();
-                if (adapter) {
-                    // Memory info not always available
-                    return null;
-                }
-            }
-        } catch {
-            // Ignore errors
-        }
-        return null;
     }
 }
 

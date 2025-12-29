@@ -1,16 +1,16 @@
 /**
  * AI Context - Manages AI chat state and preview changes
  *
- * Uses WebLLM with Qwen 2.5 1.5B (~900MB) for local AI.
- * Actions are parsed from JSON responses (no native function calling).
+ * Uses WebLLM with Hermes-3-Llama-3.2-3B (~2GB) for local AI with native function calling.
  */
 
 import { LinkBlock, UserProfile } from "@/types";
-import { getSystemPrompt, parseAIResponse, AIAction, AIResponse } from "@/services/aiBlocksPrompt";
+import { getSystemPrompt, generateMessageFromTool } from "@/services/aiBlocksPrompt";
 import webllmService, {
     ChatMessage,
     InitProgress,
     MODEL_ID,
+    ToolResult,
 } from "@/services/webllmService";
 import { createBlockDefaults } from "@/Components/Shared/blocks/blockConfig";
 import {
@@ -21,6 +21,17 @@ import {
     useMemo,
     useState,
 } from "react";
+
+// Action type for UI display
+export interface AIAction {
+    action: "add_block" | "update_design" | "remove_block";
+    type?: string;
+    title?: string;
+    icon?: string;
+    backgroundColor?: string;
+    buttonColor?: string;
+    buttonTextColor?: string;
+}
 
 // Chat message for UI display
 export interface UIChatMessage {
@@ -62,10 +73,8 @@ const AIContext = createContext<AIContextValue | null>(null);
 
 interface AIProviderProps {
     children: ReactNode;
-    // Base state from parent (the saved/current state)
     initialLinks: LinkBlock[];
     initialDesign: UserProfile["customDesign"];
-    // Callbacks to apply changes to the real state
     onApplyLinks: (links: LinkBlock[]) => void;
     onApplyDesign: (design: Partial<UserProfile["customDesign"]>) => void;
 }
@@ -80,9 +89,7 @@ export function AIProvider({
     // Engine state
     const [isEngineReady, setIsEngineReady] = useState(false);
     const [isEngineLoading, setIsEngineLoading] = useState(false);
-    const [engineProgress, setEngineProgress] = useState<InitProgress | null>(
-        null
-    );
+    const [engineProgress, setEngineProgress] = useState<InitProgress | null>(null);
     const [engineError, setEngineError] = useState<string | null>(null);
     const [currentModel, setCurrentModel] = useState<string | null>(null);
 
@@ -92,20 +99,16 @@ export function AIProvider({
 
     // Base state (what's currently saved)
     const [baseLinks, setBaseLinks] = useState<LinkBlock[]>(initialLinks);
-    const [baseDesign, setBaseDesign] =
-        useState<UserProfile["customDesign"]>(initialDesign);
+    const [baseDesign, setBaseDesign] = useState<UserProfile["customDesign"]>(initialDesign);
 
     // Preview state (AI modifications on top of base)
     const [previewLinks, setPreviewLinks] = useState<LinkBlock[]>(initialLinks);
-    const [previewDesign, setPreviewDesign] = useState<Partial<
-        UserProfile["customDesign"]
-    > | null>(null);
+    const [previewDesign, setPreviewDesign] = useState<Partial<UserProfile["customDesign"]> | null>(null);
 
     // Track if there are unsaved changes
     const hasUnsavedChanges = useMemo(() => {
         if (previewDesign !== null) return true;
-        if (JSON.stringify(previewLinks) !== JSON.stringify(baseLinks))
-            return true;
+        if (JSON.stringify(previewLinks) !== JSON.stringify(baseLinks)) return true;
         return false;
     }, [previewLinks, previewDesign, baseLinks]);
 
@@ -114,7 +117,6 @@ export function AIProvider({
         (links: LinkBlock[], design: UserProfile["customDesign"]) => {
             setBaseLinks(links);
             setBaseDesign(design);
-            // Reset preview to match base
             setPreviewLinks(links);
             setPreviewDesign(null);
         },
@@ -128,20 +130,15 @@ export function AIProvider({
         setEngineProgress(null);
 
         try {
-            await webllmService.initialize(
-                modelId || MODEL_ID,
-                (progress) => {
-                    setEngineProgress(progress);
-                }
-            );
+            await webllmService.initialize(modelId || MODEL_ID, (progress) => {
+                setEngineProgress(progress);
+            });
             setIsEngineReady(true);
             setCurrentModel(webllmService.getCurrentModel());
         } catch (error) {
             console.error("Failed to initialize WebLLM:", error);
             setEngineError(
-                error instanceof Error
-                    ? error.message
-                    : "Error al inicializar el modelo"
+                error instanceof Error ? error.message : "Error al inicializar el modelo"
             );
             setIsEngineReady(false);
         } finally {
@@ -149,11 +146,13 @@ export function AIProvider({
         }
     }, []);
 
-    // Execute an action from the AI response
-    const executeAction = useCallback((action: AIAction) => {
-        switch (action.action) {
+    // Execute a tool call from the AI
+    const executeToolCall = useCallback((tool: ToolResult): AIAction | null => {
+        const { name, arguments: args } = tool;
+
+        switch (name) {
             case "add_block": {
-                const blockType = action.type || "link";
+                const blockType = (args.type as string) || "link";
                 const defaults = createBlockDefaults(blockType as any);
                 const newBlock: LinkBlock = {
                     id: Math.random().toString(36).substr(2, 9),
@@ -161,47 +160,58 @@ export function AIProvider({
                     clicks: 0,
                     sparklineData: Array(7).fill(0).map(() => ({ value: 0 })),
                     type: blockType as any,
-                    title: action.title || "",
-                    url: action.url || "",
+                    title: (args.title as string) || "",
+                    url: (args.url as string) || "",
                     ...defaults,
                 };
 
-                // Add type-specific fields
-                if (action.phoneNumber) newBlock.phoneNumber = action.phoneNumber;
-                if (action.emailAddress) newBlock.emailAddress = action.emailAddress;
-                if (action.icon) {
-                    newBlock.icon = { type: "brands", name: action.icon };
+                if (args.phoneNumber) newBlock.phoneNumber = args.phoneNumber as string;
+                if (args.emailAddress) newBlock.emailAddress = args.emailAddress as string;
+                if (args.icon) {
+                    newBlock.icon = { type: "brands", name: args.icon as string };
                 }
 
                 setPreviewLinks((prev) => [newBlock, ...prev]);
-                break;
+                return {
+                    action: "add_block",
+                    type: blockType,
+                    title: args.title as string,
+                    icon: args.icon as string,
+                };
             }
 
             case "update_design": {
                 setPreviewDesign((prev) => ({
                     ...(prev || {}),
-                    ...(action.backgroundColor && { backgroundColor: action.backgroundColor }),
-                    ...(action.buttonColor && { buttonColor: action.buttonColor }),
-                    ...(action.buttonTextColor && { buttonTextColor: action.buttonTextColor }),
+                    ...(args.backgroundColor && { backgroundColor: args.backgroundColor as string }),
+                    ...(args.buttonColor && { buttonColor: args.buttonColor as string }),
+                    ...(args.buttonTextColor && { buttonTextColor: args.buttonTextColor as string }),
                 }));
-                break;
+                return {
+                    action: "update_design",
+                    backgroundColor: args.backgroundColor as string,
+                    buttonColor: args.buttonColor as string,
+                    buttonTextColor: args.buttonTextColor as string,
+                };
             }
 
             case "remove_block": {
-                if (action.title) {
-                    const titleToRemove = action.title.toLowerCase();
-                    setPreviewLinks((prev) =>
-                        prev.filter((link) => link.title.toLowerCase() !== titleToRemove)
-                    );
-                }
-                break;
+                const titleToRemove = ((args.title as string) || "").toLowerCase();
+                setPreviewLinks((prev) =>
+                    prev.filter((link) => link.title.toLowerCase() !== titleToRemove)
+                );
+                return {
+                    action: "remove_block",
+                    title: args.title as string,
+                };
             }
 
-            // "message" action doesn't need execution - it's just text
+            default:
+                return null;
         }
     }, []);
 
-    // Send a message to the AI
+    // Send a message to the AI using function calling
     const sendMessage = useCallback(
         async (content: string) => {
             if (!isEngineReady || isGenerating) return;
@@ -248,29 +258,39 @@ export function AIProvider({
                     { role: "user", content },
                 ];
 
-                // Get response (non-streaming for better JSON parsing)
-                const fullResponse = await webllmService.chat(
-                    chatHistory,
-                    { temperature: 0.6, maxTokens: 300 }
-                );
+                // Call with function calling
+                const response = await webllmService.chatWithTools(chatHistory, {
+                    temperature: 0.6,
+                    maxTokens: 512,
+                });
 
-                // Parse response to get message and action
-                const parsed: AIResponse = parseAIResponse(fullResponse);
+                // Execute tool calls and collect actions
+                let executedAction: AIAction | null = null;
+                const generatedMessages: string[] = [];
 
-                // Execute action if present
-                if (parsed.action) {
-                    executeAction(parsed.action);
+                for (const tool of response.toolCalls) {
+                    executedAction = executeToolCall(tool);
+                    generatedMessages.push(generateMessageFromTool(tool.name, tool.arguments));
                 }
 
-                // Update message with friendly text and action indicator
+                // Determine the message to show
+                let finalMessage = response.content || "";
+                if (!finalMessage && generatedMessages.length > 0) {
+                    finalMessage = generatedMessages.join(". ");
+                }
+                if (!finalMessage) {
+                    finalMessage = "Listo!";
+                }
+
+                // Update assistant message
                 setMessages((prev) =>
                     prev.map((msg) =>
                         msg.id === assistantId
                             ? {
                                   ...msg,
-                                  content: parsed.message,
+                                  content: finalMessage,
                                   isLoading: false,
-                                  action: parsed.action,
+                                  action: executedAction || undefined,
                               }
                             : msg
                     )
@@ -292,7 +312,7 @@ export function AIProvider({
                 setIsGenerating(false);
             }
         },
-        [isEngineReady, isGenerating, messages, previewLinks, executeAction]
+        [isEngineReady, isGenerating, messages, previewLinks, executeToolCall]
     );
 
     // Clear chat history
@@ -307,7 +327,6 @@ export function AIProvider({
         if (previewDesign) {
             onApplyDesign(previewDesign);
         }
-        // Update base to match
         setBaseLinks(previewLinks);
         if (previewDesign) {
             setBaseDesign((prev) => ({ ...prev, ...previewDesign }));
@@ -322,23 +341,16 @@ export function AIProvider({
     }, [baseLinks]);
 
     const value: AIContextValue = {
-        // Engine state
         isEngineReady,
         isEngineLoading,
         engineProgress,
         engineError,
         currentModel,
-
-        // Chat state
         messages,
         isGenerating,
-
-        // Preview state
         previewLinks,
         previewDesign,
         hasUnsavedChanges,
-
-        // Actions
         initializeEngine,
         sendMessage,
         clearChat,
