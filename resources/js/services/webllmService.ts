@@ -2,40 +2,27 @@
  * WebLLM Service - Runs LLM models directly in the browser using WebGPU
  *
  * This service manages the WebLLM engine lifecycle and provides
- * chat completion functionality for the AI assistant.
+ * chat completion with FUNCTION CALLING for the AI assistant.
+ *
+ * @see https://github.com/mlc-ai/web-llm/tree/main/examples/function-calling
  */
 
 import * as webllm from "@mlc-ai/web-llm";
 
-// Model configurations - sorted by size/capability
-// Smaller models load faster but are less capable
+// Model configurations - models that support function calling
 export const AVAILABLE_MODELS = [
     {
-        id: "Llama-3.2-1B-Instruct-q4f16_1-MLC",
-        name: "Llama 3.2 1B (Rapido)",
-        description: "Modelo pequeno, carga rapida (~700MB)",
-        size: "~700MB",
+        id: "Qwen2.5-1.5B-Instruct-q4f16_1-MLC",
+        name: "Qwen 2.5 1.5B",
+        description: "Good balance of size and function calling capability",
+        size: "~900MB",
         recommended: true,
     },
     {
         id: "Llama-3.2-3B-Instruct-q4f16_1-MLC",
-        name: "Llama 3.2 3B (Balanceado)",
-        description: "Buen balance entre velocidad y calidad (~1.8GB)",
+        name: "Llama 3.2 3B",
+        description: "Better at following instructions",
         size: "~1.8GB",
-        recommended: false,
-    },
-    {
-        id: "Qwen2.5-1.5B-Instruct-q4f16_1-MLC",
-        name: "Qwen 2.5 1.5B",
-        description: "Alternativa rapida (~900MB)",
-        size: "~900MB",
-        recommended: false,
-    },
-    {
-        id: "SmolLM2-1.7B-Instruct-q4f16_1-MLC",
-        name: "SmolLM2 1.7B",
-        description: "Modelo compacto y eficiente (~1GB)",
-        size: "~1GB",
         recommended: false,
     },
 ] as const;
@@ -43,8 +30,9 @@ export const AVAILABLE_MODELS = [
 export type ModelId = (typeof AVAILABLE_MODELS)[number]["id"];
 
 export interface ChatMessage {
-    role: "system" | "user" | "assistant";
+    role: "system" | "user" | "assistant" | "tool";
     content: string;
+    tool_call_id?: string;
 }
 
 export interface InitProgress {
@@ -53,8 +41,107 @@ export interface InitProgress {
     text: string;
 }
 
+// Tool definitions for Linkea
+export interface ToolCall {
+    id: string;
+    type: "function";
+    function: {
+        name: string;
+        arguments: string; // JSON string
+    };
+}
+
+export interface ToolResult {
+    name: string;
+    arguments: Record<string, unknown>;
+}
+
 export type InitProgressCallback = (progress: InitProgress) => void;
 export type StreamCallback = (chunk: string, fullText: string) => void;
+
+// Define the tools for Linkea - OpenAI-compatible format
+export const LINKEA_TOOLS: webllm.ChatCompletionTool[] = [
+    {
+        type: "function",
+        function: {
+            name: "add_block",
+            description: "Add a new block (link, header, whatsapp, etc) to the landing page",
+            parameters: {
+                type: "object",
+                properties: {
+                    type: {
+                        type: "string",
+                        enum: ["link", "header", "whatsapp", "youtube", "spotify", "email"],
+                        description: "Type of block to add",
+                    },
+                    title: {
+                        type: "string",
+                        description: "Display title/text for the block",
+                    },
+                    url: {
+                        type: "string",
+                        description: "URL for link/youtube/spotify blocks",
+                    },
+                    phoneNumber: {
+                        type: "string",
+                        description: "Phone number with country code for WhatsApp (e.g. +5491155667788)",
+                    },
+                    emailAddress: {
+                        type: "string",
+                        description: "Email address for email blocks",
+                    },
+                    icon: {
+                        type: "string",
+                        description: "Icon name for social links (instagram, facebook, twitter, tiktok, youtube, linkedin, github, discord, twitch, spotify)",
+                    },
+                },
+                required: ["type", "title"],
+            },
+        },
+    },
+    {
+        type: "function",
+        function: {
+            name: "update_design",
+            description: "Change the visual design/colors of the landing page",
+            parameters: {
+                type: "object",
+                properties: {
+                    backgroundColor: {
+                        type: "string",
+                        description: "Background color in hex format (e.g. #FFEB3B for yellow, #1a1a1a for dark)",
+                    },
+                    buttonColor: {
+                        type: "string",
+                        description: "Button background color in hex format",
+                    },
+                    buttonTextColor: {
+                        type: "string",
+                        description: "Button text color in hex format",
+                    },
+                },
+                required: [],
+            },
+        },
+    },
+    {
+        type: "function",
+        function: {
+            name: "remove_block",
+            description: "Remove a block from the landing page by its title",
+            parameters: {
+                type: "object",
+                properties: {
+                    title: {
+                        type: "string",
+                        description: "Title of the block to remove",
+                    },
+                },
+                required: ["title"],
+            },
+        },
+    },
+];
 
 class WebLLMService {
     private engine: webllm.MLCEngine | null = null;
@@ -170,7 +257,59 @@ class WebLLMService {
     }
 
     /**
-     * Send a chat completion request with streaming
+     * Send a chat completion request with function calling
+     * Returns both the text response and any tool calls
+     */
+    async chatWithTools(
+        messages: ChatMessage[],
+        options?: {
+            temperature?: number;
+            maxTokens?: number;
+        }
+    ): Promise<{
+        content: string | null;
+        toolCalls: ToolResult[];
+    }> {
+        if (!this.engine) {
+            throw new Error("Engine not initialized. Call initialize() first.");
+        }
+
+        const response = await this.engine.chat.completions.create({
+            messages: messages as webllm.ChatCompletionMessageParam[],
+            temperature: options?.temperature ?? 0.6,
+            max_tokens: options?.maxTokens ?? 512,
+            tools: LINKEA_TOOLS,
+            tool_choice: "auto",
+        });
+
+        const message = response.choices[0]?.message;
+        const toolCalls: ToolResult[] = [];
+
+        // Parse tool calls if present
+        if (message?.tool_calls) {
+            for (const call of message.tool_calls) {
+                if (call.type === "function") {
+                    try {
+                        const args = JSON.parse(call.function.arguments);
+                        toolCalls.push({
+                            name: call.function.name,
+                            arguments: args,
+                        });
+                    } catch (e) {
+                        console.error("Failed to parse tool call arguments:", e);
+                    }
+                }
+            }
+        }
+
+        return {
+            content: message?.content || null,
+            toolCalls,
+        };
+    }
+
+    /**
+     * Send a chat completion request with streaming (no tools)
      */
     async chatStream(
         messages: ChatMessage[],
@@ -187,7 +326,7 @@ class WebLLMService {
         let fullResponse = "";
 
         const asyncChunkGenerator = await this.engine.chat.completions.create({
-            messages: messages,
+            messages: messages as webllm.ChatCompletionMessageParam[],
             temperature: options?.temperature ?? 0.7,
             max_tokens: options?.maxTokens ?? 2048,
             stream: true,
@@ -220,7 +359,7 @@ class WebLLMService {
         }
 
         const response = await this.engine.chat.completions.create({
-            messages: messages,
+            messages: messages as webllm.ChatCompletionMessageParam[],
             temperature: options?.temperature ?? 0.7,
             max_tokens: options?.maxTokens ?? 2048,
         });

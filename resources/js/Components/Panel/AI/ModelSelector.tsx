@@ -7,14 +7,7 @@
 
 import { useAI } from "@/contexts/AIContext";
 import { ModelId } from "@/services/webllmService";
-import {
-    AlertCircle,
-    CheckCircle2,
-    HardDrive,
-    Loader2,
-    Sparkles,
-    Wifi,
-} from "lucide-react";
+import { AlertCircle, HardDrive, Loader2, Sparkles, Wifi } from "lucide-react";
 import { useEffect, useState } from "react";
 
 // Single model - Qwen 2.5 1.5B is a good balance of size and capability
@@ -47,9 +40,13 @@ export function ModelSelector() {
                 if ("caches" in window) {
                     const cacheNames = await caches.keys();
                     const hasCache = cacheNames.some(
-                        (name) => name.includes("webllm") || name.includes("mlc")
+                        (name) =>
+                            name.includes("webllm") || name.includes("mlc")
                     );
-                    if (hasCache && localStorage.getItem(CACHE_KEY) === "true") {
+                    if (
+                        hasCache &&
+                        localStorage.getItem(CACHE_KEY) === "true"
+                    ) {
                         setIsModelCached(true);
                         return;
                     }
@@ -169,11 +166,11 @@ export function ModelSelector() {
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-500 to-pink-500 flex items-center justify-center mx-auto mb-4">
                     <Sparkles size={32} className="text-white" />
                 </div>
-                
+
                 <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-2">
                     Asistente de Linkea
                 </h3>
-                
+
                 <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">
                     Crea y edita tu landing con IA.
                     <br />
@@ -189,7 +186,9 @@ export function ModelSelector() {
                 ) : (
                     <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-400 mb-4">
                         <Wifi size={16} />
-                        <span className="text-xs">Descarga unica de {MODEL_SIZE}</span>
+                        <span className="text-xs">
+                            Descarga unica de {MODEL_SIZE}
+                        </span>
                     </div>
                 )}
 
@@ -198,7 +197,9 @@ export function ModelSelector() {
                     className="w-full py-3 bg-gradient-to-r from-brand-500 to-pink-500 hover:from-brand-600 hover:to-pink-600 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
                 >
                     <Sparkles size={18} />
-                    <span>{isModelCached ? "Iniciar" : "Descargar e iniciar"}</span>
+                    <span>
+                        {isModelCached ? "Iniciar" : "Descargar e iniciar"}
+                    </span>
                 </button>
 
                 <p className="text-[10px] text-neutral-400 mt-3">
