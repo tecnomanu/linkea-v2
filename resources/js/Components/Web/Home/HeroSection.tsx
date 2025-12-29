@@ -389,11 +389,12 @@ export default function HeroSection({
                                                         : "brightness(0.9)",
                                                 }}
                                             >
-                                                <Link
+                                                <a
                                                     href={`/${landing.user.handle.replace(
                                                         "@",
                                                         ""
                                                     )}`}
+                                                    target="_blank"
                                                     className={`relative block ${
                                                         isFront
                                                             ? "animate-float-front"
@@ -437,7 +438,7 @@ export default function HeroSection({
                                                             isPreview={true}
                                                         />
                                                     </div>
-                                                </Link>
+                                                </a>
                                             </div>
                                         );
                                     })}

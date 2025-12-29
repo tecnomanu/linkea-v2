@@ -381,7 +381,6 @@ export default function FeaturesSection() {
                             links={activeProfile.links}
                             device="mobile"
                             scale={0.7}
-                            fitContainer
                         />
                         {/* Profile selector buttons */}
                         <div className="flex gap-2 mt-6">

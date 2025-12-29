@@ -701,8 +701,7 @@ export default function Dashboard({
                         links={links}
                         socialLinks={socialLinks}
                         device="mobile"
-                        scale={0.72}
-                        fitContainer
+                        scale={0.8}
                     />
                 </div>
 

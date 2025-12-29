@@ -3,6 +3,8 @@
  *
  * Uses LandingContent for the actual content rendering.
  * This component only provides the device frame (phone, tablet, browser).
+ *
+ * Scaling uses GPU-accelerated transform with translateZ(0) for crisp rendering.
  */
 
 import { LinkBlock, UserProfile } from "@/types";
@@ -23,8 +25,6 @@ interface PhonePreviewProps {
     scale?: number;
     /** If false, links are clickable and tracking occurs. Default: true */
     isPreview?: boolean;
-    /** If true, container height/width adjusts to scaled size. Useful for layouts. Default: false */
-    fitContainer?: boolean;
 }
 
 // --- Main Export ---
@@ -41,7 +41,6 @@ export const PhonePreview: React.FC<PhonePreviewProps> = ({
     className = "",
     scale = 1,
     isPreview = true,
-    fitContainer = false,
 }) => {
     const { appUrl } = usePage<{ appUrl: string }>().props;
     const displayDomain = appUrl.replace(/^https?:\/\//, "");
@@ -49,79 +48,72 @@ export const PhonePreview: React.FC<PhonePreviewProps> = ({
     const publicUrl = `${displayDomain}/${cleanHandle}`;
 
     if (device === "mobile") {
-        // Use CSS zoom instead of transform scale for crisp rendering on all DPI screens
-        // zoom doesn't cause sub-pixel rendering issues like transform: scale()
-        const phoneFrame = (
+        // GPU-accelerated transform with translateZ(0) for crisp rendering
+        // Wrapper needed because transform doesn't affect layout
+        return (
             <div
-                className={`relative select-none rounded-[56px] bg-neutral-900 border-12 border-neutral-900 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] ${
-                    !fitContainer ? className : ""
-                }`}
+                className={className}
                 style={{
-                    width: MOBILE_WIDTH,
-                    height: MOBILE_HEIGHT,
-                    zoom: scale,
+                    width: MOBILE_WIDTH * scale,
+                    height: MOBILE_HEIGHT * scale,
                 }}
             >
-                {/* Inner Screen Container (White/Content) */}
-                <div className="relative h-full w-full bg-white rounded-[44px] overflow-hidden">
-                    {/* Dynamic Island / Notch Area */}
-                    <div className="absolute top-1 left-0 w-full h-14 z-50 grid grid-cols-3 items-start pt-3 pointer-events-none text-white mix-blend-difference">
-                        {/* Left - Time (centered in left third) */}
-                        <div className="flex justify-center">
-                            <span className="text-xs font-semibold tracking-wide">
-                                {new Date().toLocaleTimeString([], {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                })}
-                            </span>
-                        </div>
-                        {/* Center - Space for notch */}
-                        <div></div>
-                        {/* Right - Status icons (centered in right third) */}
-                        <div className="flex justify-center gap-1.5 items-center">
-                            <Signal size={14} />
-                            <Wifi size={14} />
-                            <Battery size={16} />
-                        </div>
-                    </div>
-
-                    {/* The Notch Itself (Black Pill) */}
-                    <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[110px] h-[32px] bg-black rounded-full z-40 flex items-center justify-end px-3">
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500/50"></div>
-                    </div>
-
-                    {/* Content - Uses shared LandingContent */}
-                    <LandingContent
-                        user={user}
-                        links={links}
-                        socialLinks={socialLinks}
-                        device="mobile"
-                        isPreview={isPreview}
-                    />
-                </div>
-
-                {/* Hardware Buttons (Optional Cosmetic) */}
-                <div className="absolute top-24 -left-[14px] w-[2px] h-8 bg-neutral-800 rounded-l-md"></div>
-                <div className="absolute top-36 -left-[14px] w-[2px] h-12 bg-neutral-800 rounded-l-md"></div>
-                <div className="absolute top-28 -right-[14px] w-[2px] h-20 bg-neutral-800 rounded-r-md"></div>
-            </div>
-        );
-
-        // Wrap in fitted container if needed (respects scaled dimensions in layout)
-        if (fitContainer) {
-            return (
                 <div
-                    className={className}
+                    className="relative select-none rounded-[56px] bg-neutral-900 border-12 border-neutral-900 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)]"
                     style={{
-                        height: MOBILE_HEIGHT * scale,
+                        width: MOBILE_WIDTH,
+                        height: MOBILE_HEIGHT,
+                        transform: `scale(${scale}) translateZ(0)`,
+                        transformOrigin: "top left",
+                        willChange: "transform",
+                        backfaceVisibility: "hidden",
                     }}
                 >
-                    {phoneFrame}
-                </div>
-            );
-        }
+                    {/* Inner Screen Container (White/Content) */}
+                    <div className="relative h-full w-full bg-white rounded-[44px] overflow-hidden">
+                        {/* Dynamic Island / Notch Area */}
+                        <div className="absolute top-1 left-0 w-full h-14 z-50 grid grid-cols-3 items-start pt-3 pointer-events-none text-white mix-blend-difference">
+                            {/* Left - Time (centered in left third) */}
+                            <div className="flex justify-center">
+                                <span className="text-xs font-semibold tracking-wide">
+                                    {new Date().toLocaleTimeString([], {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                    })}
+                                </span>
+                            </div>
+                            {/* Center - Space for notch */}
+                            <div></div>
+                            {/* Right - Status icons (centered in right third) */}
+                            <div className="flex justify-center gap-1.5 items-center">
+                                <Signal size={14} />
+                                <Wifi size={14} />
+                                <Battery size={16} />
+                            </div>
+                        </div>
 
-        return phoneFrame;
+                        {/* The Notch Itself (Black Pill) */}
+                        <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[110px] h-[32px] bg-black rounded-full z-40 flex items-center justify-end px-3">
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500/50"></div>
+                        </div>
+
+                        {/* Content - Uses shared LandingContent */}
+                        <LandingContent
+                            user={user}
+                            links={links}
+                            socialLinks={socialLinks}
+                            device="mobile"
+                            isPreview={isPreview}
+                        />
+                    </div>
+
+                    {/* Hardware Buttons (Optional Cosmetic) */}
+                    <div className="absolute top-24 -left-[14px] w-[2px] h-8 bg-neutral-800 rounded-l-md"></div>
+                    <div className="absolute top-36 -left-[14px] w-[2px] h-12 bg-neutral-800 rounded-l-md"></div>
+                    <div className="absolute top-28 -right-[14px] w-[2px] h-20 bg-neutral-800 rounded-r-md"></div>
+                </div>
+            </div>
+        );
     }
 
     // Desktop / Tablet Browser Frame
