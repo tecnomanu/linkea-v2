@@ -57,7 +57,7 @@ class WelcomeMessage extends Notification implements ShouldQueue
             ->view('emails.welcome', [
                 'firstName' => $firstName,
                 'actionUrl' => $appUrl . '/panel',
-                'fullWidthHeaderBg' => 'images/emails/welcome_header.webp',
+                'fullWidthHeaderBg' => 'images/emails/welcome_header.png',
                 'headerTitle' => 'BIENVENIDO',
                 'headerHeight' => '500px',
                 'headerBgPosition' => 'top center',

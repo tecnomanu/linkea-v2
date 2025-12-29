@@ -50,7 +50,7 @@ class VerifyUserCode extends Notification implements ShouldQueue
             ->subject('Verifica tu cuenta - Linkea')
             ->view('emails.verification-code', [
                 'code' => $code,
-                'headerImage' => 'images/emails/linky_otp.webp',
+                'headerImage' => 'images/emails/linky_otp.png',
                 'headerTitle' => 'Verificar Email',
                 'headerSubtitle' => 'Ingresá el código para continuar',
             ]);

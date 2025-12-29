@@ -134,7 +134,7 @@
                                                 <td style="padding: {{ $paddingTop }} 30px {{ $paddingBottom }}; text-align: center; vertical-align: top;">
                                                     <!-- Logo -->
                                                     <a href="{{ config('app.url') }}" style="text-decoration: none; display: inline-block;">
-                                                        <img src="{{ asset('images/logos/logo-white.webp') }}" alt="Linkea" height="40" style="display: block; margin: 0 auto;">
+                                                        <img src="{{ asset('images/logos/logo-white.png') }}" alt="Linkea" height="40" style="display: block; margin: 0 auto;">
                                                     </a>
                                                     
                                                     <!-- Title -->
@@ -155,10 +155,10 @@
                             <!-- Split Header with Background Image -->
                             <table width="100%" cellspacing="0" cellpadding="0" border="0">
                                 <tr>
-                                    <td background="{{ asset('images/emails/email_bg_header.webp') }}" bgcolor="#ea580c" style="background-color: #ea580c; background-image: url('{{ asset('images/emails/email_bg_header.webp') }}'); background-size: cover; background-position: center center; background-repeat: no-repeat;">
+                                    <td background="{{ asset('images/emails/email_bg_header.png') }}" bgcolor="#ea580c" style="background-color: #ea580c; background-image: url('{{ asset('images/emails/email_bg_header.png') }}'); background-size: cover; background-position: center center; background-repeat: no-repeat;">
                                         <!--[if gte mso 9]>
                                         <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:640px;">
-                                        <v:fill type="frame" src="{{ asset('images/emails/email_bg_header.webp') }}" color="#ea580c" />
+                                        <v:fill type="frame" src="{{ asset('images/emails/email_bg_header.png') }}" color="#ea580c" />
                                         <v:textbox style="mso-fit-shape-to-text:true" inset="0,0,0,0">
                                         <![endif]-->
                                         <table width="100%" cellspacing="0" cellpadding="0" border="0" style="height: 220px;">
@@ -170,7 +170,7 @@
                                                         <tr>
                                                             <td style="vertical-align: top; padding-bottom: 15px;">
                                                                 <a href="{{ config('app.url') }}" style="display: inline-block; text-decoration: none;">
-                                                                    <img src="{{ asset('images/logos/logo-white.webp') }}" alt="Linkea" height="30" style="display: block;">
+                                                                    <img src="{{ asset('images/logos/logo-white.png') }}" alt="Linkea" height="30" style="display: block;">
                                                                 </a>
                                                             </td>
                                                         </tr>
@@ -206,17 +206,17 @@
                             <!-- Simple Header (Logo only, centered) with Background Image -->
                             <table width="100%" cellspacing="0" cellpadding="0" border="0">
                                 <tr>
-                                    <td background="{{ asset('images/emails/email_bg_header.webp') }}" bgcolor="#ea580c" style="background-color: #ea580c; background-image: url('{{ asset('images/emails/email_bg_header.webp') }}'); background-size: cover; background-position: center center; background-repeat: no-repeat;">
+                                    <td background="{{ asset('images/emails/email_bg_header.png') }}" bgcolor="#ea580c" style="background-color: #ea580c; background-image: url('{{ asset('images/emails/email_bg_header.png') }}'); background-size: cover; background-position: center center; background-repeat: no-repeat;">
                                         <!--[if gte mso 9]>
                                         <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:640px;">
-                                        <v:fill type="frame" src="{{ asset('images/emails/email_bg_header.webp') }}" color="#ea580c" />
+                                        <v:fill type="frame" src="{{ asset('images/emails/email_bg_header.png') }}" color="#ea580c" />
                                         <v:textbox style="mso-fit-shape-to-text:true" inset="0,0,0,0">
                                         <![endif]-->
                                         <table width="100%" cellspacing="0" cellpadding="0" border="0">
                                             <tr>
                                                 <td style="padding: 40px 50px; text-align: center;">
                                                     <a href="{{ config('app.url') }}" style="text-decoration: none;">
-                                                        <img src="{{ asset('images/logos/logo-white.webp') }}" alt="Linkea" height="38" style="display: block; margin: 0 auto;">
+                                                        <img src="{{ asset('images/logos/logo-white.png') }}" alt="Linkea" height="38" style="display: block; margin: 0 auto;">
                                                     </a>
                                                 </td>
                                             </tr>
