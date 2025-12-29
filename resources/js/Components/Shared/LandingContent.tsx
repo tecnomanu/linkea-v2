@@ -385,7 +385,7 @@ export const LandingContent: React.FC<LandingContentProps> = ({
 
     return (
         <div
-            className={`w-full ${heightClass} overflow-y-auto hide-scrollbar pt-14 pb-8 transition-all duration-500 ${containerClasses} ${fontClasses}`}
+            className={`w-full ${heightClass} overflow-y-auto overlay-scrollbar pt-14 pb-8 transition-all duration-500 ${containerClasses} ${fontClasses}`}
             style={containerStyle}
         >
             {/* Profile Header */}
@@ -454,7 +454,9 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                             isThemePreset ? baseTextColor : ""
                         }`}
                         style={
-                            !isThemePreset ? { color: computedTextColors.text } : {}
+                            !isThemePreset
+                                ? { color: computedTextColors.text }
+                                : {}
                         }
                     >
                         {user.title}

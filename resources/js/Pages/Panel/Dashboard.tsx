@@ -527,49 +527,114 @@ export default function Dashboard({
             />
 
             {/* Added top padding for mobile to account for fixed MobileNav */}
-            <div className="flex-1 w-full max-w-5xl mx-auto p-4 md:p-8 lg:p-12 pt-32 md:pt-8 overflow-y-auto h-screen hide-scrollbar relative">
-                {/* Header - Hidden on Mobile to save space (MobileNav has context) */}
-                <header className="hidden md:flex justify-between items-end mb-8 sticky top-0 z-40 bg-slate-50/90 dark:bg-neutral-950/90 backdrop-blur-xl py-4 -mx-4 px-4 lg:-mx-12 lg:px-12 transition-all">
-                    <div className="flex items-center gap-6">
-                        <div>
-                            <div className="flex items-center gap-2 text-sm font-bold text-neutral-400 mb-1 uppercase tracking-wider">
-                                <span>Panel</span>
-                                {activeTab !== "dashboard" && (
-                                    <>
-                                        <span className="text-neutral-300">
-                                            &gt;
-                                        </span>
-                                        <span className="text-brand-500 capitalize">
-                                            {activeTab}
-                                        </span>
-                                    </>
-                                )}
+            <div className="flex-1 w-full mx-auto p-4 md:p-8 lg:p-12 pt-32 md:pt-8 overflow-y-auto h-screen overlay-scrollbar relative">
+                <div className=" max-w-5xl  mx-auto">
+                    {/* Header - Hidden on Mobile to save space (MobileNav has context) */}
+                    <header className="hidden md:flex justify-between items-end mb-8 sticky top-0 z-40 bg-slate-50/90 dark:bg-neutral-950/90 backdrop-blur-xl py-4 -mx-4 px-4 lg:-mx-12 lg:px-12 transition-all">
+                        <div className="flex items-center gap-6">
+                            <div>
+                                <div className="flex items-center gap-2 text-sm font-bold text-neutral-400 mb-1 uppercase tracking-wider">
+                                    <span>Panel</span>
+                                    {activeTab !== "dashboard" && (
+                                        <>
+                                            <span className="text-neutral-300">
+                                                &gt;
+                                            </span>
+                                            <span className="text-brand-500 capitalize">
+                                                {activeTab}
+                                            </span>
+                                        </>
+                                    )}
+                                </div>
+                                <h1 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white tracking-tight capitalize">
+                                    {activeTab === "dashboard"
+                                        ? "Mis enlaces"
+                                        : activeTab}
+                                </h1>
                             </div>
-                            <h1 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white tracking-tight capitalize">
+                            {/* Links Tab Switcher - Desktop */}
+                            {activeTab === "links" && (
+                                <div className="flex bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl">
+                                    <button
+                                        onClick={() =>
+                                            setCurrentLinkType("blocks")
+                                        }
+                                        className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+                                            currentLinkType === "blocks"
+                                                ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-md"
+                                                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+                                        }`}
+                                    >
+                                        BLOQUES
+                                    </button>
+                                    <button
+                                        onClick={() =>
+                                            setCurrentLinkType("social")
+                                        }
+                                        className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+                                            currentLinkType === "social"
+                                                ? "bg-linear-to-r from-brand-500 to-pink-500 text-white shadow-md"
+                                                : "bg-linear-to-r from-brand-100/60 to-pink-100/60 dark:from-brand-900/20 dark:to-pink-900/20 text-brand-600 dark:text-brand-400"
+                                        }`}
+                                    >
+                                        REDES
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        {/* Auto-save status, preview button, and manual save */}
+                        <div className="flex items-center gap-3">
+                            <AutoSaveBadge />
+                            {/* Preview button - visible when Live Preview sidebar is hidden */}
+                            <button
+                                onClick={() => openPreview("mobile")}
+                                className="xl:hidden flex items-center gap-2 px-4 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-semibold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all"
+                            >
+                                <Eye size={16} />
+                                <span>Vista previa</span>
+                            </button>
+                            <ManualSaveButton onClick={handleManualSave} />
+                        </div>
+                    </header>
+
+                    {/* Mobile Title */}
+                    <div className="md:hidden mb-4">
+                        <div className="flex justify-between items-center">
+                            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white capitalize">
                                 {activeTab === "dashboard"
-                                    ? "Mis enlaces"
+                                    ? "Resumen"
                                     : activeTab}
                             </h1>
+                            <button
+                                onClick={() => openPreview("mobile")}
+                                className="p-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all"
+                                aria-label="Vista previa"
+                            >
+                                <Eye size={18} />
+                            </button>
                         </div>
-                        {/* Links Tab Switcher - Desktop */}
+                        <div className="mt-2">
+                            <AutoSaveBadge />
+                        </div>
+                        {/* Links Tab Switcher - Mobile */}
                         {activeTab === "links" && (
-                            <div className="flex bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl">
+                            <div className="flex bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl mt-4">
                                 <button
                                     onClick={() => setCurrentLinkType("blocks")}
-                                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+                                    className={`flex-1 px-4 py-2.5 rounded-lg font-bold text-sm transition-all ${
                                         currentLinkType === "blocks"
                                             ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-md"
-                                            : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+                                            : "text-neutral-500 dark:text-neutral-400"
                                     }`}
                                 >
                                     BLOQUES
                                 </button>
                                 <button
                                     onClick={() => setCurrentLinkType("social")}
-                                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+                                    className={`flex-1 px-4 py-2.5 rounded-lg font-bold text-sm transition-all ${
                                         currentLinkType === "social"
-                                            ? "bg-linear-to-r from-brand-500 to-pink-500 text-white shadow-md"
-                                            : "bg-linear-to-r from-brand-100/60 to-pink-100/60 dark:from-brand-900/20 dark:to-pink-900/20 text-brand-600 dark:text-brand-400"
+                                            ? "bg-gradient-to-r from-brand-500 to-pink-500 text-white shadow-md"
+                                            : "bg-gradient-to-r from-brand-200/50 to-pink-200/50 dark:from-brand-900/30 dark:to-pink-900/30 text-brand-600 dark:text-brand-400"
                                     }`}
                                 >
                                     REDES
@@ -577,100 +642,49 @@ export default function Dashboard({
                             </div>
                         )}
                     </div>
-                    {/* Auto-save status, preview button, and manual save */}
-                    <div className="flex items-center gap-3">
-                        <AutoSaveBadge />
-                        {/* Preview button - visible when Live Preview sidebar is hidden */}
-                        <button
-                            onClick={() => openPreview("mobile")}
-                            className="xl:hidden flex items-center gap-2 px-4 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-semibold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all"
-                        >
-                            <Eye size={16} />
-                            <span>Vista previa</span>
-                        </button>
-                        <ManualSaveButton onClick={handleManualSave} />
-                    </div>
-                </header>
 
-                {/* Mobile Title */}
-                <div className="md:hidden mb-4">
-                    <div className="flex justify-between items-center">
-                        <h1 className="text-2xl font-bold text-neutral-900 dark:text-white capitalize">
-                            {activeTab === "dashboard" ? "Resumen" : activeTab}
-                        </h1>
-                        <button
-                            onClick={() => openPreview("mobile")}
-                            className="p-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all"
-                            aria-label="Vista previa"
-                        >
-                            <Eye size={18} />
-                        </button>
-                    </div>
-                    <div className="mt-2">
-                        <AutoSaveBadge />
-                    </div>
-                    {/* Links Tab Switcher - Mobile */}
-                    {activeTab === "links" && (
-                        <div className="flex bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl mt-4">
-                            <button
-                                onClick={() => setCurrentLinkType("blocks")}
-                                className={`flex-1 px-4 py-2.5 rounded-lg font-bold text-sm transition-all ${
-                                    currentLinkType === "blocks"
-                                        ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-md"
-                                        : "text-neutral-500 dark:text-neutral-400"
-                                }`}
-                            >
-                                BLOQUES
-                            </button>
-                            <button
-                                onClick={() => setCurrentLinkType("social")}
-                                className={`flex-1 px-4 py-2.5 rounded-lg font-bold text-sm transition-all ${
-                                    currentLinkType === "social"
-                                        ? "bg-gradient-to-r from-brand-500 to-pink-500 text-white shadow-md"
-                                        : "bg-gradient-to-r from-brand-200/50 to-pink-200/50 dark:from-brand-900/30 dark:to-pink-900/30 text-brand-600 dark:text-brand-400"
-                                }`}
-                            >
-                                REDES
-                            </button>
+                    {/* Sticky LinkBar - Shows public URL (visible on all tabs except profile and links) */}
+                    {/* Note: Links tab has its own sticky container that includes LinkBar */}
+                    {activeTab !== "profile" && activeTab !== "links" && (
+                        <div className="sticky top-0 md:top-20 z-30 bg-slate-50/95 dark:bg-neutral-950/95 backdrop-blur-xl -mx-4 px-4 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12 py-4">
+                            <LinkBar landing={landing} user={auth.user} />
                         </div>
                     )}
+
+                    {/* Content Rendering based on activeTab */}
+                    {activeTab === "dashboard" && (
+                        <DashboardTab stats={dashboardStats} />
+                    )}
+
+                    {activeTab === "links" && (
+                        <LinksTab
+                            links={links}
+                            socialLinks={socialLinks}
+                            onUpdateLinks={setLinks}
+                            onUpdateSocialLinks={setSocialLinks}
+                            currentLinkType={currentLinkType}
+                            onChangeLinkType={setCurrentLinkType}
+                            landing={landing}
+                            user={auth.user}
+                        />
+                    )}
+
+                    {activeTab === "appearance" && (
+                        <DesignTab
+                            user={user}
+                            onUpdateUser={handleUpdateUser}
+                        />
+                    )}
+
+                    {activeTab === "settings" && (
+                        <SettingsTab
+                            user={user}
+                            onUpdateUser={handleUpdateUser}
+                        />
+                    )}
+
+                    {activeTab === "profile" && <ProfileTab user={auth.user} />}
                 </div>
-
-                {/* Sticky LinkBar - Shows public URL (visible on all tabs except profile and links) */}
-                {/* Note: Links tab has its own sticky container that includes LinkBar */}
-                {activeTab !== "profile" && activeTab !== "links" && (
-                    <div className="sticky top-0 md:top-20 z-30 bg-slate-50/95 dark:bg-neutral-950/95 backdrop-blur-xl -mx-4 px-4 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12 py-4">
-                        <LinkBar landing={landing} user={auth.user} />
-                    </div>
-                )}
-
-                {/* Content Rendering based on activeTab */}
-                {activeTab === "dashboard" && (
-                    <DashboardTab stats={dashboardStats} />
-                )}
-
-                {activeTab === "links" && (
-                    <LinksTab
-                        links={links}
-                        socialLinks={socialLinks}
-                        onUpdateLinks={setLinks}
-                        onUpdateSocialLinks={setSocialLinks}
-                        currentLinkType={currentLinkType}
-                        onChangeLinkType={setCurrentLinkType}
-                        landing={landing}
-                        user={auth.user}
-                    />
-                )}
-
-                {activeTab === "appearance" && (
-                    <DesignTab user={user} onUpdateUser={handleUpdateUser} />
-                )}
-
-                {activeTab === "settings" && (
-                    <SettingsTab user={user} onUpdateUser={handleUpdateUser} />
-                )}
-
-                {activeTab === "profile" && <ProfileTab user={auth.user} />}
             </div>
 
             {/* Right: Live Preview (Desktop Sticky - Only Mobile Mode) */}

@@ -348,7 +348,7 @@ export default function NewsletterForm({ auth, newsletter }: NewsletterFormProps
                         </div>
 
                         {/* Recipients Table */}
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto overlay-scrollbar">
                             <table className="w-full">
                                 <thead className="bg-neutral-50 dark:bg-neutral-800/50 text-xs uppercase tracking-wider text-neutral-500">
                                     <tr>

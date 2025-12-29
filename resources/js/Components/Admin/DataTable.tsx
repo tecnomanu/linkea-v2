@@ -138,7 +138,7 @@ export function DataTable<T extends { id: string }>({
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto overlay-scrollbar">
                 <table className="w-full">
                     <thead>
                         <tr className="bg-neutral-50 dark:bg-neutral-800/50">

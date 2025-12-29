@@ -67,7 +67,7 @@ export const Dialog: React.FC<DialogProps> = ({
             />
 
             {/* Container */}
-            <div className="fixed inset-0 overflow-y-auto">
+            <div className="fixed inset-0 overflow-y-auto overlay-scrollbar">
                 <div className="flex min-h-full items-center justify-center p-4">
                     {children}
                 </div>

@@ -120,46 +120,91 @@
       radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.05) 0px, transparent 50%);
   }
 
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
-  }
+  /* 
+   * Custom Overlay Scrollbar System
+   * - Floating (doesn't take space)
+   * - Appears only on hover
+   * - Works consistently across all browsers
+   * - Supports dark mode
+   */
 
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 10px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+  /* Hide scrollbar utility */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
 
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
+  /* 
+   * Overlay Scrollbar - Apply to any scrollable container
+   * The scrollbar is invisible by default and appears on hover
+   */
+  .overlay-scrollbar {
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.3s ease;
   }
 
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.05);
+  .overlay-scrollbar:hover {
+    scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
   }
 
-  .dark .custom-scrollbar::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
+  /* Webkit (Chrome, Safari, Edge) */
+  .overlay-scrollbar::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+    background: transparent;
   }
 
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #94a3b8;
+  .overlay-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
     border-radius: 10px;
   }
 
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #64748b;
+  .overlay-scrollbar::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    transition: background 0.3s ease;
+  }
+
+  .overlay-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.5);
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .overlay-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.8) !important;
+  }
+
+  .overlay-scrollbar::-webkit-scrollbar-thumb:active {
+    background: rgba(100, 116, 139, 0.9) !important;
+  }
+
+  .overlay-scrollbar::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Dark mode variants */
+  .dark .overlay-scrollbar:hover {
+    scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+  }
+
+  .dark .overlay-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.4);
+  }
+
+  .dark .overlay-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.6) !important;
+  }
+
+  .dark .overlay-scrollbar::-webkit-scrollbar-thumb:active {
+    background: rgba(148, 163, 184, 0.8) !important;
   }
 }

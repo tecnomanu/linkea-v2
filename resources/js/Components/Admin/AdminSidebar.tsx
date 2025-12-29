@@ -91,7 +91,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             </div>
 
             {/* Main Navigation */}
-            <nav className="flex-1 flex flex-col px-2 overflow-y-auto">
+            <nav className="flex-1 flex flex-col px-2 overflow-y-auto overlay-scrollbar">
                 <div className="text-xs uppercase text-neutral-400 dark:text-neutral-500 px-3 mb-2 font-medium">
                     General
                 </div>

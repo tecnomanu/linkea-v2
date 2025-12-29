@@ -1,18 +1,7 @@
-import { Button } from "@/Components/ui/Button";
-import {
-    Dialog,
-    DialogBody,
-    DialogCloseButton,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-} from "@/Components/ui/Dialog";
 import {
     getBlockConfig,
     renderBlockTypeIcon,
 } from "@/Components/Shared/blocks/blockConfig";
-import { LinkBlock } from "@/types";
-import React from "react";
 import {
     CalendarConfig,
     DefaultConfig,
@@ -24,6 +13,17 @@ import {
     VideoEmbedConfig,
     WhatsAppConfig,
 } from "@/Components/Shared/blocks/configs";
+import { Button } from "@/Components/ui/Button";
+import {
+    Dialog,
+    DialogBody,
+    DialogCloseButton,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+} from "@/Components/ui/Dialog";
+import { LinkBlock } from "@/types";
+import React from "react";
 
 interface LinkConfigDialogProps {
     isOpen: boolean;
@@ -97,7 +97,7 @@ export const LinkConfigDialog: React.FC<LinkConfigDialogProps> = ({
                     <DialogCloseButton onClick={onClose} variant="minimal" />
                 </DialogHeader>
 
-                <DialogBody className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
+                <DialogBody className="p-6 space-y-6 max-h-[60vh] overflow-y-auto overlay-scrollbar">
                     {renderConfigContent()}
                 </DialogBody>
 

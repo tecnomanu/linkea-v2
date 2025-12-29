@@ -201,7 +201,7 @@ export const IconSelector: React.FC<IconSelectorProps> = ({
                                         {/* Grid with padding to prevent clipping of ring/checkmark */}
                                         <div
                                             ref={gridRef}
-                                            className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 gap-2 max-h-72 overflow-y-auto p-1"
+                                            className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 gap-2 max-h-72 overflow-y-auto overlay-scrollbar p-1"
                                         >
                                             {filteredIcons.map((iconName) => {
                                                 const selected = isSelected(

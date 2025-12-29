@@ -1,8 +1,8 @@
+import { LinkBlock, UserProfile } from "@/types";
 import { Monitor, Smartphone, Tablet, X } from "lucide-react";
 import React, { useState } from "react";
 import { LandingContent } from "./LandingContent";
 import { DeviceMode, PhonePreview, SocialLink } from "./PhonePreview";
-import { LinkBlock, UserProfile } from "@/types";
 
 interface DevicePreviewModalProps {
     isOpen: boolean;
@@ -45,8 +45,14 @@ export const DevicePreviewModal: React.FC<DevicePreviewModalProps> = ({
                 </button>
 
                 {/* Fullscreen content */}
-                <div className="h-full w-full overflow-auto">
-                    <LandingContent user={user} links={links} socialLinks={socialLinks} device="mobile" isPreview={true} />
+                <div className="h-full w-full overflow-auto overlay-scrollbar">
+                    <LandingContent
+                        user={user}
+                        links={links}
+                        socialLinks={socialLinks}
+                        device="mobile"
+                        isPreview={true}
+                    />
                 </div>
             </div>
 
@@ -102,7 +108,7 @@ export const DevicePreviewModal: React.FC<DevicePreviewModalProps> = ({
                 </div>
 
                 {/* Preview Canvas */}
-                <div className="flex-1 overflow-auto bg-neutral-900/50 p-4 sm:p-8 flex items-start justify-center">
+                <div className="flex-1 overflow-auto overlay-scrollbar bg-neutral-900/50 p-4 sm:p-8 flex items-start justify-center">
                     <PhonePreview
                         user={user}
                         links={links}
