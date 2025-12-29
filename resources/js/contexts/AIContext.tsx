@@ -406,6 +406,5 @@ export function useAI(): AIContextValue {
     return context;
 }
 
-export { AVAILABLE_MODELS };
 export type { ModelId };
 

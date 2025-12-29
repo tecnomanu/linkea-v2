@@ -92,7 +92,7 @@ export const LinksTab: React.FC<LinksTabProps> = ({
         const newLink: LinkBlock = {
             id: Math.random().toString(36).substr(2, 9),
             title: "", // Will be overwritten by defaults if present
-            url: "",   // Will be overwritten by defaults if present
+            url: "", // Will be overwritten by defaults if present
             isEnabled: true,
             clicks: 0,
             type: type,

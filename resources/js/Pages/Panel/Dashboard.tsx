@@ -704,7 +704,11 @@ export default function Dashboard({
 
             {/* Right: Live Preview (Desktop Sticky - Only Mobile Mode) */}
             {/* Hidden on AI tab since it has its own preview system */}
-            <div className={`w-[440px] ${activeTab === "ai" ? "hidden" : "hidden xl:flex"} flex-col items-center justify-center gap-4 py-6 sticky top-0 h-screen bg-white/50 dark:bg-neutral-900/50 backdrop-blur-xl border-l border-neutral-200/50 dark:border-neutral-800/50`}>
+            <div
+                className={`w-[440px] ${
+                    activeTab === "ai" ? "hidden" : "hidden xl:flex"
+                } flex-col items-center justify-center gap-4 py-6 sticky top-0 h-screen bg-white/50 dark:bg-neutral-900/50 backdrop-blur-xl border-l border-neutral-200/50 dark:border-neutral-800/50`}
+            >
                 {/* Live Preview Badge */}
                 <span className="text-[10px] font-bold tracking-[0.2em] text-neutral-400 uppercase bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full shrink-0">
                     Vista previa
