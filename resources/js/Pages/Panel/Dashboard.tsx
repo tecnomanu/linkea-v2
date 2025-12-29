@@ -695,15 +695,15 @@ export default function Dashboard({
                 </span>
 
                 {/* Phone Component Container - Scales based on available height */}
-                <div className="flex-1 flex items-center justify-center min-h-0 w-full overflow-hidden">
-                    <div className="transform scale-[0.65] sm:scale-[0.70] 2xl:scale-[0.75] origin-center transition-transform duration-500">
-                        <PhonePreview
-                            user={user}
-                            links={links}
-                            socialLinks={socialLinks}
-                            device="mobile"
-                        />
-                    </div>
+                <div className="flex-1 flex items-center justify-center min-h-0 w-full">
+                    <PhonePreview
+                        user={user}
+                        links={links}
+                        socialLinks={socialLinks}
+                        device="mobile"
+                        scale={0.72}
+                        fitContainer
+                    />
                 </div>
 
                 {/* Desktop Fullscreen Trigger */}

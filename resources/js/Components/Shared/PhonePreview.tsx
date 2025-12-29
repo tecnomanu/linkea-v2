@@ -49,16 +49,17 @@ export const PhonePreview: React.FC<PhonePreviewProps> = ({
     const publicUrl = `${displayDomain}/${cleanHandle}`;
 
     if (device === "mobile") {
+        // Use CSS zoom instead of transform scale for crisp rendering on all DPI screens
+        // zoom doesn't cause sub-pixel rendering issues like transform: scale()
         const phoneFrame = (
             <div
-                className={`relative select-none rounded-[56px] bg-neutral-900 border-[12px] border-neutral-900 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] ${
+                className={`relative select-none rounded-[56px] bg-neutral-900 border-12 border-neutral-900 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] ${
                     !fitContainer ? className : ""
                 }`}
                 style={{
                     width: MOBILE_WIDTH,
                     height: MOBILE_HEIGHT,
-                    transform: `scale(${scale})`,
-                    transformOrigin: "top center",
+                    zoom: scale,
                 }}
             >
                 {/* Inner Screen Container (White/Content) */}
