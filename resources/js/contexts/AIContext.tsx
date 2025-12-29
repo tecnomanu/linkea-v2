@@ -12,7 +12,6 @@
 import { LinkBlock, UserProfile } from "@/types";
 import {
     AIAction,
-    detectIntentFromText,
     getSystemPrompt,
     parseAIResponse,
 } from "@/services/aiBlocksPrompt";
@@ -245,10 +244,6 @@ export function AIProvider({
         async (content: string) => {
             if (!isEngineReady || isGenerating) return;
 
-            // First, try to detect intent directly from user message
-            // This is a fast-path for simple commands like "agregar instagram @pepe"
-            const directIntent = detectIntentFromText(content);
-
             // Add user message
             const userMessage: UIChatMessage = {
                 id: Math.random().toString(36).substr(2, 9),
@@ -257,22 +252,6 @@ export function AIProvider({
                 timestamp: new Date(),
             };
             setMessages((prev) => [...prev, userMessage]);
-
-            // If we detected a clear intent, execute it immediately
-            if (directIntent) {
-                const confirmMessage = getActionConfirmation(directIntent);
-                const assistantMessage: UIChatMessage = {
-                    id: Math.random().toString(36).substr(2, 9),
-                    role: "assistant",
-                    content: confirmMessage,
-                    timestamp: new Date(),
-                    isStreaming: false,
-                    action: directIntent,
-                };
-                setMessages((prev) => [...prev, assistantMessage]);
-                applyAction(directIntent);
-                return;
-            }
 
             // Create assistant message placeholder
             const assistantId = Math.random().toString(36).substr(2, 9);
@@ -319,7 +298,7 @@ export function AIProvider({
                             )
                         );
                     },
-                    { temperature: 0.7, maxTokens: 512 }
+                    { temperature: 0.6, maxTokens: 1024 }
                 );
 
                 // Parse the response for actions
@@ -363,29 +342,6 @@ export function AIProvider({
         },
         [isEngineReady, isGenerating, messages, previewLinks, applyAction]
     );
-
-    // Generate confirmation message for an action
-    function getActionConfirmation(action: AIAction): string {
-        switch (action.action) {
-            case "add_blocks":
-                if (action.blocks && action.blocks.length > 0) {
-                    const names = action.blocks.map(b => b.title).join(", ");
-                    return `Listo! Agregue: ${names}`;
-                }
-                return "Bloque agregado!";
-            case "update_design":
-                if (action.design?.backgroundColor) {
-                    return `Cambie el fondo a ${action.design.backgroundColor}`;
-                }
-                return "Diseno actualizado!";
-            case "remove_blocks":
-                return "Bloques eliminados!";
-            case "reorder_blocks":
-                return "Bloques reordenados!";
-            default:
-                return "Cambio aplicado!";
-        }
-    }
 
     // Clear chat history
     const clearChat = useCallback(() => {

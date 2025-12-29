@@ -84,7 +84,6 @@ function generateBlocksDescription(): string {
 
 /**
  * The system prompt that defines the AI's behavior and knowledge
- * Simplified for small models like Llama 3.2 1B
  */
 export function getSystemPrompt(
     currentBlocks: { type: string; title: string }[] = []
@@ -94,35 +93,61 @@ export function getSystemPrompt(
             ? currentBlocks.map((b) => `${b.type}: "${b.title}"`).join(", ")
             : "vacia";
 
-    // Simplified prompt for small models - focus on JSON output
-    return `Eres un asistente para crear paginas de enlaces. Responde SIEMPRE en JSON.
+    return `Eres un asistente de Linkea para crear paginas de enlaces (como Linktree).
+Respondes en espanol argentino. Sos amable y conciso.
 
 LANDING ACTUAL: ${currentBlocksSummary}
 
-FORMATO DE RESPUESTA (SIEMPRE usar este formato):
-{"message":"tu respuesta","action":"add_blocks|update_design|none","blocks":[...],"design":{...}}
+TIPOS DE BLOQUES DISPONIBLES:
+- link: Link generico (necesita: title, url)
+- header: Titulo/encabezado (necesita: title)
+- whatsapp: Boton de WhatsApp (necesita: title, phoneNumber con codigo de pais)
+- youtube: Video de YouTube (necesita: title, url del video)
+- spotify: Musica de Spotify (necesita: title, url)
+- email: Boton de email (necesita: title, emailAddress)
+
+REGLAS IMPORTANTES:
+1. Si el usuario pide agregar algo pero NO da la informacion necesaria (URL, numero, etc), PREGUNTA primero.
+2. Solo ejecuta la accion cuando tengas TODOS los datos necesarios.
+3. Para redes sociales, necesitas el usuario o URL completa.
+
+FORMATO DE RESPUESTA:
+Siempre responde con JSON asi:
+{"message":"tu mensaje al usuario","action":"none|add_blocks|update_design","blocks":[...],"design":{...}}
 
 EJEMPLOS:
 
-Usuario: "agregar link a instagram @pepe"
-{"message":"Listo! Agregue tu link de Instagram","action":"add_blocks","blocks":[{"type":"link","title":"Instagram","url":"https://instagram.com/pepe"}]}
+Usuario: "agregar instagram"
+{"message":"Genial! Cual es tu usuario de Instagram? (ej: @tu_usuario)","action":"none"}
+
+Usuario: "@pepe_oficial"  
+{"message":"Listo! Agregue tu link de Instagram.","action":"add_blocks","blocks":[{"type":"link","title":"Instagram","url":"https://instagram.com/pepe_oficial","icon":{"type":"brands","name":"instagram"}}]}
+
+Usuario: "agregar link a instagram de @maria"
+{"message":"Agregado el link de Instagram!","action":"add_blocks","blocks":[{"type":"link","title":"Instagram","url":"https://instagram.com/maria","icon":{"type":"brands","name":"instagram"}}]}
+
+Usuario: "quiero whatsapp"
+{"message":"Cual es tu numero de WhatsApp? Incluye el codigo de pais (ej: +54 11 1234-5678)","action":"none"}
+
+Usuario: "+54 11 5566 7788"
+{"message":"Agregue tu boton de WhatsApp!","action":"add_blocks","blocks":[{"type":"whatsapp","title":"WhatsApp","phoneNumber":"+5411556677788"}]}
 
 Usuario: "fondo amarillo"
-{"message":"Cambie el fondo a amarillo","action":"update_design","design":{"backgroundColor":"#FFEB3B"}}
+{"message":"Cambie el fondo a amarillo!","action":"update_design","design":{"backgroundColor":"#FFEB3B"}}
 
-Usuario: "agregar whatsapp 1155667788"
-{"message":"Agregue el boton de WhatsApp","action":"add_blocks","blocks":[{"type":"whatsapp","title":"WhatsApp","phoneNumber":"+541155667788"}]}
+Usuario: "fondo azul oscuro con botones blancos"
+{"message":"Aplique los colores!","action":"update_design","design":{"backgroundColor":"#1a237e","buttonColor":"#ffffff","buttonTextColor":"#1a237e"}}
 
-Usuario: "agregar youtube"
-{"message":"Cual es la URL del video de YouTube?","action":"none"}
+Usuario: "agregar encabezado que diga Mis Redes"
+{"message":"Agregue el encabezado!","action":"add_blocks","blocks":[{"type":"header","title":"Mis Redes"}]}
 
-Usuario: "hola"
-{"message":"Hola! Soy tu asistente. Puedo agregar links, cambiar colores y mas. Que queres hacer?","action":"none"}
+ICONOS PARA REDES:
+instagram, facebook, twitter, tiktok, youtube, linkedin, github, discord, twitch, spotify
 
-TIPOS DE BLOQUES: link, header, whatsapp, youtube, spotify, email, map
-COLORES: usar hex (#RRGGBB)
+COLORES COMUNES:
+Amarillo: #FFEB3B, Rojo: #F44336, Azul: #2196F3, Verde: #4CAF50, Negro: #1a1a1a, Blanco: #FFFFFF, Rosa: #E91E63, Morado: #9C27B0
 
-Responde SOLO con JSON valido, sin texto adicional.`;
+Responde SOLO con JSON valido.`;
 }
 
 /**
@@ -184,7 +209,9 @@ function extractJSON(response: string): ParsedResponse | null {
     }
 
     // Try 3: Find JSON object anywhere in text
-    const jsonObjectMatch = response.match(/\{[\s\S]*?"(?:action|message)"[\s\S]*?\}/);
+    const jsonObjectMatch = response.match(
+        /\{[\s\S]*?"(?:action|message)"[\s\S]*?\}/
+    );
     if (jsonObjectMatch) {
         try {
             return JSON.parse(jsonObjectMatch[0]);
@@ -202,15 +229,60 @@ export function detectIntentFromText(text: string): AIAction | null {
     const lower = text.toLowerCase();
 
     // Detect social media links
-    const socialPatterns: { pattern: RegExp; type: string; name: string; urlPrefix: string }[] = [
-        { pattern: /@?([a-zA-Z0-9_.]+)\s*(?:en\s*)?instagram/i, type: "link", name: "Instagram", urlPrefix: "https://instagram.com/" },
-        { pattern: /instagram[:\s]*@?([a-zA-Z0-9_.]+)/i, type: "link", name: "Instagram", urlPrefix: "https://instagram.com/" },
-        { pattern: /@?([a-zA-Z0-9_.]+)\s*(?:en\s*)?tiktok/i, type: "link", name: "TikTok", urlPrefix: "https://tiktok.com/@" },
-        { pattern: /tiktok[:\s]*@?([a-zA-Z0-9_.]+)/i, type: "link", name: "TikTok", urlPrefix: "https://tiktok.com/@" },
-        { pattern: /@?([a-zA-Z0-9_.]+)\s*(?:en\s*)?twitter/i, type: "link", name: "Twitter", urlPrefix: "https://twitter.com/" },
-        { pattern: /twitter[:\s]*@?([a-zA-Z0-9_.]+)/i, type: "link", name: "Twitter", urlPrefix: "https://twitter.com/" },
-        { pattern: /@?([a-zA-Z0-9_.]+)\s*(?:en\s*)?facebook/i, type: "link", name: "Facebook", urlPrefix: "https://facebook.com/" },
-        { pattern: /youtube[:\s]*@?([a-zA-Z0-9_.]+)/i, type: "link", name: "YouTube", urlPrefix: "https://youtube.com/@" },
+    const socialPatterns: {
+        pattern: RegExp;
+        type: string;
+        name: string;
+        urlPrefix: string;
+    }[] = [
+        {
+            pattern: /@?([a-zA-Z0-9_.]+)\s*(?:en\s*)?instagram/i,
+            type: "link",
+            name: "Instagram",
+            urlPrefix: "https://instagram.com/",
+        },
+        {
+            pattern: /instagram[:\s]*@?([a-zA-Z0-9_.]+)/i,
+            type: "link",
+            name: "Instagram",
+            urlPrefix: "https://instagram.com/",
+        },
+        {
+            pattern: /@?([a-zA-Z0-9_.]+)\s*(?:en\s*)?tiktok/i,
+            type: "link",
+            name: "TikTok",
+            urlPrefix: "https://tiktok.com/@",
+        },
+        {
+            pattern: /tiktok[:\s]*@?([a-zA-Z0-9_.]+)/i,
+            type: "link",
+            name: "TikTok",
+            urlPrefix: "https://tiktok.com/@",
+        },
+        {
+            pattern: /@?([a-zA-Z0-9_.]+)\s*(?:en\s*)?twitter/i,
+            type: "link",
+            name: "Twitter",
+            urlPrefix: "https://twitter.com/",
+        },
+        {
+            pattern: /twitter[:\s]*@?([a-zA-Z0-9_.]+)/i,
+            type: "link",
+            name: "Twitter",
+            urlPrefix: "https://twitter.com/",
+        },
+        {
+            pattern: /@?([a-zA-Z0-9_.]+)\s*(?:en\s*)?facebook/i,
+            type: "link",
+            name: "Facebook",
+            urlPrefix: "https://facebook.com/",
+        },
+        {
+            pattern: /youtube[:\s]*@?([a-zA-Z0-9_.]+)/i,
+            type: "link",
+            name: "YouTube",
+            urlPrefix: "https://youtube.com/@",
+        },
     ];
 
     for (const { pattern, type, name, urlPrefix } of socialPatterns) {
@@ -218,28 +290,33 @@ export function detectIntentFromText(text: string): AIAction | null {
         if (match && match[1]) {
             return {
                 action: "add_blocks",
-                blocks: [{
-                    type,
-                    title: name,
-                    url: urlPrefix + match[1].replace("@", ""),
-                    icon: { type: "brands", name: name.toLowerCase() }
-                }]
+                blocks: [
+                    {
+                        type,
+                        title: name,
+                        url: urlPrefix + match[1].replace("@", ""),
+                        icon: { type: "brands", name: name.toLowerCase() },
+                    },
+                ],
             };
         }
     }
 
     // Detect WhatsApp with number
-    const whatsappMatch = text.match(/whatsapp[:\s]*\+?(\d[\d\s-]+)/i) ||
-                         text.match(/\+?(\d[\d\s-]{8,})[^\d]*whatsapp/i);
+    const whatsappMatch =
+        text.match(/whatsapp[:\s]*\+?(\d[\d\s-]+)/i) ||
+        text.match(/\+?(\d[\d\s-]{8,})[^\d]*whatsapp/i);
     if (whatsappMatch) {
         const phone = whatsappMatch[1].replace(/[\s-]/g, "");
         return {
             action: "add_blocks",
-            blocks: [{
-                type: "whatsapp",
-                title: "WhatsApp",
-                phoneNumber: phone.startsWith("+") ? phone : `+${phone}`
-            }]
+            blocks: [
+                {
+                    type: "whatsapp",
+                    title: "WhatsApp",
+                    phoneNumber: phone.startsWith("+") ? phone : `+${phone}`,
+                },
+            ],
         };
     }
 
@@ -263,8 +340,8 @@ export function detectIntentFromText(text: string): AIAction | null {
             return {
                 action: "update_design",
                 design: {
-                    backgroundColor: color || `#${match[1]}`
-                }
+                    backgroundColor: color || `#${match[1]}`,
+                },
             };
         }
     }
@@ -282,7 +359,7 @@ export function parseAIResponse(response: string): {
     if (parsed) {
         // Successfully parsed JSON
         const text = parsed.message || "";
-        
+
         if (parsed.action && parsed.action !== "none") {
             const action: AIAction = {
                 action: parsed.action as AIAction["action"],
@@ -291,7 +368,7 @@ export function parseAIResponse(response: string): {
             };
             return { text, action };
         }
-        
+
         return { text, action: null };
     }
 

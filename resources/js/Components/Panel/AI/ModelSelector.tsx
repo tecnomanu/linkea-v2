@@ -1,18 +1,22 @@
 /**
  * ModelSelector - UI for loading the WebLLM model
  *
- * Shows a WiFi confirmation before downloading (if not cached),
+ * Offers choice between fast (1B) and smart (3B) models,
+ * shows WiFi confirmation before downloading (if not cached),
  * then handles the initialization process with progress feedback.
  */
 
 import { useAI } from "@/contexts/AIContext";
+import { ModelId } from "@/services/webllmService";
 import {
     AlertCircle,
+    Brain,
     CheckCircle2,
     HardDrive,
     Loader2,
     Sparkles,
     Wifi,
+    Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -36,8 +40,25 @@ const LOADING_TIPS = [
     "Agregar link a mi LinkedIn",
 ];
 
-const MODEL_ID = "Llama-3.2-1B-Instruct-q4f16_1-MLC";
-const CACHE_KEY = `webllm_cached_${MODEL_ID}`;
+// Model options
+const MODELS = {
+    smart: {
+        id: "Llama-3.2-3B-Instruct-q4f16_1-MLC" as ModelId,
+        name: "Inteligente",
+        description: "Mejor comprension, pregunta lo que necesita",
+        size: "1.8GB",
+        icon: Brain,
+    },
+    fast: {
+        id: "Llama-3.2-1B-Instruct-q4f16_1-MLC" as ModelId,
+        name: "Rapido",
+        description: "Carga mas rapido, menos preciso",
+        size: "700MB",
+        icon: Zap,
+    },
+};
+
+type ModelType = keyof typeof MODELS;
 
 export function ModelSelector() {
     const {
@@ -48,40 +69,50 @@ export function ModelSelector() {
         initializeEngine,
     } = useAI();
 
-    const [isModelCached, setIsModelCached] = useState<boolean | null>(null);
+    const [selectedModel, setSelectedModel] = useState<ModelType>("smart");
+    const [cachedModels, setCachedModels] = useState<Record<string, boolean>>({});
     const [showWifiPrompt, setShowWifiPrompt] = useState(true);
     const [currentTipIndex, setCurrentTipIndex] = useState(0);
     const [tipVisible, setTipVisible] = useState(true);
 
-    // Check if model is cached on mount
+    const currentModelConfig = MODELS[selectedModel];
+    const isCurrentModelCached = cachedModels[currentModelConfig.id] ?? false;
+
+    // Check which models are cached on mount
     useEffect(() => {
         const checkCache = async () => {
-            // Check localStorage flag first (fast check)
-            const cachedFlag = localStorage.getItem(CACHE_KEY);
-            if (cachedFlag === "true") {
-                setIsModelCached(true);
-                return;
+            const cached: Record<string, boolean> = {};
+
+            for (const model of Object.values(MODELS)) {
+                const cacheKey = `webllm_cached_${model.id}`;
+                const cachedFlag = localStorage.getItem(cacheKey);
+                if (cachedFlag === "true") {
+                    cached[model.id] = true;
+                }
             }
 
-            // Try to check Cache API for WebLLM cached files
+            // Also check Cache API
             try {
                 if ("caches" in window) {
                     const cacheNames = await caches.keys();
                     const hasWebLLMCache = cacheNames.some(
-                        (name) =>
-                            name.includes("webllm") || name.includes("mlc")
+                        (name) => name.includes("webllm") || name.includes("mlc")
                     );
                     if (hasWebLLMCache) {
-                        localStorage.setItem(CACHE_KEY, "true");
-                        setIsModelCached(true);
-                        return;
+                        // If we have any cache, check each model
+                        for (const model of Object.values(MODELS)) {
+                            const cacheKey = `webllm_cached_${model.id}`;
+                            if (localStorage.getItem(cacheKey) === "true") {
+                                cached[model.id] = true;
+                            }
+                        }
                     }
                 }
             } catch (e) {
                 // Cache API not available or error
             }
 
-            setIsModelCached(false);
+            setCachedModels(cached);
         };
 
         checkCache();
@@ -105,19 +136,15 @@ export function ModelSelector() {
     // Mark model as cached after successful load
     useEffect(() => {
         if (isEngineReady) {
-            localStorage.setItem(CACHE_KEY, "true");
+            const cacheKey = `webllm_cached_${currentModelConfig.id}`;
+            localStorage.setItem(cacheKey, "true");
+            setCachedModels((prev) => ({ ...prev, [currentModelConfig.id]: true }));
         }
-    }, [isEngineReady]);
+    }, [isEngineReady, currentModelConfig.id]);
 
-    const handleConfirmWifi = () => {
+    const handleLoadModel = () => {
         setShowWifiPrompt(false);
-        initializeEngine(MODEL_ID);
-    };
-
-    // Auto-load if cached
-    const handleLoadFromCache = () => {
-        setShowWifiPrompt(false);
-        initializeEngine(MODEL_ID);
+        initializeEngine(currentModelConfig.id);
     };
 
     // If already loaded, show success state
@@ -146,8 +173,6 @@ export function ModelSelector() {
         const progressPercent = Math.round(
             (engineProgress?.progress || 0) * 100
         );
-        const isFromCache =
-            engineProgress?.text?.includes("cache") || progressPercent > 50;
 
         return (
             <div className="max-w-sm mx-auto p-5 bg-gradient-to-br from-brand-50 to-pink-50 dark:from-brand-900/20 dark:to-pink-900/20 rounded-2xl border border-brand-200 dark:border-brand-800">
@@ -160,9 +185,9 @@ export function ModelSelector() {
                     </div>
                     <div className="min-w-0 flex-1">
                         <p className="font-bold text-sm text-neutral-900 dark:text-white">
-                            {isModelCached
+                            {isCurrentModelCached
                                 ? "Cargando desde cache..."
-                                : "Descargando modelo..."}
+                                : `Descargando ${currentModelConfig.name}...`}
                         </p>
                         <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
                             {engineProgress?.text || "Preparando..."}
@@ -196,7 +221,7 @@ export function ModelSelector() {
                 </div>
 
                 <p className="text-[10px] text-neutral-400 mt-3 text-center">
-                    {isModelCached
+                    {isCurrentModelCached
                         ? "Cargando desde cache local"
                         : "El modelo se descarga una vez y queda en cache"}
                 </p>
@@ -220,7 +245,7 @@ export function ModelSelector() {
                             {engineError}
                         </p>
                         <button
-                            onClick={handleConfirmWifi}
+                            onClick={handleLoadModel}
                             className="mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium text-xs transition-colors"
                         >
                             Reintentar
@@ -231,81 +256,12 @@ export function ModelSelector() {
         );
     }
 
-    // Initial state - different UI based on cache status
+    // Initial state - Model selection
     if (showWifiPrompt) {
-        // Still checking cache
-        if (isModelCached === null) {
-            return (
-                <div className="max-w-sm mx-auto p-6 text-center">
-                    <Loader2
-                        size={24}
-                        className="animate-spin text-brand-500 mx-auto mb-2"
-                    />
-                    <p className="text-sm text-neutral-500">
-                        Verificando cache...
-                    </p>
-                </div>
-            );
-        }
-
-        // Model is cached - quick load option
-        if (isModelCached) {
-            return (
-                <div className="max-w-sm mx-auto p-6">
-                    {/* Header */}
-                    <div className="text-center mb-6">
-                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-pink-500 flex items-center justify-center mx-auto mb-3">
-                            <Sparkles size={28} className="text-white" />
-                        </div>
-                        <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-1">
-                            Asistente IA
-                        </h3>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                            Crea tu landing hablando con la IA. Funciona 100% en
-                            tu navegador, gratis y privado.
-                        </p>
-                    </div>
-
-                    {/* Cached indicator */}
-                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 mb-5">
-                        <div className="flex items-start gap-3">
-                            <HardDrive
-                                size={18}
-                                className="text-green-600 dark:text-green-400 shrink-0 mt-0.5"
-                            />
-                            <div>
-                                <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                                    Modelo en cache
-                                </p>
-                                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                    Ya descargaste el modelo antes. Se cargara
-                                    desde tu navegador sin usar datos.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Load button */}
-                    <button
-                        onClick={handleLoadFromCache}
-                        className="w-full py-3.5 bg-gradient-to-r from-brand-500 to-pink-500 hover:from-brand-600 hover:to-pink-600 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20"
-                    >
-                        <Sparkles size={18} />
-                        <span>Cargar asistente</span>
-                    </button>
-
-                    <p className="text-[10px] text-neutral-400 mt-3 text-center">
-                        Requiere Chrome 113+ o Edge 113+ con WebGPU
-                    </p>
-                </div>
-            );
-        }
-
-        // Model not cached - WiFi warning
         return (
             <div className="max-w-sm mx-auto p-6">
                 {/* Header */}
-                <div className="text-center mb-6">
+                <div className="text-center mb-5">
                     <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-pink-500 flex items-center justify-center mx-auto mb-3">
                         <Sparkles size={28} className="text-white" />
                     </div>
@@ -318,33 +274,104 @@ export function ModelSelector() {
                     </p>
                 </div>
 
-                {/* WiFi warning */}
-                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-5">
-                    <div className="flex items-start gap-3">
-                        <Wifi
-                            size={18}
-                            className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5"
-                        />
-                        <div>
-                            <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                                Estas conectado a WiFi?
-                            </p>
-                            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                                El modelo de IA pesa ~700MB y se descarga una
-                                sola vez. Recomendamos usar WiFi para evitar
-                                consumo de datos moviles.
-                            </p>
-                        </div>
+                {/* Model selection */}
+                <div className="space-y-2 mb-5">
+                    <p className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                        Elegir modelo:
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                        {(Object.entries(MODELS) as [ModelType, typeof MODELS.smart][]).map(
+                            ([key, model]) => {
+                                const Icon = model.icon;
+                                const isCached = cachedModels[model.id];
+                                const isSelected = selectedModel === key;
+
+                                return (
+                                    <button
+                                        key={key}
+                                        onClick={() => setSelectedModel(key)}
+                                        className={`p-3 rounded-xl border-2 transition-all text-left ${
+                                            isSelected
+                                                ? "border-brand-500 bg-brand-50 dark:bg-brand-900/20"
+                                                : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Icon
+                                                size={16}
+                                                className={
+                                                    isSelected
+                                                        ? "text-brand-500"
+                                                        : "text-neutral-500"
+                                                }
+                                            />
+                                            <span
+                                                className={`text-sm font-bold ${
+                                                    isSelected
+                                                        ? "text-brand-700 dark:text-brand-300"
+                                                        : "text-neutral-700 dark:text-neutral-300"
+                                                }`}
+                                            >
+                                                {model.name}
+                                            </span>
+                                            {isCached && (
+                                                <HardDrive
+                                                    size={12}
+                                                    className="text-green-500"
+                                                />
+                                            )}
+                                        </div>
+                                        <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                                            {model.description}
+                                        </p>
+                                        <p className="text-[10px] text-neutral-400 mt-1">
+                                            {model.size}
+                                            {isCached && " (en cache)"}
+                                        </p>
+                                    </button>
+                                );
+                            }
+                        )}
                     </div>
                 </div>
 
-                {/* Confirm button */}
+                {/* WiFi/Cache indicator */}
+                {isCurrentModelCached ? (
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-3 mb-4">
+                        <div className="flex items-center gap-2">
+                            <HardDrive
+                                size={16}
+                                className="text-green-600 dark:text-green-400"
+                            />
+                            <p className="text-xs text-green-700 dark:text-green-300">
+                                Este modelo ya esta en cache, no usa datos.
+                            </p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3 mb-4">
+                        <div className="flex items-center gap-2">
+                            <Wifi
+                                size={16}
+                                className="text-amber-600 dark:text-amber-400"
+                            />
+                            <p className="text-xs text-amber-700 dark:text-amber-300">
+                                Descarga de {currentModelConfig.size}. Recomendamos WiFi.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Load button */}
                 <button
-                    onClick={handleConfirmWifi}
+                    onClick={handleLoadModel}
                     className="w-full py-3.5 bg-gradient-to-r from-brand-500 to-pink-500 hover:from-brand-600 hover:to-pink-600 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20"
                 >
                     <Sparkles size={18} />
-                    <span>Si, cargar asistente</span>
+                    <span>
+                        {isCurrentModelCached ? "Cargar" : "Descargar"} asistente{" "}
+                        {currentModelConfig.name.toLowerCase()}
+                    </span>
                 </button>
 
                 <p className="text-[10px] text-neutral-400 mt-3 text-center">
