@@ -65,7 +65,7 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
             ->view('emails.reset-password', [
                 'url' => $url,
                 'count' => $expireMinutes,
-                'headerImage' => 'images/emails/linky_header.png',
+                'headerImage' => 'images/emails/linky_header.webp',
                 'headerTitle' => 'Restablecer Contraseña',
                 'headerSubtitle' => 'Seguí los pasos para recuperar tu cuenta',
             ]);

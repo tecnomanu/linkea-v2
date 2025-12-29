@@ -155,10 +155,10 @@
                             <!-- Split Header with Background Image -->
                             <table width="100%" cellspacing="0" cellpadding="0" border="0">
                                 <tr>
-                                    <td background="{{ asset('images/emails/email_bg_header.png') }}" bgcolor="#ea580c" style="background-color: #ea580c; background-image: url('{{ asset('images/emails/email_bg_header.png') }}'); background-size: cover; background-position: center center; background-repeat: no-repeat;">
+                                    <td background="{{ asset('images/emails/email_bg_header.webp') }}" bgcolor="#ea580c" style="background-color: #ea580c; background-image: url('{{ asset('images/emails/email_bg_header.webp') }}'); background-size: cover; background-position: center center; background-repeat: no-repeat;">
                                         <!--[if gte mso 9]>
                                         <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:640px;">
-                                        <v:fill type="frame" src="{{ asset('images/emails/email_bg_header.png') }}" color="#ea580c" />
+                                        <v:fill type="frame" src="{{ asset('images/emails/email_bg_header.webp') }}" color="#ea580c" />
                                         <v:textbox style="mso-fit-shape-to-text:true" inset="0,0,0,0">
                                         <![endif]-->
                                         <table width="100%" cellspacing="0" cellpadding="0" border="0" style="height: 220px;">
@@ -206,10 +206,10 @@
                             <!-- Simple Header (Logo only, centered) with Background Image -->
                             <table width="100%" cellspacing="0" cellpadding="0" border="0">
                                 <tr>
-                                    <td background="{{ asset('images/emails/email_bg_header.png') }}" bgcolor="#ea580c" style="background-color: #ea580c; background-image: url('{{ asset('images/emails/email_bg_header.png') }}'); background-size: cover; background-position: center center; background-repeat: no-repeat;">
+                                    <td background="{{ asset('images/emails/email_bg_header.webp') }}" bgcolor="#ea580c" style="background-color: #ea580c; background-image: url('{{ asset('images/emails/email_bg_header.webp') }}'); background-size: cover; background-position: center center; background-repeat: no-repeat;">
                                         <!--[if gte mso 9]>
                                         <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:640px;">
-                                        <v:fill type="frame" src="{{ asset('images/emails/email_bg_header.png') }}" color="#ea580c" />
+                                        <v:fill type="frame" src="{{ asset('images/emails/email_bg_header.webp') }}" color="#ea580c" />
                                         <v:textbox style="mso-fit-shape-to-text:true" inset="0,0,0,0">
                                         <![endif]-->
                                         <table width="100%" cellspacing="0" cellpadding="0" border="0">

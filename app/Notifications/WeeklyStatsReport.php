@@ -73,7 +73,7 @@ class WeeklyStatsReport extends Notification implements ShouldQueue
                 'topLinks' => $topLinks,
                 'weekStart' => $weekStart,
                 'weekEnd' => $weekEnd,
-                'headerImage' => 'images/emails/linky_stats.png',
+                'headerImage' => 'images/emails/linky_stats.webp',
                 'headerTitle' => 'Tu Resumen Semanal',
                 'headerSubtitle' => 'Estadísticas de tu Linkea',
             ]);

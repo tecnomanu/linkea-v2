@@ -52,7 +52,7 @@ class ResetPasswordSuccess extends Notification implements ShouldQueue
         return (new MailMessage)
             ->subject('Tu contraseña fue cambiada - ' . $appName)
             ->view('emails.reset-password-success', [
-                'headerImage' => 'images/emails/linky_header.png',
+                'headerImage' => 'images/emails/linky_header.webp',
                 'headerTitle' => 'Contraseña Actualizada',
                 'headerSubtitle' => 'Tu cuenta está segura',
             ]);
