@@ -15,6 +15,22 @@ const MODEL_ID: ModelId = "Qwen2.5-1.5B-Instruct-q4f16_1-MLC";
 const MODEL_SIZE = "900MB";
 const CACHE_KEY = `webllm_cached_${MODEL_ID}`;
 
+// Tips to show during loading - examples of what the AI can do
+const LOADING_TIPS = [
+    '"Agregá un link a mi Instagram @usuario"',
+    '"Poné un botón de WhatsApp con mi número"',
+    '"Hacé que el fondo sea amarillo"',
+    '"Creá un header que diga Mis Redes"',
+    '"Agregá mi canal de YouTube"',
+    '"Poné un link a mi Spotify"',
+    '"Cambiá los botones a color negro"',
+    '"Agregá un email de contacto"',
+    '"Creá 3 links para mis redes sociales"',
+    '"Borrá el link de Instagram"',
+    '"Poné el fondo oscuro y botones blancos"',
+    '"Agregá un link a mi TikTok"',
+];
+
 export function ModelSelector() {
     const {
         isEngineReady,
@@ -26,6 +42,8 @@ export function ModelSelector() {
 
     const [isModelCached, setIsModelCached] = useState<boolean | null>(null);
     const [showPrompt, setShowPrompt] = useState(true);
+    const [currentTipIndex, setCurrentTipIndex] = useState(0);
+    const [tipFading, setTipFading] = useState(false);
 
     // Check if model is cached on mount
     useEffect(() => {
@@ -68,6 +86,21 @@ export function ModelSelector() {
             setIsModelCached(true);
         }
     }, [isEngineReady]);
+
+    // Rotate tips during loading
+    useEffect(() => {
+        if (!isEngineLoading) return;
+
+        const interval = setInterval(() => {
+            setTipFading(true);
+            setTimeout(() => {
+                setCurrentTipIndex((prev) => (prev + 1) % LOADING_TIPS.length);
+                setTipFading(false);
+            }, 300);
+        }, 3500);
+
+        return () => clearInterval(interval);
+    }, [isEngineLoading]);
 
     const handleLoadModel = () => {
         setShowPrompt(false);
@@ -116,6 +149,24 @@ export function ModelSelector() {
                 <p className="text-xs text-neutral-400 text-center mt-2">
                     {progressPercent}%
                 </p>
+
+                {/* Animated tips slider */}
+                <div className="mt-5 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                    <p className="text-[10px] font-bold tracking-widest text-neutral-400 uppercase mb-2 text-center">
+                        Vas a poder decirle
+                    </p>
+                    <div className="h-12 flex items-center justify-center overflow-hidden">
+                        <p
+                            className={`text-sm text-center text-brand-600 dark:text-brand-400 italic transition-all duration-300 ${
+                                tipFading
+                                    ? "opacity-0 translate-y-2"
+                                    : "opacity-100 translate-y-0"
+                            }`}
+                        >
+                            {LOADING_TIPS[currentTipIndex]}
+                        </p>
+                    </div>
+                </div>
             </div>
         );
     }
