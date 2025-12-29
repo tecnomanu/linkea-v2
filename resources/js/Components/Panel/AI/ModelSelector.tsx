@@ -7,7 +7,7 @@
 
 import { useAI } from "@/contexts/AIContext";
 import { ModelId } from "@/services/webllmService";
-import { AlertCircle, HardDrive, Loader2, Sparkles, Wifi } from "lucide-react";
+import { AlertCircle, Loader2, Sparkles, Wifi } from "lucide-react";
 import { useEffect, useState } from "react";
 
 // Single model - Qwen 2.5 1.5B is a good balance of size and capability
@@ -171,25 +171,22 @@ export function ModelSelector() {
                     Asistente de Linkea
                 </h3>
 
-                <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
                     Crea y edita tu landing con IA.
                     <br />
                     Funciona en tu navegador, gratis y privado.
                 </p>
 
-                {/* Cache/WiFi indicator */}
+                {/* Status indicator - simple inline text */}
                 {isModelCached ? (
-                    <div className="flex items-center justify-center gap-2 text-green-600 dark:text-green-400 mb-4">
-                        <HardDrive size={16} />
-                        <span className="text-xs">Listo para usar</span>
-                    </div>
+                    <p className="text-sm text-green-600 dark:text-green-400 mb-5">
+                        Modelo precargado
+                    </p>
                 ) : (
-                    <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-400 mb-4">
+                    <p className="flex items-center justify-center gap-2 text-sm text-amber-600 dark:text-amber-400 mb-5">
                         <Wifi size={16} />
-                        <span className="text-xs">
-                            Descarga unica de {MODEL_SIZE}
-                        </span>
-                    </div>
+                        Requiere WiFi - se descargaran {MODEL_SIZE}
+                    </p>
                 )}
 
                 <button
@@ -198,7 +195,7 @@ export function ModelSelector() {
                 >
                     <Sparkles size={18} />
                     <span>
-                        {isModelCached ? "Iniciar" : "Descargar e iniciar"}
+                        {isModelCached ? "Iniciar chat" : "Descargar e iniciar"}
                     </span>
                 </button>
 

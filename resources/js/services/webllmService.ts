@@ -65,13 +65,21 @@ export const LINKEA_TOOLS: webllm.ChatCompletionTool[] = [
         type: "function",
         function: {
             name: "add_block",
-            description: "Add a new block (link, header, whatsapp, etc) to the landing page",
+            description:
+                "Add a new block (link, header, whatsapp, etc) to the landing page",
             parameters: {
                 type: "object",
                 properties: {
                     type: {
                         type: "string",
-                        enum: ["link", "header", "whatsapp", "youtube", "spotify", "email"],
+                        enum: [
+                            "link",
+                            "header",
+                            "whatsapp",
+                            "youtube",
+                            "spotify",
+                            "email",
+                        ],
                         description: "Type of block to add",
                     },
                     title: {
@@ -84,7 +92,8 @@ export const LINKEA_TOOLS: webllm.ChatCompletionTool[] = [
                     },
                     phoneNumber: {
                         type: "string",
-                        description: "Phone number with country code for WhatsApp (e.g. +5491155667788)",
+                        description:
+                            "Phone number with country code for WhatsApp (e.g. +5491155667788)",
                     },
                     emailAddress: {
                         type: "string",
@@ -92,7 +101,8 @@ export const LINKEA_TOOLS: webllm.ChatCompletionTool[] = [
                     },
                     icon: {
                         type: "string",
-                        description: "Icon name for social links (instagram, facebook, twitter, tiktok, youtube, linkedin, github, discord, twitch, spotify)",
+                        description:
+                            "Icon name for social links (instagram, facebook, twitter, tiktok, youtube, linkedin, github, discord, twitch, spotify)",
                     },
                 },
                 required: ["type", "title"],
@@ -109,7 +119,8 @@ export const LINKEA_TOOLS: webllm.ChatCompletionTool[] = [
                 properties: {
                     backgroundColor: {
                         type: "string",
-                        description: "Background color in hex format (e.g. #FFEB3B for yellow, #1a1a1a for dark)",
+                        description:
+                            "Background color in hex format (e.g. #FFEB3B for yellow, #1a1a1a for dark)",
                     },
                     buttonColor: {
                         type: "string",
@@ -296,7 +307,10 @@ class WebLLMService {
                             arguments: args,
                         });
                     } catch (e) {
-                        console.error("Failed to parse tool call arguments:", e);
+                        console.error(
+                            "Failed to parse tool call arguments:",
+                            e
+                        );
                     }
                 }
             }
@@ -410,4 +424,3 @@ class WebLLMService {
 // Export singleton instance
 export const webllmService = new WebLLMService();
 export default webllmService;
-
