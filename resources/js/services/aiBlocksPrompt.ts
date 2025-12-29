@@ -7,7 +7,10 @@
  * - User interaction guidelines
  */
 
-import { BLOCK_TYPES, getVisibleBlockTypes } from "@/Components/Shared/blocks/blockConfig";
+import {
+    BLOCK_TYPES,
+    getVisibleBlockTypes,
+} from "@/Components/Shared/blocks/blockConfig";
 
 /**
  * Generate a description of all available blocks for the AI
@@ -52,10 +55,12 @@ function generateBlocksDescription(): string {
                     "\n  Campos: title (ej: 'Nuestra Ubicacion'), mapAddress (direccion completa)";
                 break;
             case "vimeo":
-                desc += "\n  Campos: title (titulo del video), url (URL de Vimeo)";
+                desc +=
+                    "\n  Campos: title (titulo del video), url (URL de Vimeo)";
                 break;
             case "tiktok":
-                desc += "\n  Campos: title (titulo del video), url (URL de TikTok)";
+                desc +=
+                    "\n  Campos: title (titulo del video), url (URL de TikTok)";
                 break;
             case "soundcloud":
                 desc +=
@@ -79,117 +84,45 @@ function generateBlocksDescription(): string {
 
 /**
  * The system prompt that defines the AI's behavior and knowledge
+ * Simplified for small models like Llama 3.2 1B
  */
 export function getSystemPrompt(
     currentBlocks: { type: string; title: string }[] = []
 ): string {
-    const blocksDescription = generateBlocksDescription();
     const currentBlocksSummary =
         currentBlocks.length > 0
-            ? currentBlocks
-                  .map((b) => `- ${b.type}: "${b.title}"`)
-                  .join("\n")
-            : "Ninguno (landing vacia)";
+            ? currentBlocks.map((b) => `${b.type}: "${b.title}"`).join(", ")
+            : "vacia";
 
-    return `Eres un asistente de Linkea, una plataforma de "link in bio" similar a Linktree.
-Tu rol es ayudar al usuario a crear y modificar su pagina de enlaces.
+    // Simplified prompt for small models - focus on JSON output
+    return `Eres un asistente para crear paginas de enlaces. Responde SIEMPRE en JSON.
 
-## BLOQUES DISPONIBLES
-${blocksDescription}
+LANDING ACTUAL: ${currentBlocksSummary}
 
-## ESTADO ACTUAL DE LA LANDING
-${currentBlocksSummary}
+FORMATO DE RESPUESTA (SIEMPRE usar este formato):
+{"message":"tu respuesta","action":"add_blocks|update_design|none","blocks":[...],"design":{...}}
 
-## REGLAS DE INTERACCION
+EJEMPLOS:
 
-1. **Siempre responde en espanol (Argentina)**
+Usuario: "agregar link a instagram @pepe"
+{"message":"Listo! Agregue tu link de Instagram","action":"add_blocks","blocks":[{"type":"link","title":"Instagram","url":"https://instagram.com/pepe"}]}
 
-2. **Antes de crear bloques, pregunta por los datos necesarios:**
-   - Si el usuario pide "agregar un link a Instagram", pregunta por la URL exacta
-   - Si el usuario pide "agregar WhatsApp", pregunta por el numero de telefono
-   - Solo crea bloques con datos dummy si el usuario explicitamente dice que los completara despues
+Usuario: "fondo amarillo"
+{"message":"Cambie el fondo a amarillo","action":"update_design","design":{"backgroundColor":"#FFEB3B"}}
 
-3. **Para modificar bloques existentes:**
-   - Identifica el bloque por su titulo o tipo
-   - Solo modifica los campos que el usuario menciona
+Usuario: "agregar whatsapp 1155667788"
+{"message":"Agregue el boton de WhatsApp","action":"add_blocks","blocks":[{"type":"whatsapp","title":"WhatsApp","phoneNumber":"+541155667788"}]}
 
-4. **Formato de respuesta cuando tengas todos los datos:**
-   Responde con un JSON valido entre marcadores \`\`\`json y \`\`\`:
+Usuario: "agregar youtube"
+{"message":"Cual es la URL del video de YouTube?","action":"none"}
 
-   Para AGREGAR bloques:
-   \`\`\`json
-   {
-     "action": "add_blocks",
-     "blocks": [
-       { "type": "link", "title": "Mi Instagram", "url": "https://instagram.com/usuario" }
-     ]
-   }
-   \`\`\`
+Usuario: "hola"
+{"message":"Hola! Soy tu asistente. Puedo agregar links, cambiar colores y mas. Que queres hacer?","action":"none"}
 
-   Para MODIFICAR el tema/diseno:
-   \`\`\`json
-   {
-     "action": "update_design",
-     "design": {
-       "backgroundColor": "#FFEB3B",
-       "buttonColor": "#000000",
-       "buttonTextColor": "#FFFFFF"
-     }
-   }
-   \`\`\`
+TIPOS DE BLOQUES: link, header, whatsapp, youtube, spotify, email, map
+COLORES: usar hex (#RRGGBB)
 
-   Para ELIMINAR bloques (por titulo):
-   \`\`\`json
-   {
-     "action": "remove_blocks",
-     "titles": ["Titulo del bloque a eliminar"]
-   }
-   \`\`\`
-
-   Para REORDENAR bloques:
-   \`\`\`json
-   {
-     "action": "reorder_blocks",
-     "order": ["Titulo 1", "Titulo 2", "Titulo 3"]
-   }
-   \`\`\`
-
-5. **Si necesitas mas informacion, NO incluyas JSON**
-   Solo responde con texto preguntando lo que necesitas.
-
-6. **Ejemplos de interaccion:**
-
-   Usuario: "Quiero un link a mi Instagram"
-   TU: "Genial! Cual es tu usuario o URL de Instagram?"
-
-   Usuario: "instagram.com/miusuario"
-   TU: "Perfecto! Voy a agregar el link a tu Instagram.
-   \`\`\`json
-   {"action":"add_blocks","blocks":[{"type":"link","title":"Instagram","url":"https://instagram.com/miusuario","icon":{"type":"brands","name":"instagram"}}]}
-   \`\`\`"
-
-   Usuario: "Quiero que mi landing sea amarilla con botones negros"
-   TU: "Excelente eleccion! Voy a aplicar esos colores.
-   \`\`\`json
-   {"action":"update_design","design":{"backgroundColor":"#FFEB3B","buttonColor":"#000000","buttonTextColor":"#FFFFFF"}}
-   \`\`\`"
-
-   Usuario: "Agrega 3 links a mis redes sociales"
-   TU: "Claro! Necesito saber a que redes sociales queres agregar links. Cuales son?"
-
-7. **Colores: usa valores hexadecimales (#RRGGBB)**
-
-8. **Iconos para links de redes sociales comunes:**
-   - Instagram: {"type":"brands","name":"instagram"}
-   - Facebook: {"type":"brands","name":"facebook"}
-   - Twitter/X: {"type":"brands","name":"twitter"}
-   - TikTok: {"type":"brands","name":"tiktok"}
-   - LinkedIn: {"type":"brands","name":"linkedin"}
-   - YouTube: {"type":"brands","name":"youtube"}
-   - GitHub: {"type":"brands","name":"github"}
-   - Discord: {"type":"brands","name":"discord"}
-
-Se amable, conciso y ayuda al usuario a crear una landing increible.`;
+Responde SOLO con JSON valido, sin texto adicional.`;
 }
 
 /**
@@ -223,32 +156,151 @@ export interface AIAction {
     order?: string[];
 }
 
+interface ParsedResponse {
+    message?: string;
+    action?: string;
+    blocks?: AIAction["blocks"];
+    design?: AIAction["design"];
+}
+
+/**
+ * Try to extract JSON from various formats the model might produce
+ */
+function extractJSON(response: string): ParsedResponse | null {
+    // Try 1: Direct JSON (no markdown)
+    try {
+        const trimmed = response.trim();
+        if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+            return JSON.parse(trimmed);
+        }
+    } catch {}
+
+    // Try 2: JSON in markdown code block
+    const jsonBlockMatch = response.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (jsonBlockMatch) {
+        try {
+            return JSON.parse(jsonBlockMatch[1].trim());
+        } catch {}
+    }
+
+    // Try 3: Find JSON object anywhere in text
+    const jsonObjectMatch = response.match(/\{[\s\S]*?"(?:action|message)"[\s\S]*?\}/);
+    if (jsonObjectMatch) {
+        try {
+            return JSON.parse(jsonObjectMatch[0]);
+        } catch {}
+    }
+
+    return null;
+}
+
+/**
+ * Fallback: Try to detect intent from natural language
+ * Works on both user input and AI responses
+ */
+export function detectIntentFromText(text: string): AIAction | null {
+    const lower = text.toLowerCase();
+
+    // Detect social media links
+    const socialPatterns: { pattern: RegExp; type: string; name: string; urlPrefix: string }[] = [
+        { pattern: /@?([a-zA-Z0-9_.]+)\s*(?:en\s*)?instagram/i, type: "link", name: "Instagram", urlPrefix: "https://instagram.com/" },
+        { pattern: /instagram[:\s]*@?([a-zA-Z0-9_.]+)/i, type: "link", name: "Instagram", urlPrefix: "https://instagram.com/" },
+        { pattern: /@?([a-zA-Z0-9_.]+)\s*(?:en\s*)?tiktok/i, type: "link", name: "TikTok", urlPrefix: "https://tiktok.com/@" },
+        { pattern: /tiktok[:\s]*@?([a-zA-Z0-9_.]+)/i, type: "link", name: "TikTok", urlPrefix: "https://tiktok.com/@" },
+        { pattern: /@?([a-zA-Z0-9_.]+)\s*(?:en\s*)?twitter/i, type: "link", name: "Twitter", urlPrefix: "https://twitter.com/" },
+        { pattern: /twitter[:\s]*@?([a-zA-Z0-9_.]+)/i, type: "link", name: "Twitter", urlPrefix: "https://twitter.com/" },
+        { pattern: /@?([a-zA-Z0-9_.]+)\s*(?:en\s*)?facebook/i, type: "link", name: "Facebook", urlPrefix: "https://facebook.com/" },
+        { pattern: /youtube[:\s]*@?([a-zA-Z0-9_.]+)/i, type: "link", name: "YouTube", urlPrefix: "https://youtube.com/@" },
+    ];
+
+    for (const { pattern, type, name, urlPrefix } of socialPatterns) {
+        const match = text.match(pattern);
+        if (match && match[1]) {
+            return {
+                action: "add_blocks",
+                blocks: [{
+                    type,
+                    title: name,
+                    url: urlPrefix + match[1].replace("@", ""),
+                    icon: { type: "brands", name: name.toLowerCase() }
+                }]
+            };
+        }
+    }
+
+    // Detect WhatsApp with number
+    const whatsappMatch = text.match(/whatsapp[:\s]*\+?(\d[\d\s-]+)/i) ||
+                         text.match(/\+?(\d[\d\s-]{8,})[^\d]*whatsapp/i);
+    if (whatsappMatch) {
+        const phone = whatsappMatch[1].replace(/[\s-]/g, "");
+        return {
+            action: "add_blocks",
+            blocks: [{
+                type: "whatsapp",
+                title: "WhatsApp",
+                phoneNumber: phone.startsWith("+") ? phone : `+${phone}`
+            }]
+        };
+    }
+
+    // Detect color changes
+    const colorPatterns: { pattern: RegExp; color: string }[] = [
+        { pattern: /fondo\s*(amarill|yellow)/i, color: "#FFEB3B" },
+        { pattern: /fondo\s*(roj|red)/i, color: "#F44336" },
+        { pattern: /fondo\s*(azul|blue)/i, color: "#2196F3" },
+        { pattern: /fondo\s*(verde|green)/i, color: "#4CAF50" },
+        { pattern: /fondo\s*(negr|black|oscur|dark)/i, color: "#1a1a1a" },
+        { pattern: /fondo\s*(blanc|white|clar)/i, color: "#FFFFFF" },
+        { pattern: /fondo\s*(rosa|pink)/i, color: "#E91E63" },
+        { pattern: /fondo\s*(morad|purple|violet)/i, color: "#9C27B0" },
+        { pattern: /fondo\s*(naranja|orange)/i, color: "#FF9800" },
+        { pattern: /#([0-9A-Fa-f]{6})/i, color: "" }, // Custom hex
+    ];
+
+    for (const { pattern, color } of colorPatterns) {
+        const match = text.match(pattern);
+        if (match) {
+            return {
+                action: "update_design",
+                design: {
+                    backgroundColor: color || `#${match[1]}`
+                }
+            };
+        }
+    }
+
+    return null;
+}
+
 export function parseAIResponse(response: string): {
     text: string;
     action: AIAction | null;
 } {
-    // Look for JSON block in the response
-    const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
+    // Try to extract JSON from the response
+    const parsed = extractJSON(response);
 
-    if (!jsonMatch) {
-        return { text: response.trim(), action: null };
+    if (parsed) {
+        // Successfully parsed JSON
+        const text = parsed.message || "";
+        
+        if (parsed.action && parsed.action !== "none") {
+            const action: AIAction = {
+                action: parsed.action as AIAction["action"],
+                blocks: parsed.blocks,
+                design: parsed.design,
+            };
+            return { text, action };
+        }
+        
+        return { text, action: null };
     }
 
-    try {
-        const jsonStr = jsonMatch[1].trim();
-        const action = JSON.parse(jsonStr) as AIAction;
-
-        // Extract text before/after JSON block
-        const textBefore = response.substring(0, jsonMatch.index).trim();
-        const textAfter = response
-            .substring((jsonMatch.index ?? 0) + jsonMatch[0].length)
-            .trim();
-        const text = [textBefore, textAfter].filter(Boolean).join("\n\n");
-
-        return { text, action };
-    } catch (e) {
-        console.error("Failed to parse AI response JSON:", e);
-        return { text: response.trim(), action: null };
+    // Fallback: Try to detect intent from natural language
+    const fallbackAction = detectIntentFromText(response);
+    if (fallbackAction) {
+        return { text: response, action: fallbackAction };
     }
+
+    // No action detected
+    return { text: response.trim(), action: null };
 }
-
