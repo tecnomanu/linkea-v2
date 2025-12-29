@@ -50,6 +50,7 @@ export default function PanelLayout({
         if (url.includes("/panel/settings")) return "settings";
         if (url.includes("/panel/links")) return "links";
         if (url.includes("/panel/profile")) return "profile";
+        if (url.includes("/panel/ai")) return "ai";
         return "dashboard";
     };
 

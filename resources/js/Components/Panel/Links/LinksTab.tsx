@@ -4,7 +4,6 @@
  * Uses centralized configuration from @/config/blockConfig.ts
  */
 
-import { Dialog, DialogBody, DialogContent } from "@/Components/ui/Dialog";
 import { createBlockDefaults } from "@/Components/Shared/blocks/blockConfig";
 import { Icon } from "@/constants/icons";
 import { BlockType, LinkBlock } from "@/types";
@@ -23,6 +22,7 @@ import {
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { Link } from "@inertiajs/react";
 import { Plus, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { BlockSelector } from "./BlockSelector";
@@ -60,7 +60,6 @@ export const LinksTab: React.FC<LinksTabProps> = ({
     user,
 }) => {
     const [isBlockSelectorOpen, setIsBlockSelectorOpen] = useState(false);
-    const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
 
     // DnD Sensors
     const sensors = useSensors(
@@ -92,6 +91,8 @@ export const LinksTab: React.FC<LinksTabProps> = ({
 
         const newLink: LinkBlock = {
             id: Math.random().toString(36).substr(2, 9),
+            title: "", // Will be overwritten by defaults if present
+            url: "",   // Will be overwritten by defaults if present
             isEnabled: true,
             clicks: 0,
             type: type,
@@ -161,33 +162,6 @@ export const LinksTab: React.FC<LinksTabProps> = ({
                 onSelect={handleAddBlock}
             />
 
-            {/* AI Coming Soon Dialog */}
-            <Dialog
-                isOpen={isAIDialogOpen}
-                onClose={() => setIsAIDialogOpen(false)}
-            >
-                <DialogContent maxWidth="sm">
-                    <DialogBody className="text-center py-10">
-                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-brand-500 to-brand-600 mb-4">
-                            <Sparkles size={32} className="text-white" />
-                        </div>
-                        <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">
-                            Proximamente
-                        </h3>
-                        <p className="text-neutral-500 dark:text-neutral-400">
-                            Estamos trabajando en esta funcionalidad. Muy pronto
-                            podras usar IA para generar tus enlaces.
-                        </p>
-                        <button
-                            onClick={() => setIsAIDialogOpen(false)}
-                            className="mt-6 px-6 py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-full font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors"
-                        >
-                            Entendido
-                        </button>
-                    </DialogBody>
-                </DialogContent>
-            </Dialog>
-
             {/* Sticky Section: LinkBar + Add Block / Add Social */}
             <div className="sticky top-0 md:top-20 z-30 bg-slate-50/95 dark:bg-neutral-950/95 backdrop-blur-xl -mx-4 px-4 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12 py-4 space-y-4">
                 {/* LinkBar - Public URL */}
@@ -205,13 +179,13 @@ export const LinksTab: React.FC<LinksTabProps> = ({
                             </div>
                             <span>Agregar Bloque</span>
                         </button>
-                        <button
-                            onClick={() => setIsAIDialogOpen(true)}
+                        <Link
+                            href={route("panel.ai") as string}
                             className="px-4 md:px-8 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-400 hover:to-brand-500 text-white rounded-[20px] md:rounded-[24px] font-bold transition-all hover:shadow-glow hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
                         >
                             <Sparkles size={18} className="animate-pulse" />
                             <span className="hidden sm:inline">IA Magica</span>
-                        </button>
+                        </Link>
                     </div>
                 ) : (
                     <div className="bg-white dark:bg-neutral-900 rounded-[28px] md:rounded-[32px] p-2 border border-neutral-100 dark:border-neutral-800 shadow-soft-xl">

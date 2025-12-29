@@ -8,6 +8,7 @@ import {
     Palette,
     Settings,
     Shield,
+    Sparkles,
     Sun,
     User,
 } from "lucide-react";
@@ -48,6 +49,12 @@ export const MobileNav: React.FC<MobileNavProps> = ({
             icon: <Layers size={20} />,
             label: "Enlaces",
             route: "panel.links",
+        },
+        {
+            id: "ai",
+            icon: <Sparkles size={20} />,
+            label: "IA",
+            route: "panel.ai",
         },
         {
             id: "appearance",

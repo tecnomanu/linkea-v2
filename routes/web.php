@@ -61,6 +61,9 @@ Route::middleware(['auth', 'verified'])->prefix('panel')->group(function () {
 
     // Profile
     Route::get('/profile', [PanelController::class, 'profile'])->name('panel.profile');
+
+    // AI Assistant
+    Route::get('/ai', [PanelController::class, 'ai'])->name('panel.ai');
 });
 
 /**

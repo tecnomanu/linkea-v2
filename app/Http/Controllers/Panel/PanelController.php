@@ -43,6 +43,11 @@ class PanelController extends Controller
         return $this->renderView('profile');
     }
 
+    public function ai(): Response|RedirectResponse
+    {
+        return $this->renderView('ai');
+    }
+
     protected function renderView(string $activeTab): Response|RedirectResponse
     {
         $user = auth()->user();

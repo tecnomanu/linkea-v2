@@ -1,3 +1,4 @@
+import { AITab } from "@/Components/Panel/AI";
 import { DashboardTab } from "@/Components/Panel/Dashboard/DashboardTab";
 import { DesignTab } from "@/Components/Panel/Design/DesignTab";
 import { LinkBar } from "@/Components/Panel/Links/LinkBar";
@@ -522,6 +523,8 @@ export default function Dashboard({
                         ? "Ajustes"
                         : activeTab === "dashboard"
                         ? "Panel"
+                        : activeTab === "ai"
+                        ? "Asistente IA"
                         : activeTab
                 }
             />
@@ -549,6 +552,8 @@ export default function Dashboard({
                                 <h1 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white tracking-tight capitalize">
                                     {activeTab === "dashboard"
                                         ? "Mis enlaces"
+                                        : activeTab === "ai"
+                                        ? "Asistente IA"
                                         : activeTab}
                                 </h1>
                             </div>
@@ -684,11 +689,22 @@ export default function Dashboard({
                     )}
 
                     {activeTab === "profile" && <ProfileTab user={auth.user} />}
+
+                    {activeTab === "ai" && (
+                        <AITab
+                            links={links}
+                            socialLinks={socialLinks}
+                            user={user}
+                            onUpdateLinks={setLinks}
+                            onUpdateUser={handleUpdateUser}
+                        />
+                    )}
                 </div>
             </div>
 
             {/* Right: Live Preview (Desktop Sticky - Only Mobile Mode) */}
-            <div className="w-[440px] hidden xl:flex flex-col items-center justify-center gap-4 py-6 sticky top-0 h-screen bg-white/50 dark:bg-neutral-900/50 backdrop-blur-xl border-l border-neutral-200/50 dark:border-neutral-800/50">
+            {/* Hidden on AI tab since it has its own preview system */}
+            <div className={`w-[440px] ${activeTab === "ai" ? "hidden" : "hidden xl:flex"} flex-col items-center justify-center gap-4 py-6 sticky top-0 h-screen bg-white/50 dark:bg-neutral-900/50 backdrop-blur-xl border-l border-neutral-200/50 dark:border-neutral-800/50`}>
                 {/* Live Preview Badge */}
                 <span className="text-[10px] font-bold tracking-[0.2em] text-neutral-400 uppercase bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full shrink-0">
                     Vista previa

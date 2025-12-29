@@ -8,6 +8,7 @@ import {
     Palette,
     Settings,
     Shield,
+    Sparkles,
     Sun,
 } from "lucide-react";
 import React from "react";
@@ -41,6 +42,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             icon: <Layers size={20} />,
             label: "Enlaces",
             route: "panel.links",
+        },
+        {
+            id: "ai",
+            icon: <Sparkles size={20} />,
+            label: "IA",
+            route: "panel.ai",
+            highlight: true,
         },
         {
             id: "appearance",
