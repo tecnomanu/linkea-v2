@@ -107,18 +107,11 @@ class MongoImportSeeder extends Seeder
                 continue;
             }
 
-            // Clean username
-            $username = $this->sanitizeUsername($userData['username'] ?? '');
-            if (empty($username) || User::where('username', $username)->exists()) {
-                $username = $username . '_' . substr($mongoId, -4);
-            }
-
             try {
                 $user = User::create([
                     'first_name' => $userData['first_name'] ?? null,
                     'last_name' => $userData['last_name'] ?? null,
                     'name' => ($userData['first_name'] ?? '') . ' ' . ($userData['last_name'] ?? ''),
-                    'username' => $username,
                     'email' => $email,
                     'password' => $userData['password'] ?? Hash::make('12345678'),
                     'verified_at' => isset($userData['verified_at']) ? $this->parseDate($userData['verified_at']) : null,
@@ -131,7 +124,7 @@ class MongoImportSeeder extends Seeder
                 ]);
 
                 // Assign role: root_linkea gets root, admins get admin, others get user
-                $isRoot = $userData['username'] === 'root_linkea';
+                $isRoot = ($userData['username'] ?? '') === 'root_linkea';
                 $isAdmin = !$isRoot && isset($userData['role_id']) &&
                     in_array('60e60c8632bff4267d1c4792', (array)$userData['role_id']);
 
@@ -192,14 +185,11 @@ class MongoImportSeeder extends Seeder
             }
 
             try {
-                $slug = $this->sanitizeSlug($companyData['slug'] ?? Str::slug($companyData['name'] ?? 'company'));
-
                 $company = Company::updateOrCreate(
-                    ['slug' => $slug],
+                    ['mongo_id' => $mongoId],
                     [
                         'name' => $companyData['name'] ?? 'Sin nombre',
                         'owner_id' => $ownerId,
-                        'mongo_id' => $mongoId,
                         'created_at' => $this->parseDate($companyData['created_at'] ?? null),
                         'updated_at' => $this->parseDate($companyData['updated_at'] ?? null),
                     ]
@@ -439,34 +429,6 @@ class MongoImportSeeder extends Seeder
         }
 
         return null;
-    }
-
-    /**
-     * Sanitize username.
-     */
-    private function sanitizeUsername(string $username): string
-    {
-        // Remove special chars, lowercase
-        $username = strtolower(trim($username));
-        $username = preg_replace('/[^a-z0-9_.-]/', '', $username);
-        $username = preg_replace('/\.+$/', '', $username); // Remove trailing dots
-
-        return $username ?: 'user_' . Str::random(6);
-    }
-
-    /**
-     * Sanitize slug/domain_name for companies (used internally).
-     * Allows dots (.) for compatibility with legacy slugs like "mambar_.s"
-     */
-    private function sanitizeSlug(string $slug): string
-    {
-        // Lowercase, remove special chars except hyphens, underscores and dots
-        $slug = strtolower(trim($slug));
-        $slug = preg_replace('/[^a-z0-9_.-]/', '', $slug);
-        $slug = preg_replace('/-+/', '-', $slug); // Remove multiple hyphens
-        $slug = trim($slug, '-');
-
-        return $slug ?: 'page-' . Str::random(6);
     }
 
     /**

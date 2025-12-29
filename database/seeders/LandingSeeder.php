@@ -16,8 +16,8 @@ class LandingSeeder extends Seeder
     public function run(): void
     {
         // Create Landing for Root User
-        $rootUser = User::where('username', 'root_linkea')->first();
-        $linkeaCompany = Company::where('slug', 'linkea')->first();
+        $rootUser = User::where('email', 'root@root.com')->first();
+        $linkeaCompany = Company::where('name', 'Linkea')->first();
 
         if ($rootUser && $linkeaCompany) {
             $landing = Landing::where('slug', 'linkea')->first();
@@ -40,8 +40,8 @@ class LandingSeeder extends Seeder
         }
 
         // Create Landing for Test User
-        $testUser = User::where('username', 'testuser')->first();
-        $testCompany = Company::where('slug', 'test-company')->first();
+        $testUser = User::where('email', 'test@example.com')->first();
+        $testCompany = Company::where('name', 'Test Company')->first();
 
         if ($testUser && $testCompany) {
             $testLanding = Landing::where('slug', 'testuser')->first();
@@ -76,8 +76,8 @@ class LandingSeeder extends Seeder
         }
 
         // Create Landing for Test2 User
-        $testUser2 = User::where('username', 'testuser2')->first();
-        $testCompany2 = Company::where('slug', 'test-company-2')->first();
+        $testUser2 = User::where('email', 'test2@example.com')->first();
+        $testCompany2 = Company::where('name', 'Test Company 2')->first();
 
         if ($testUser2 && $testCompany2) {
             $testLanding2 = Landing::where('slug', 'testuser2')->first();

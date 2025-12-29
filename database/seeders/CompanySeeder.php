@@ -15,15 +15,14 @@ class CompanySeeder extends Seeder
     public function run(): void
     {
         // Create Linkea Company for Root User
-        $rootUser = User::where('username', 'root_linkea')->first();
+        $rootUser = User::where('email', 'root@root.com')->first();
 
         if ($rootUser) {
-            $linkeaCompany = Company::where('slug', 'linkea')->first();
+            $linkeaCompany = Company::where('name', 'Linkea')->first();
 
             if (!$linkeaCompany) {
                 $linkeaCompany = Company::create([
                     'name' => 'Linkea',
-                    'slug' => 'linkea',
                     'owner_id' => $rootUser->id,
                     'created_at' => Carbon::now(),
                     'updated_at' => Carbon::now()
@@ -35,15 +34,14 @@ class CompanySeeder extends Seeder
         }
 
         // Create Test Company for Test User
-        $testUser = User::where('username', 'testuser')->first();
+        $testUser = User::where('email', 'test@example.com')->first();
 
         if ($testUser) {
-            $testCompany = Company::where('slug', 'test-company')->first();
+            $testCompany = Company::where('name', 'Test Company')->first();
 
             if (!$testCompany) {
                 $testCompany = Company::create([
                     'name' => 'Test Company',
-                    'slug' => 'test-company',
                     'owner_id' => $testUser->id,
                 ]);
             }
@@ -52,15 +50,14 @@ class CompanySeeder extends Seeder
         }
 
         // Create Test2 Company for Test2 User
-        $testUser2 = User::where('username', 'testuser2')->first();
+        $testUser2 = User::where('email', 'test2@example.com')->first();
 
         if ($testUser2) {
-            $testCompany2 = Company::where('slug', 'test-company-2')->first();
+            $testCompany2 = Company::where('name', 'Test Company 2')->first();
 
             if (!$testCompany2) {
                 $testCompany2 = Company::create([
                     'name' => 'Test Company 2',
-                    'slug' => 'test-company-2',
                     'owner_id' => $testUser2->id,
                 ]);
             }

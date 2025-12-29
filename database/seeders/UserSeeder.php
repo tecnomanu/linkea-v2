@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // Create Root User
-        $rootUser = User::where('username', 'root_linkea')->first();
+        $rootUser = User::where('email', 'root@root.com')->first();
 
         if (!$rootUser) {
             $rootUser = User::create([
@@ -24,7 +24,6 @@ class UserSeeder extends Seeder
                 'last_name' => 'Admin',
                 'password' => Hash::make('12345678'),
                 'email' => 'root@root.com',
-                'username' => 'root_linkea',
                 'verified_at' => now(),
             ]);
 
@@ -42,7 +41,6 @@ class UserSeeder extends Seeder
                 'name' => 'Test User',
                 'first_name' => 'Test',
                 'last_name' => 'User',
-                'username' => 'testuser',
                 'email' => 'test@example.com',
                 'password' => Hash::make('password'),
                 'verified_at' => now(),
@@ -62,7 +60,6 @@ class UserSeeder extends Seeder
                 'name' => 'Test Two',
                 'first_name' => 'Test',
                 'last_name' => 'Two',
-                'username' => 'testuser2',
                 'email' => 'test2@example.com',
                 'password' => Hash::make('password123'),
                 'verified_at' => now(),
