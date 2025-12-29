@@ -318,6 +318,18 @@ export default function Dashboard({
         "blocks"
     );
 
+    // AI Preview state - used to show AI changes in sidebar before saving
+    const [aiPreviewLinks, setAiPreviewLinks] = useState<LinkBlock[] | null>(null);
+    const [aiPreviewDesign, setAiPreviewDesign] = useState<Partial<UserProfile["customDesign"]> | null>(null);
+
+    const handleAIPreviewChange = useCallback((
+        previewLinks: LinkBlock[],
+        previewDesign: Partial<UserProfile["customDesign"]> | null
+    ) => {
+        setAiPreviewLinks(previewLinks);
+        setAiPreviewDesign(previewDesign);
+    }, []);
+
     // What's New modal for first-time visitors
     const whatsNewModal = useWhatsNewModal();
 
@@ -697,28 +709,29 @@ export default function Dashboard({
                             user={user}
                             onUpdateLinks={setLinks}
                             onUpdateUser={handleUpdateUser}
+                            onPreviewChange={handleAIPreviewChange}
                         />
                     )}
                 </div>
             </div>
 
             {/* Right: Live Preview (Desktop Sticky - Only Mobile Mode) */}
-            {/* Hidden on AI tab since it has its own preview system */}
-            <div
-                className={`w-[440px] ${
-                    activeTab === "ai" ? "hidden" : "hidden xl:flex"
-                } flex-col items-center justify-center gap-4 py-6 sticky top-0 h-screen bg-white/50 dark:bg-neutral-900/50 backdrop-blur-xl border-l border-neutral-200/50 dark:border-neutral-800/50`}
-            >
-                {/* Live Preview Badge */}
+            <div className="w-[440px] hidden xl:flex flex-col items-center justify-center gap-4 py-6 sticky top-0 h-screen bg-white/50 dark:bg-neutral-900/50 backdrop-blur-xl border-l border-neutral-200/50 dark:border-neutral-800/50">
+                {/* Live Preview Badge - shows AI indicator when in AI tab */}
                 <span className="text-[10px] font-bold tracking-[0.2em] text-neutral-400 uppercase bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full shrink-0">
-                    Vista previa
+                    {activeTab === "ai" ? "Preview IA" : "Vista previa"}
                 </span>
 
                 {/* Phone Component Container - Scales based on available height */}
+                {/* When in AI tab, show AI preview; otherwise show normal preview */}
                 <div className="flex-1 flex items-center justify-center min-h-0 w-full">
                     <PhonePreview
-                        user={user}
-                        links={links}
+                        user={
+                            activeTab === "ai" && aiPreviewDesign
+                                ? { ...user, customDesign: { ...user.customDesign, ...aiPreviewDesign } }
+                                : user
+                        }
+                        links={activeTab === "ai" && aiPreviewLinks ? aiPreviewLinks : links}
                         socialLinks={socialLinks}
                         device="mobile"
                         scale={0.8}

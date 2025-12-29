@@ -4,31 +4,30 @@
  * Displays:
  * - Model selector/loader (when not loaded)
  * - Chat interface (when model is ready)
- * - Phone preview with AI-made changes
  * - Save/Discard buttons for changes
+ *
+ * Preview is handled by the parent Dashboard sidebar
  */
 
-import { PhonePreview } from "@/Components/Shared/PhonePreview";
 import { LinkBlock, UserProfile } from "@/types";
 import { AIProvider, useAI } from "@/contexts/AIContext";
 import { SocialLink } from "@/Components/Panel/Links/LinksTab";
 import {
     Check,
-    RefreshCw,
     RotateCcw,
     Sparkles,
     Trash2,
-    X,
 } from "lucide-react";
+import { useEffect } from "react";
 import { AIChat } from "./AIChat";
 import { ModelSelector } from "./ModelSelector";
 
 interface AITabInnerProps {
     user: UserProfile;
-    socialLinks: SocialLink[];
+    onPreviewChange?: (links: LinkBlock[], design: Partial<UserProfile["customDesign"]> | null) => void;
 }
 
-function AITabInner({ user, socialLinks }: AITabInnerProps) {
+function AITabInner({ user, onPreviewChange }: AITabInnerProps) {
     const {
         isEngineReady,
         previewLinks,
@@ -40,16 +39,10 @@ function AITabInner({ user, socialLinks }: AITabInnerProps) {
         messages,
     } = useAI();
 
-    // Merge preview design with user's design for preview
-    const previewUser: UserProfile = previewDesign
-        ? {
-              ...user,
-              customDesign: {
-                  ...user.customDesign,
-                  ...previewDesign,
-              },
-          }
-        : user;
+    // Notify parent of preview changes for sidebar
+    useEffect(() => {
+        onPreviewChange?.(previewLinks, previewDesign);
+    }, [previewLinks, previewDesign, onPreviewChange]);
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -122,34 +115,16 @@ function AITabInner({ user, socialLinks }: AITabInnerProps) {
                 )}
             </div>
 
-            {/* Main content area */}
+            {/* Main content area - Chat only, preview in sidebar */}
             <div className="mt-6 pb-8 xl:pb-32">
-                {/* Desktop: Side by side layout */}
-                <div className="flex flex-col xl:flex-row gap-6">
-                    {/* Chat area */}
-                    <div className="flex-1 bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-soft-xl overflow-hidden min-h-[500px] flex flex-col">
-                        {!isEngineReady ? (
-                            <div className="flex-1 flex items-center justify-center">
-                                <ModelSelector />
-                            </div>
-                        ) : (
-                            <AIChat />
-                        )}
-                    </div>
-
-                    {/* Preview area - visible on mobile too */}
-                    <div className="xl:hidden flex flex-col items-center gap-4 p-6 bg-neutral-100 dark:bg-neutral-800/50 rounded-3xl">
-                        <span className="text-xs font-bold tracking-widest text-neutral-400 uppercase">
-                            Vista previa
-                        </span>
-                        <PhonePreview
-                            user={previewUser}
-                            links={previewLinks}
-                            socialLinks={socialLinks}
-                            device="mobile"
-                            scale={0.7}
-                        />
-                    </div>
+                <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-soft-xl overflow-hidden min-h-[500px] flex flex-col">
+                    {!isEngineReady ? (
+                        <div className="flex-1 flex items-center justify-center">
+                            <ModelSelector />
+                        </div>
+                    ) : (
+                        <AIChat />
+                    )}
                 </div>
             </div>
         </div>
@@ -162,6 +137,7 @@ interface AITabProps {
     user: UserProfile;
     onUpdateLinks: (links: LinkBlock[]) => void;
     onUpdateUser: (updates: Partial<UserProfile>) => void;
+    onPreviewChange?: (links: LinkBlock[], design: Partial<UserProfile["customDesign"]> | null) => void;
 }
 
 /**
@@ -173,6 +149,7 @@ export function AITab({
     user,
     onUpdateLinks,
     onUpdateUser,
+    onPreviewChange,
 }: AITabProps) {
     const handleApplyLinks = (newLinks: LinkBlock[]) => {
         onUpdateLinks(newLinks);
@@ -194,7 +171,7 @@ export function AITab({
             onApplyLinks={handleApplyLinks}
             onApplyDesign={handleApplyDesign}
         >
-            <AITabInner user={user} socialLinks={socialLinks} />
+            <AITabInner user={user} onPreviewChange={onPreviewChange} />
         </AIProvider>
     );
 }
