@@ -1,33 +1,16 @@
 /**
  * WebLLM Service - Runs LLM models directly in the browser using WebGPU
  *
- * This service manages the WebLLM engine lifecycle and provides
- * chat completion with FUNCTION CALLING for the AI assistant.
+ * Uses Qwen 2.5 1.5B (~900MB) - good balance of size and function calling capability.
  *
  * @see https://github.com/mlc-ai/web-llm/tree/main/examples/function-calling
  */
 
 import * as webllm from "@mlc-ai/web-llm";
 
-// Model configurations - models that support function calling
-export const AVAILABLE_MODELS = [
-    {
-        id: "Qwen2.5-1.5B-Instruct-q4f16_1-MLC",
-        name: "Qwen 2.5 1.5B",
-        description: "Good balance of size and function calling capability",
-        size: "~900MB",
-        recommended: true,
-    },
-    {
-        id: "Llama-3.2-3B-Instruct-q4f16_1-MLC",
-        name: "Llama 3.2 3B",
-        description: "Better at following instructions",
-        size: "~1.8GB",
-        recommended: false,
-    },
-] as const;
-
-export type ModelId = (typeof AVAILABLE_MODELS)[number]["id"];
+// Single model - Qwen 2.5 1.5B with function calling support
+export const MODEL_ID = "Qwen2.5-1.5B-Instruct-q4f16_1-MLC";
+export type ModelId = typeof MODEL_ID;
 
 export interface ChatMessage {
     role: "system" | "user" | "assistant" | "tool";
@@ -176,18 +159,10 @@ class WebLLMService {
     }
 
     /**
-     * Get the recommended model based on available memory
-     */
-    getRecommendedModel(): ModelId {
-        // Default to smallest model for compatibility
-        return "Llama-3.2-1B-Instruct-q4f16_1-MLC";
-    }
-
-    /**
-     * Initialize the WebLLM engine with a specific model
+     * Initialize the WebLLM engine
      */
     async initialize(
-        modelId: ModelId = "Llama-3.2-1B-Instruct-q4f16_1-MLC",
+        modelId: string = MODEL_ID,
         onProgress?: InitProgressCallback
     ): Promise<void> {
         // If already initializing, wait for that to complete
