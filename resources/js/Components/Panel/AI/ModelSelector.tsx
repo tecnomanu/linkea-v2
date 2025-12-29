@@ -1,21 +1,22 @@
 /**
  * ModelSelector - UI for loading the WebLLM model
  *
- * Shows a WiFi confirmation before downloading, then handles
- * the initialization process with progress feedback.
+ * Shows a WiFi confirmation before downloading (if not cached),
+ * then handles the initialization process with progress feedback.
  */
 
 import { useAI } from "@/contexts/AIContext";
 import {
     AlertCircle,
     CheckCircle2,
+    HardDrive,
     Loader2,
     Sparkles,
     Wifi,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-// Example prompts to show during loading
+// Example prompts to show during loading - many options
 const LOADING_TIPS = [
     "Agregar link a mi Instagram",
     "Cambiar el fondo a amarillo",
@@ -23,7 +24,20 @@ const LOADING_TIPS = [
     "Poner mis redes sociales",
     "Cambiar el estilo de botones",
     "Agregar un encabezado",
+    "Quiero botones redondeados",
+    "Agregar mi canal de YouTube",
+    "Poner fondo oscuro",
+    "Agregar link a mi TikTok",
+    "Cambiar la fuente a elegante",
+    "Agregar mi Spotify",
+    "Quiero botones con borde",
+    "Agregar mi email de contacto",
+    "Poner mi ubicacion en el mapa",
+    "Agregar link a mi LinkedIn",
 ];
+
+const MODEL_ID = "Llama-3.2-1B-Instruct-q4f16_1-MLC";
+const CACHE_KEY = `webllm_cached_${MODEL_ID}`;
 
 export function ModelSelector() {
     const {
@@ -34,22 +48,76 @@ export function ModelSelector() {
         initializeEngine,
     } = useAI();
 
+    const [isModelCached, setIsModelCached] = useState<boolean | null>(null);
     const [showWifiPrompt, setShowWifiPrompt] = useState(true);
     const [currentTipIndex, setCurrentTipIndex] = useState(0);
+    const [tipVisible, setTipVisible] = useState(true);
 
-    // Rotate tips every 3 seconds during loading
-    useState(() => {
-        if (isEngineLoading) {
-            const interval = setInterval(() => {
+    // Check if model is cached on mount
+    useEffect(() => {
+        const checkCache = async () => {
+            // Check localStorage flag first (fast check)
+            const cachedFlag = localStorage.getItem(CACHE_KEY);
+            if (cachedFlag === "true") {
+                setIsModelCached(true);
+                return;
+            }
+
+            // Try to check Cache API for WebLLM cached files
+            try {
+                if ("caches" in window) {
+                    const cacheNames = await caches.keys();
+                    const hasWebLLMCache = cacheNames.some(
+                        (name) =>
+                            name.includes("webllm") || name.includes("mlc")
+                    );
+                    if (hasWebLLMCache) {
+                        localStorage.setItem(CACHE_KEY, "true");
+                        setIsModelCached(true);
+                        return;
+                    }
+                }
+            } catch (e) {
+                // Cache API not available or error
+            }
+
+            setIsModelCached(false);
+        };
+
+        checkCache();
+    }, []);
+
+    // Rotate tips every 2.5 seconds during loading with fade animation
+    useEffect(() => {
+        if (!isEngineLoading) return;
+
+        const interval = setInterval(() => {
+            setTipVisible(false);
+            setTimeout(() => {
                 setCurrentTipIndex((prev) => (prev + 1) % LOADING_TIPS.length);
-            }, 3000);
-            return () => clearInterval(interval);
+                setTipVisible(true);
+            }, 200);
+        }, 2500);
+
+        return () => clearInterval(interval);
+    }, [isEngineLoading]);
+
+    // Mark model as cached after successful load
+    useEffect(() => {
+        if (isEngineReady) {
+            localStorage.setItem(CACHE_KEY, "true");
         }
-    });
+    }, [isEngineReady]);
 
     const handleConfirmWifi = () => {
         setShowWifiPrompt(false);
-        initializeEngine("Llama-3.2-1B-Instruct-q4f16_1-MLC");
+        initializeEngine(MODEL_ID);
+    };
+
+    // Auto-load if cached
+    const handleLoadFromCache = () => {
+        setShowWifiPrompt(false);
+        initializeEngine(MODEL_ID);
     };
 
     // If already loaded, show success state
@@ -75,16 +143,26 @@ export function ModelSelector() {
 
     // Loading state
     if (isEngineLoading) {
-        const progressPercent = Math.round((engineProgress?.progress || 0) * 100);
+        const progressPercent = Math.round(
+            (engineProgress?.progress || 0) * 100
+        );
+        const isFromCache =
+            engineProgress?.text?.includes("cache") || progressPercent > 50;
+
         return (
             <div className="max-w-sm mx-auto p-5 bg-gradient-to-br from-brand-50 to-pink-50 dark:from-brand-900/20 dark:to-pink-900/20 rounded-2xl border border-brand-200 dark:border-brand-800">
                 <div className="flex items-start gap-3 mb-4">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-pink-500 flex items-center justify-center shrink-0">
-                        <Loader2 size={20} className="text-white animate-spin" />
+                        <Loader2
+                            size={20}
+                            className="text-white animate-spin"
+                        />
                     </div>
                     <div className="min-w-0 flex-1">
                         <p className="font-bold text-sm text-neutral-900 dark:text-white">
-                            Cargando modelo...
+                            {isModelCached
+                                ? "Cargando desde cache..."
+                                : "Descargando modelo..."}
                         </p>
                         <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
                             {engineProgress?.text || "Preparando..."}
@@ -103,18 +181,24 @@ export function ModelSelector() {
                     {progressPercent}% completado
                 </p>
 
-                {/* Tip during loading */}
-                <div className="bg-white/50 dark:bg-neutral-800/50 rounded-xl p-3">
+                {/* Tip during loading with fade animation */}
+                <div className="bg-white/50 dark:bg-neutral-800/50 rounded-xl p-3 min-h-[60px]">
                     <p className="text-[10px] text-neutral-400 uppercase tracking-wider mb-1">
                         Cuando termine, podras decir:
                     </p>
-                    <p className="text-sm font-medium text-neutral-700 dark:text-neutral-200 italic">
+                    <p
+                        className={`text-sm font-medium text-neutral-700 dark:text-neutral-200 italic transition-opacity duration-200 ${
+                            tipVisible ? "opacity-100" : "opacity-0"
+                        }`}
+                    >
                         "{LOADING_TIPS[currentTipIndex]}"
                     </p>
                 </div>
 
                 <p className="text-[10px] text-neutral-400 mt-3 text-center">
-                    El modelo se descarga una vez y queda en cache del navegador
+                    {isModelCached
+                        ? "Cargando desde cache local"
+                        : "El modelo se descarga una vez y queda en cache"}
                 </p>
             </div>
         );
@@ -147,8 +231,77 @@ export function ModelSelector() {
         );
     }
 
-    // Initial state - WiFi confirmation
+    // Initial state - different UI based on cache status
     if (showWifiPrompt) {
+        // Still checking cache
+        if (isModelCached === null) {
+            return (
+                <div className="max-w-sm mx-auto p-6 text-center">
+                    <Loader2
+                        size={24}
+                        className="animate-spin text-brand-500 mx-auto mb-2"
+                    />
+                    <p className="text-sm text-neutral-500">
+                        Verificando cache...
+                    </p>
+                </div>
+            );
+        }
+
+        // Model is cached - quick load option
+        if (isModelCached) {
+            return (
+                <div className="max-w-sm mx-auto p-6">
+                    {/* Header */}
+                    <div className="text-center mb-6">
+                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-pink-500 flex items-center justify-center mx-auto mb-3">
+                            <Sparkles size={28} className="text-white" />
+                        </div>
+                        <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-1">
+                            Asistente IA
+                        </h3>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                            Crea tu landing hablando con la IA. Funciona 100% en
+                            tu navegador, gratis y privado.
+                        </p>
+                    </div>
+
+                    {/* Cached indicator */}
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 mb-5">
+                        <div className="flex items-start gap-3">
+                            <HardDrive
+                                size={18}
+                                className="text-green-600 dark:text-green-400 shrink-0 mt-0.5"
+                            />
+                            <div>
+                                <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                                    Modelo en cache
+                                </p>
+                                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                    Ya descargaste el modelo antes. Se cargara
+                                    desde tu navegador sin usar datos.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Load button */}
+                    <button
+                        onClick={handleLoadFromCache}
+                        className="w-full py-3.5 bg-gradient-to-r from-brand-500 to-pink-500 hover:from-brand-600 hover:to-pink-600 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20"
+                    >
+                        <Sparkles size={18} />
+                        <span>Cargar asistente</span>
+                    </button>
+
+                    <p className="text-[10px] text-neutral-400 mt-3 text-center">
+                        Requiere Chrome 113+ o Edge 113+ con WebGPU
+                    </p>
+                </div>
+            );
+        }
+
+        // Model not cached - WiFi warning
         return (
             <div className="max-w-sm mx-auto p-6">
                 {/* Header */}
@@ -177,9 +330,9 @@ export function ModelSelector() {
                                 Estas conectado a WiFi?
                             </p>
                             <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                                El modelo de IA pesa ~700MB y se descarga una sola
-                                vez. Recomendamos usar WiFi para evitar consumo de
-                                datos moviles.
+                                El modelo de IA pesa ~700MB y se descarga una
+                                sola vez. Recomendamos usar WiFi para evitar
+                                consumo de datos moviles.
                             </p>
                         </div>
                     </div>
@@ -203,4 +356,3 @@ export function ModelSelector() {
 
     return null;
 }
-

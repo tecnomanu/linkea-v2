@@ -319,16 +319,23 @@ export default function Dashboard({
     );
 
     // AI Preview state - used to show AI changes in sidebar before saving
-    const [aiPreviewLinks, setAiPreviewLinks] = useState<LinkBlock[] | null>(null);
-    const [aiPreviewDesign, setAiPreviewDesign] = useState<Partial<UserProfile["customDesign"]> | null>(null);
+    const [aiPreviewLinks, setAiPreviewLinks] = useState<LinkBlock[] | null>(
+        null
+    );
+    const [aiPreviewDesign, setAiPreviewDesign] = useState<Partial<
+        UserProfile["customDesign"]
+    > | null>(null);
 
-    const handleAIPreviewChange = useCallback((
-        previewLinks: LinkBlock[],
-        previewDesign: Partial<UserProfile["customDesign"]> | null
-    ) => {
-        setAiPreviewLinks(previewLinks);
-        setAiPreviewDesign(previewDesign);
-    }, []);
+    const handleAIPreviewChange = useCallback(
+        (
+            previewLinks: LinkBlock[],
+            previewDesign: Partial<UserProfile["customDesign"]> | null
+        ) => {
+            setAiPreviewLinks(previewLinks);
+            setAiPreviewDesign(previewDesign);
+        },
+        []
+    );
 
     // What's New modal for first-time visitors
     const whatsNewModal = useWhatsNewModal();
@@ -728,10 +735,20 @@ export default function Dashboard({
                     <PhonePreview
                         user={
                             activeTab === "ai" && aiPreviewDesign
-                                ? { ...user, customDesign: { ...user.customDesign, ...aiPreviewDesign } }
+                                ? {
+                                      ...user,
+                                      customDesign: {
+                                          ...user.customDesign,
+                                          ...aiPreviewDesign,
+                                      },
+                                  }
                                 : user
                         }
-                        links={activeTab === "ai" && aiPreviewLinks ? aiPreviewLinks : links}
+                        links={
+                            activeTab === "ai" && aiPreviewLinks
+                                ? aiPreviewLinks
+                                : links
+                        }
                         socialLinks={socialLinks}
                         device="mobile"
                         scale={0.8}
