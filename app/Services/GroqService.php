@@ -162,6 +162,12 @@ PROMPT;
             $messages
         );
 
+        // Log the request
+        Log::channel('daily')->info('=== GROQ CHAT REQUEST ===');
+        Log::channel('daily')->info('System Prompt:', ['prompt' => $systemPrompt]);
+        Log::channel('daily')->info('Messages:', ['messages' => $messages]);
+        Log::channel('daily')->info('Current Blocks:', ['blocks' => $currentBlocks]);
+
         try {
             $response = $this->client->chat()->create([
                 'model' => $this->model,
@@ -184,12 +190,17 @@ PROMPT;
                 }
             }
 
+            // Log the response
+            Log::channel('daily')->info('=== GROQ CHAT RESPONSE ===');
+            Log::channel('daily')->info('Content:', ['content' => $message->content]);
+            Log::channel('daily')->info('Tool Calls:', ['toolCalls' => $toolCalls]);
+
             return [
                 'content' => $message->content,
                 'toolCalls' => $toolCalls,
             ];
         } catch (\Exception $e) {
-            Log::error('Groq API error: ' . $e->getMessage());
+            Log::channel('daily')->error('Groq API error: ' . $e->getMessage());
             throw $e;
         }
     }
@@ -206,6 +217,12 @@ PROMPT;
             [['role' => 'system', 'content' => $systemPrompt]],
             $messages
         );
+
+        // Log the request
+        Log::channel('daily')->info('=== GROQ STREAM REQUEST ===');
+        Log::channel('daily')->info('System Prompt:', ['prompt' => $systemPrompt]);
+        Log::channel('daily')->info('Messages:', ['messages' => $messages]);
+        Log::channel('daily')->info('Current Blocks:', ['blocks' => $currentBlocks]);
 
         try {
             $stream = $this->client->chat()->createStreamed([
@@ -259,13 +276,21 @@ PROMPT;
                 }
             }
 
-            // Yield tool calls at the end
+            // Log and yield tool calls at the end
+            Log::channel('daily')->info('=== GROQ STREAM RESPONSE ===');
+            Log::channel('daily')->info('Tool Calls:', ['toolCalls' => $toolCalls]);
+
             foreach ($toolCalls as $call) {
                 if ($call['name'] && $call['arguments']) {
+                    $parsedArgs = json_decode($call['arguments'], true);
+                    Log::channel('daily')->info('Executing tool:', [
+                        'name' => $call['name'],
+                        'arguments' => $parsedArgs,
+                    ]);
                     yield [
                         'type' => 'tool_call',
                         'name' => $call['name'],
-                        'arguments' => json_decode($call['arguments'], true),
+                        'arguments' => $parsedArgs,
                     ];
                 }
             }
@@ -273,7 +298,9 @@ PROMPT;
             yield ['type' => 'done'];
 
         } catch (\Exception $e) {
-            Log::error('Groq streaming error: ' . $e->getMessage());
+            Log::channel('daily')->error('Groq streaming error: ' . $e->getMessage(), [
+                'exception' => $e->getTraceAsString(),
+            ]);
             yield [
                 'type' => 'error',
                 'message' => 'Error en la conexion con el asistente',
