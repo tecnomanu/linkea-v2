@@ -34,6 +34,11 @@ class AIController extends Controller
         $messages = $request->input('messages');
         $currentBlocks = $request->input('currentBlocks', []);
 
+        Log::info('=== AI CHAT ENDPOINT CALLED ===', [
+            'messages_count' => count($messages),
+            'blocks_count' => count($currentBlocks),
+        ]);
+
         return new StreamedResponse(function () use ($messages, $currentBlocks) {
             // Disable output buffering
             if (ob_get_level()) {
@@ -41,14 +46,35 @@ class AIController extends Controller
             }
 
             try {
-                foreach ($this->groqService->streamChat($messages, $currentBlocks) as $event) {
-                    $this->sendSSE($event);
+                // Use non-streaming for now (more reliable with tool calls)
+                $response = $this->groqService->chat($messages, $currentBlocks);
+
+                // Send content if present
+                if ($response['content']) {
+                    $this->sendSSE([
+                        'type' => 'content',
+                        'content' => $response['content'],
+                    ]);
                 }
+
+                // Send tool calls
+                foreach ($response['toolCalls'] as $toolCall) {
+                    $this->sendSSE([
+                        'type' => 'tool_call',
+                        'name' => $toolCall['name'],
+                        'arguments' => $toolCall['arguments'],
+                    ]);
+                }
+
+                $this->sendSSE(['type' => 'done']);
+
             } catch (\Exception $e) {
-                Log::error('AI chat stream error: ' . $e->getMessage());
+                Log::error('AI chat error: ' . $e->getMessage(), [
+                    'trace' => $e->getTraceAsString(),
+                ]);
                 $this->sendSSE([
                     'type' => 'error',
-                    'message' => 'Error en el asistente. Intenta de nuevo.',
+                    'message' => 'Error: ' . $e->getMessage(),
                 ]);
             }
         }, 200, [
@@ -108,4 +134,3 @@ class AIController extends Controller
         }
     }
 }
-

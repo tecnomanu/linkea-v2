@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 class GroqService
 {
     private $client;
+    // Model optimized for tool/function calling
     private string $model = 'llama-3.3-70b-versatile';
 
     // Tools for Linkea block management
@@ -101,8 +102,15 @@ class GroqService
 
     public function __construct()
     {
+        $apiKey = config('services.groq.api_key');
+        
+        Log::info('GroqService initialized', [
+            'api_key_set' => !empty($apiKey),
+            'api_key_prefix' => $apiKey ? substr($apiKey, 0, 10) . '...' : 'NOT SET',
+        ]);
+
         $this->client = OpenAI::factory()
-            ->withApiKey(config('services.groq.api_key'))
+            ->withApiKey($apiKey)
             ->withBaseUri('https://api.groq.com/openai/v1')
             ->make();
     }
@@ -163,10 +171,10 @@ PROMPT;
         );
 
         // Log the request
-        Log::channel('daily')->info('=== GROQ CHAT REQUEST ===');
-        Log::channel('daily')->info('System Prompt:', ['prompt' => $systemPrompt]);
-        Log::channel('daily')->info('Messages:', ['messages' => $messages]);
-        Log::channel('daily')->info('Current Blocks:', ['blocks' => $currentBlocks]);
+        Log::info('=== GROQ CHAT REQUEST ===');
+        Log::info('System Prompt:', ['prompt' => $systemPrompt]);
+        Log::info('Messages:', ['messages' => $messages]);
+        Log::info('Current Blocks:', ['blocks' => $currentBlocks]);
 
         try {
             $response = $this->client->chat()->create([
@@ -191,16 +199,16 @@ PROMPT;
             }
 
             // Log the response
-            Log::channel('daily')->info('=== GROQ CHAT RESPONSE ===');
-            Log::channel('daily')->info('Content:', ['content' => $message->content]);
-            Log::channel('daily')->info('Tool Calls:', ['toolCalls' => $toolCalls]);
+            Log::info('=== GROQ CHAT RESPONSE ===');
+            Log::info('Content:', ['content' => $message->content]);
+            Log::info('Tool Calls:', ['toolCalls' => $toolCalls]);
 
             return [
                 'content' => $message->content,
                 'toolCalls' => $toolCalls,
             ];
         } catch (\Exception $e) {
-            Log::channel('daily')->error('Groq API error: ' . $e->getMessage());
+            Log::error('Groq API error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             throw $e;
         }
     }
@@ -219,10 +227,10 @@ PROMPT;
         );
 
         // Log the request
-        Log::channel('daily')->info('=== GROQ STREAM REQUEST ===');
-        Log::channel('daily')->info('System Prompt:', ['prompt' => $systemPrompt]);
-        Log::channel('daily')->info('Messages:', ['messages' => $messages]);
-        Log::channel('daily')->info('Current Blocks:', ['blocks' => $currentBlocks]);
+        Log::info('=== GROQ STREAM REQUEST ===');
+        Log::info('System Prompt:', ['prompt' => $systemPrompt]);
+        Log::info('Messages:', ['messages' => $messages]);
+        Log::info('Current Blocks:', ['blocks' => $currentBlocks]);
 
         try {
             $stream = $this->client->chat()->createStreamed([
@@ -277,13 +285,13 @@ PROMPT;
             }
 
             // Log and yield tool calls at the end
-            Log::channel('daily')->info('=== GROQ STREAM RESPONSE ===');
-            Log::channel('daily')->info('Tool Calls:', ['toolCalls' => $toolCalls]);
+            Log::info('=== GROQ STREAM RESPONSE ===');
+            Log::info('Tool Calls:', ['toolCalls' => $toolCalls]);
 
             foreach ($toolCalls as $call) {
                 if ($call['name'] && $call['arguments']) {
                     $parsedArgs = json_decode($call['arguments'], true);
-                    Log::channel('daily')->info('Executing tool:', [
+                    Log::info('Executing tool:', [
                         'name' => $call['name'],
                         'arguments' => $parsedArgs,
                     ]);
@@ -296,9 +304,8 @@ PROMPT;
             }
 
             yield ['type' => 'done'];
-
         } catch (\Exception $e) {
-            Log::channel('daily')->error('Groq streaming error: ' . $e->getMessage(), [
+            Log::error('Groq streaming error: ' . $e->getMessage(), [
                 'exception' => $e->getTraceAsString(),
             ]);
             yield [
@@ -308,4 +315,3 @@ PROMPT;
         }
     }
 }
-
