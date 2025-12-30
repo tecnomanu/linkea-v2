@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\Admin\NewslettersController;
 // Panel Controllers (new Inertia/React panel)
 use App\Http\Controllers\Api\Panel\LinkController;
 use App\Http\Controllers\Api\Panel\LandingController;
+use App\Http\Controllers\Api\Panel\AIController;
 
 // Legacy Controllers (deprecated - Angular wizard)
 use App\Http\Controllers\Api\LandingsController as LegacyLandingsController;
@@ -105,6 +106,12 @@ Route::prefix('panel')->middleware(['web', 'auth', 'verified'])->group(function 
         ->name('api.panel.settings.save');
     Route::post('/validate-handle/{landingId}', [LandingController::class, 'validateHandle'])
         ->name('api.panel.validate-handle');
+
+    // AI Assistant
+    Route::post('/ai/chat', [AIController::class, 'chat'])
+        ->name('api.panel.ai.chat');
+    Route::post('/ai/chat-sync', [AIController::class, 'chatSync'])
+        ->name('api.panel.ai.chat-sync');
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {

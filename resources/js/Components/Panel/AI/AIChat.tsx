@@ -6,19 +6,32 @@
  */
 
 import { useAI, UIChatMessage, AIAction } from "@/contexts/AIContext";
-import { Check, Loader2, Palette, Plus, Send, Sparkles, Trash2, User } from "lucide-react";
+import {
+    Check,
+    Loader2,
+    Palette,
+    Plus,
+    Send,
+    Sparkles,
+    Trash2,
+    User,
+} from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 interface ChatMessageProps {
     message: UIChatMessage;
 }
 
-function getActionLabel(action: AIAction): { icon: React.ReactNode; text: string } {
+function getActionLabel(
+    action: AIAction
+): { icon: React.ReactNode; text: string } {
     switch (action.action) {
         case "add_block":
             return {
                 icon: <Plus size={12} />,
-                text: action.title ? `Agregado: ${action.title}` : "Bloque agregado",
+                text: action.title
+                    ? `Agregado: ${action.title}`
+                    : "Bloque agregado",
             };
         case "update_design":
             const changes = [];
@@ -27,12 +40,16 @@ function getActionLabel(action: AIAction): { icon: React.ReactNode; text: string
             if (action.buttonTextColor) changes.push("texto");
             return {
                 icon: <Palette size={12} />,
-                text: changes.length ? `Colores: ${changes.join(", ")}` : "Diseno actualizado",
+                text: changes.length
+                    ? `Colores: ${changes.join(", ")}`
+                    : "Diseno actualizado",
             };
         case "remove_block":
             return {
                 icon: <Trash2 size={12} />,
-                text: action.title ? `Eliminado: ${action.title}` : "Bloque eliminado",
+                text: action.title
+                    ? `Eliminado: ${action.title}`
+                    : "Bloque eliminado",
             };
         default:
             return { icon: <Check size={12} />, text: "Accion ejecutada" };
@@ -55,7 +72,10 @@ function ChatMessageBubble({ message }: ChatMessageProps) {
                 }`}
             >
                 {isUser ? (
-                    <User size={16} className="text-white dark:text-neutral-900" />
+                    <User
+                        size={16}
+                        className="text-white dark:text-neutral-900"
+                    />
                 ) : (
                     <Sparkles size={16} className="text-white" />
                 )}
@@ -98,7 +118,7 @@ function ChatMessageBubble({ message }: ChatMessageProps) {
 }
 
 export function AIChat() {
-    const { messages, isGenerating, sendMessage, isEngineReady } = useAI();
+    const { messages, isGenerating, sendMessage } = useAI();
     const [input, setInput] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -108,17 +128,15 @@ export function AIChat() {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    // Focus input when engine becomes ready
+    // Focus input on mount
     useEffect(() => {
-        if (isEngineReady) {
-            inputRef.current?.focus();
-        }
-    }, [isEngineReady]);
+        inputRef.current?.focus();
+    }, []);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         const trimmedInput = input.trim();
-        if (!trimmedInput || isGenerating || !isEngineReady) return;
+        if (!trimmedInput || isGenerating) return;
 
         setInput("");
         await sendMessage(trimmedInput);
@@ -145,8 +163,8 @@ export function AIChat() {
                         </h3>
                         <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-xs">
                             Decime que queres hacer con tu landing y te ayudo a
-                            crearlo. Podes pedirme que agregue links, cambie colores,
-                            organice tus bloques y mas.
+                            crearlo. Podes pedirme que agregue links, cambie
+                            colores, organice tus bloques y mas.
                         </p>
                         <div className="mt-6 space-y-2">
                             <p className="text-xs text-neutral-400 dark:text-neutral-500">
@@ -154,9 +172,9 @@ export function AIChat() {
                             </p>
                             <div className="flex flex-wrap gap-2 justify-center">
                                 {[
-                                    "Agregar link a Instagram",
+                                    "Agregar link a mi Instagram @usuario",
                                     "Fondo amarillo",
-                                    "Agregar WhatsApp",
+                                    "Agregar boton de WhatsApp",
                                 ].map((example) => (
                                     <button
                                         key={example}
@@ -185,19 +203,15 @@ export function AIChat() {
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder={
-                            isEngineReady
-                                ? "Escribi tu mensaje..."
-                                : "Esperando que cargue el modelo..."
-                        }
-                        disabled={!isEngineReady || isGenerating}
+                        placeholder="Escribi tu mensaje..."
+                        disabled={isGenerating}
                         rows={1}
                         className="w-full pr-12 pl-4 py-3 rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{ minHeight: "48px", maxHeight: "120px" }}
                     />
                     <button
                         type="submit"
-                        disabled={!isEngineReady || isGenerating || !input.trim()}
+                        disabled={isGenerating || !input.trim()}
                         className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 flex items-center justify-center hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isGenerating ? (
@@ -216,4 +230,3 @@ export function AIChat() {
         </div>
     );
 }
-

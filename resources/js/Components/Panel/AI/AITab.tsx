@@ -2,8 +2,7 @@
  * AITab - Main AI assistant interface
  *
  * Displays:
- * - Model selector/loader (when not loaded)
- * - Chat interface (when model is ready)
+ * - Chat interface (always ready - API-based)
  * - Save/Discard buttons for changes
  * - Preview on mobile (below chat)
  *
@@ -17,7 +16,6 @@ import { LinkBlock, UserProfile } from "@/types";
 import { Check, RotateCcw, Sparkles, Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { AIChat } from "./AIChat";
-import { ModelSelector } from "./ModelSelector";
 
 interface AITabInnerProps {
     user: UserProfile;
@@ -30,7 +28,6 @@ interface AITabInnerProps {
 
 function AITabInner({ user, socialLinks, onPreviewChange }: AITabInnerProps) {
     const {
-        isEngineReady,
         previewLinks,
         previewDesign,
         hasUnsavedChanges,
@@ -71,9 +68,7 @@ function AITabInner({ user, socialLinks, onPreviewChange }: AITabInnerProps) {
                                     Asistente IA
                                 </h2>
                                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                                    {isEngineReady
-                                        ? "Modelo cargado - Listo para ayudarte"
-                                        : "Carga el modelo para comenzar"}
+                                    Listo para ayudarte a crear tu landing
                                 </p>
                             </div>
                         </div>
@@ -131,15 +126,9 @@ function AITabInner({ user, socialLinks, onPreviewChange }: AITabInnerProps) {
             <div className="mt-6 pb-8 xl:pb-32">
                 {/* Mobile: Chat and Preview side by side or stacked */}
                 <div className="flex flex-col xl:flex-row gap-4">
-                    {/* Chat area */}
+                    {/* Chat area - always ready (API-based) */}
                     <div className="flex-1 bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-soft-xl overflow-hidden min-h-[400px] xl:min-h-[500px] flex flex-col">
-                        {!isEngineReady ? (
-                            <div className="flex-1 flex items-center justify-center">
-                                <ModelSelector />
-                            </div>
-                        ) : (
-                            <AIChat />
-                        )}
+                        <AIChat />
                     </div>
 
                     {/* Mobile Preview - Only visible on small screens */}

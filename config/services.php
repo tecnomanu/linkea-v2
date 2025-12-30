@@ -81,4 +81,17 @@ return [
         'redirect' => env('APPLE_REDIRECT_URL'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Groq AI Integration
+    |--------------------------------------------------------------------------
+    |
+    | Groq provides fast LLM inference with OpenAI-compatible API.
+    | Get your API key from: https://console.groq.com
+    |
+    */
+    'groq' => [
+        'api_key' => env('GROQ_API_KEY'),
+    ],
+
 ];

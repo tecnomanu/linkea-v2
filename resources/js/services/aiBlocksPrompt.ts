@@ -1,55 +1,30 @@
 /**
- * AI System Prompt for Native Function Calling
+ * AI Blocks Prompt Utilities
  *
- * Hermes models handle function calling natively via tools.
- * This prompt provides context, the tools are defined in webllmService.ts
+ * Helper functions for AI chat - message generation from tool calls.
+ * The actual prompts are defined in the Laravel backend (GroqService).
  */
 
-/**
- * Generate the system prompt for the AI assistant
- */
-export function getSystemPrompt(
-    currentBlocks: { type: string; title: string }[] = []
-): string {
-    const currentBlocksSummary =
-        currentBlocks.length > 0
-            ? currentBlocks.map((b) => `"${b.title}" (${b.type})`).join(", ")
-            : "empty";
+export interface AIAction {
+    action: "add_block" | "update_design" | "remove_block";
+    type?: string;
+    title?: string;
+    url?: string;
+    phoneNumber?: string;
+    emailAddress?: string;
+    icon?: string;
+    backgroundColor?: string;
+    buttonColor?: string;
+    buttonTextColor?: string;
+}
 
-    return `You are Linkea's assistant. Help users create their "link in bio" page.
-Respond in the user's language. Be friendly and brief.
-
-Current blocks on page: ${currentBlocksSummary}
-
-You have tools to:
-- add_block: Add links, headers, WhatsApp, YouTube, Spotify, email
-- update_design: Change colors (background, buttons)
-- remove_block: Delete blocks by title
-
-IMPORTANT RULES:
-1. If user gives a username like @john or john, BUILD THE FULL URL:
-   - Instagram: https://instagram.com/john
-   - TikTok: https://tiktok.com/@john
-   - Twitter: https://twitter.com/john
-   - YouTube: https://youtube.com/@john
-   - Facebook: https://facebook.com/john
-   - LinkedIn: https://linkedin.com/in/john
-   - GitHub: https://github.com/john
-
-2. If required info is MISSING (no username, no phone), ask before calling tools.
-
-3. For WhatsApp, phone must include country code (+5491155667788).
-
-4. For social links, use icon name: instagram, tiktok, twitter, youtube, etc.
-
-5. Common colors: yellow=#FFEB3B, red=#F44336, blue=#2196F3, green=#4CAF50, 
-   dark=#1a1a1a, white=#FFFFFF, pink=#E91E63, purple=#9C27B0
-
-6. Always respond with a brief message after executing tools.`;
+export interface ToolCall {
+    name: string;
+    arguments: Record<string, unknown>;
 }
 
 /**
- * Generate a friendly message from tool results
+ * Generate a friendly message from a tool call
  */
 export function generateMessageFromTool(
     toolName: string,
@@ -58,7 +33,8 @@ export function generateMessageFromTool(
     switch (toolName) {
         case "add_block":
             if (args.type === "whatsapp") return "Listo! Agregue tu WhatsApp";
-            if (args.type === "header") return `Agregue el encabezado "${args.title}"`;
+            if (args.type === "header")
+                return `Agregue el encabezado "${args.title}"`;
             if (args.type === "email") return "Agregue un link de email";
             if (args.icon) return `Listo! Agregue tu link de ${args.icon}`;
             return `Agregue "${args.title || "nuevo bloque"}"`;
@@ -68,12 +44,51 @@ export function generateMessageFromTool(
             if (args.backgroundColor) changes.push("fondo");
             if (args.buttonColor) changes.push("botones");
             if (args.buttonTextColor) changes.push("texto");
-            return changes.length ? `Cambie ${changes.join(" y ")}!` : "Diseno actualizado!";
+            return changes.length
+                ? `Cambie ${changes.join(" y ")}!`
+                : "Diseno actualizado!";
 
         case "remove_block":
             return `Elimine "${args.title}"`;
 
         default:
             return "Listo!";
+    }
+}
+
+/**
+ * Convert tool call to AIAction for UI display
+ */
+export function toolCallToAction(toolCall: ToolCall): AIAction | null {
+    const { name, arguments: args } = toolCall;
+
+    switch (name) {
+        case "add_block":
+            return {
+                action: "add_block",
+                type: args.type as string,
+                title: args.title as string,
+                url: args.url as string,
+                phoneNumber: args.phoneNumber as string,
+                emailAddress: args.emailAddress as string,
+                icon: args.icon as string,
+            };
+
+        case "update_design":
+            return {
+                action: "update_design",
+                backgroundColor: args.backgroundColor as string,
+                buttonColor: args.buttonColor as string,
+                buttonTextColor: args.buttonTextColor as string,
+            };
+
+        case "remove_block":
+            return {
+                action: "remove_block",
+                title: args.title as string,
+            };
+
+        default:
+            return null;
     }
 }

@@ -23,7 +23,6 @@
         "@dnd-kit/utilities": "^3.2.2",
         "@headlessui/react": "^2.2.9",
         "@inertiajs/react": "^2.3.4",
-        "@mlc-ai/web-llm": "^0.2.80",
         "@tiptap/extension-image": "^3.14.0",
         "@tiptap/extension-link": "^3.14.0",
         "@tiptap/extension-placeholder": "^3.14.0",

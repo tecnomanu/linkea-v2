@@ -1,17 +1,16 @@
 /**
  * AI Context - Manages AI chat state and preview changes
  *
- * Uses WebLLM with Hermes-3-Llama-3.2-3B (~2GB) for local AI with native function calling.
+ * Uses Groq API via Laravel backend with SSE streaming.
  */
 
 import { LinkBlock, UserProfile } from "@/types";
-import { getSystemPrompt, generateMessageFromTool } from "@/services/aiBlocksPrompt";
-import webllmService, {
-    ChatMessage,
-    InitProgress,
-    MODEL_ID,
-    ToolResult,
-} from "@/services/webllmService";
+import {
+    generateMessageFromTool,
+    toolCallToAction,
+    AIAction,
+    ToolCall,
+} from "@/services/aiBlocksPrompt";
 import { createBlockDefaults } from "@/Components/Shared/blocks/blockConfig";
 import {
     createContext,
@@ -22,16 +21,8 @@ import {
     useState,
 } from "react";
 
-// Action type for UI display
-export interface AIAction {
-    action: "add_block" | "update_design" | "remove_block";
-    type?: string;
-    title?: string;
-    icon?: string;
-    backgroundColor?: string;
-    buttonColor?: string;
-    buttonTextColor?: string;
-}
+// Re-export AIAction for components
+export type { AIAction };
 
 // Chat message for UI display
 export interface UIChatMessage {
@@ -44,16 +35,10 @@ export interface UIChatMessage {
 }
 
 interface AIContextValue {
-    // Engine state
-    isEngineReady: boolean;
-    isEngineLoading: boolean;
-    engineProgress: InitProgress | null;
-    engineError: string | null;
-    currentModel: string | null;
-
     // Chat state
     messages: UIChatMessage[];
     isGenerating: boolean;
+    error: string | null;
 
     // Preview state (changes made by AI, not yet saved)
     previewLinks: LinkBlock[];
@@ -61,12 +46,14 @@ interface AIContextValue {
     hasUnsavedChanges: boolean;
 
     // Actions
-    initializeEngine: (modelId?: string) => Promise<void>;
     sendMessage: (content: string) => Promise<void>;
     clearChat: () => void;
     applyChanges: () => void;
     discardChanges: () => void;
-    setBaseState: (links: LinkBlock[], design: UserProfile["customDesign"]) => void;
+    setBaseState: (
+        links: LinkBlock[],
+        design: UserProfile["customDesign"]
+    ) => void;
 }
 
 const AIContext = createContext<AIContextValue | null>(null);
@@ -86,29 +73,27 @@ export function AIProvider({
     onApplyLinks,
     onApplyDesign,
 }: AIProviderProps) {
-    // Engine state
-    const [isEngineReady, setIsEngineReady] = useState(false);
-    const [isEngineLoading, setIsEngineLoading] = useState(false);
-    const [engineProgress, setEngineProgress] = useState<InitProgress | null>(null);
-    const [engineError, setEngineError] = useState<string | null>(null);
-    const [currentModel, setCurrentModel] = useState<string | null>(null);
-
     // Chat state
     const [messages, setMessages] = useState<UIChatMessage[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Base state (what's currently saved)
     const [baseLinks, setBaseLinks] = useState<LinkBlock[]>(initialLinks);
-    const [baseDesign, setBaseDesign] = useState<UserProfile["customDesign"]>(initialDesign);
+    const [baseDesign, setBaseDesign] =
+        useState<UserProfile["customDesign"]>(initialDesign);
 
     // Preview state (AI modifications on top of base)
     const [previewLinks, setPreviewLinks] = useState<LinkBlock[]>(initialLinks);
-    const [previewDesign, setPreviewDesign] = useState<Partial<UserProfile["customDesign"]> | null>(null);
+    const [previewDesign, setPreviewDesign] = useState<Partial<
+        UserProfile["customDesign"]
+    > | null>(null);
 
     // Track if there are unsaved changes
     const hasUnsavedChanges = useMemo(() => {
         if (previewDesign !== null) return true;
-        if (JSON.stringify(previewLinks) !== JSON.stringify(baseLinks)) return true;
+        if (JSON.stringify(previewLinks) !== JSON.stringify(baseLinks))
+            return true;
         return false;
     }, [previewLinks, previewDesign, baseLinks]);
 
@@ -123,32 +108,9 @@ export function AIProvider({
         []
     );
 
-    // Initialize the WebLLM engine
-    const initializeEngine = useCallback(async (modelId?: string) => {
-        setIsEngineLoading(true);
-        setEngineError(null);
-        setEngineProgress(null);
-
-        try {
-            await webllmService.initialize(modelId || MODEL_ID, (progress) => {
-                setEngineProgress(progress);
-            });
-            setIsEngineReady(true);
-            setCurrentModel(webllmService.getCurrentModel());
-        } catch (error) {
-            console.error("Failed to initialize WebLLM:", error);
-            setEngineError(
-                error instanceof Error ? error.message : "Error al inicializar el modelo"
-            );
-            setIsEngineReady(false);
-        } finally {
-            setIsEngineLoading(false);
-        }
-    }, []);
-
-    // Execute a tool call from the AI
-    const executeToolCall = useCallback((tool: ToolResult): AIAction | null => {
-        const { name, arguments: args } = tool;
+    // Execute a tool call
+    const executeToolCall = useCallback((toolCall: ToolCall): AIAction | null => {
+        const { name, arguments: args } = toolCall;
 
         switch (name) {
             case "add_block": {
@@ -158,52 +120,51 @@ export function AIProvider({
                     id: Math.random().toString(36).substr(2, 9),
                     isEnabled: true,
                     clicks: 0,
-                    sparklineData: Array(7).fill(0).map(() => ({ value: 0 })),
+                    sparklineData: Array(7)
+                        .fill(0)
+                        .map(() => ({ value: 0 })),
                     type: blockType as any,
                     title: (args.title as string) || "",
                     url: (args.url as string) || "",
                     ...defaults,
                 };
 
-                if (args.phoneNumber) newBlock.phoneNumber = args.phoneNumber as string;
-                if (args.emailAddress) newBlock.emailAddress = args.emailAddress as string;
+                if (args.phoneNumber)
+                    newBlock.phoneNumber = args.phoneNumber as string;
+                if (args.emailAddress)
+                    newBlock.emailAddress = args.emailAddress as string;
                 if (args.icon) {
                     newBlock.icon = { type: "brands", name: args.icon as string };
                 }
 
                 setPreviewLinks((prev) => [newBlock, ...prev]);
-                return {
-                    action: "add_block",
-                    type: blockType,
-                    title: args.title as string,
-                    icon: args.icon as string,
-                };
+                return toolCallToAction(toolCall);
             }
 
             case "update_design": {
                 setPreviewDesign((prev) => ({
                     ...(prev || {}),
-                    ...(args.backgroundColor && { backgroundColor: args.backgroundColor as string }),
-                    ...(args.buttonColor && { buttonColor: args.buttonColor as string }),
-                    ...(args.buttonTextColor && { buttonTextColor: args.buttonTextColor as string }),
+                    ...(args.backgroundColor && {
+                        backgroundColor: args.backgroundColor as string,
+                    }),
+                    ...(args.buttonColor && {
+                        buttonColor: args.buttonColor as string,
+                    }),
+                    ...(args.buttonTextColor && {
+                        buttonTextColor: args.buttonTextColor as string,
+                    }),
                 }));
-                return {
-                    action: "update_design",
-                    backgroundColor: args.backgroundColor as string,
-                    buttonColor: args.buttonColor as string,
-                    buttonTextColor: args.buttonTextColor as string,
-                };
+                return toolCallToAction(toolCall);
             }
 
             case "remove_block": {
                 const titleToRemove = ((args.title as string) || "").toLowerCase();
                 setPreviewLinks((prev) =>
-                    prev.filter((link) => link.title.toLowerCase() !== titleToRemove)
+                    prev.filter(
+                        (link) => link.title.toLowerCase() !== titleToRemove
+                    )
                 );
-                return {
-                    action: "remove_block",
-                    title: args.title as string,
-                };
+                return toolCallToAction(toolCall);
             }
 
             default:
@@ -211,10 +172,12 @@ export function AIProvider({
         }
     }, []);
 
-    // Send a message to the AI using function calling
+    // Send a message via SSE streaming
     const sendMessage = useCallback(
         async (content: string) => {
-            if (!isEngineReady || isGenerating) return;
+            if (isGenerating) return;
+
+            setError(null);
 
             // Add user message
             const userMessage: UIChatMessage = {
@@ -241,68 +204,137 @@ export function AIProvider({
             setIsGenerating(true);
 
             try {
-                // Build conversation history
-                const currentBlocksSummary = previewLinks.map((link) => ({
+                // Prepare current blocks for context
+                const currentBlocks = previewLinks.map((link) => ({
                     type: link.type,
                     title: link.title,
                 }));
 
-                const systemPrompt = getSystemPrompt(currentBlocksSummary);
+                // Prepare chat history (last 6 messages)
+                const chatHistory = messages.slice(-6).map((msg) => ({
+                    role: msg.role,
+                    content: msg.content,
+                }));
+                chatHistory.push({ role: "user", content });
 
-                const chatHistory: ChatMessage[] = [
-                    { role: "system", content: systemPrompt },
-                    ...messages.slice(-6).map((msg) => ({
-                        role: msg.role as "user" | "assistant",
-                        content: msg.content,
-                    })),
-                    { role: "user", content },
-                ];
-
-                // Call with function calling
-                const response = await webllmService.chatWithTools(chatHistory, {
-                    temperature: 0.6,
-                    maxTokens: 512,
+                // Call API with SSE
+                const response = await fetch("/api/panel/ai/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "text/event-stream",
+                        "X-CSRF-TOKEN":
+                            document
+                                .querySelector('meta[name="csrf-token"]')
+                                ?.getAttribute("content") || "",
+                    },
+                    body: JSON.stringify({
+                        messages: chatHistory,
+                        currentBlocks,
+                    }),
                 });
 
-                // Execute tool calls and collect actions
+                if (!response.ok) {
+                    throw new Error("Error en la respuesta del servidor");
+                }
+
+                const reader = response.body?.getReader();
+                const decoder = new TextDecoder();
+
+                if (!reader) {
+                    throw new Error("No se pudo leer la respuesta");
+                }
+
+                let fullContent = "";
                 let executedAction: AIAction | null = null;
                 const generatedMessages: string[] = [];
 
-                for (const tool of response.toolCalls) {
-                    executedAction = executeToolCall(tool);
-                    generatedMessages.push(generateMessageFromTool(tool.name, tool.arguments));
+                // Read SSE stream
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const text = decoder.decode(value, { stream: true });
+                    const lines = text.split("\n");
+
+                    for (const line of lines) {
+                        if (line.startsWith("data: ")) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+
+                                if (data.type === "content" && data.content) {
+                                    fullContent += data.content;
+                                    setMessages((prev) =>
+                                        prev.map((msg) =>
+                                            msg.id === assistantId
+                                                ? {
+                                                      ...msg,
+                                                      content: fullContent,
+                                                      isLoading: false,
+                                                  }
+                                                : msg
+                                        )
+                                    );
+                                }
+
+                                if (data.type === "tool_call") {
+                                    const toolCall: ToolCall = {
+                                        name: data.name,
+                                        arguments: data.arguments,
+                                    };
+                                    executedAction = executeToolCall(toolCall);
+                                    generatedMessages.push(
+                                        generateMessageFromTool(
+                                            data.name,
+                                            data.arguments
+                                        )
+                                    );
+                                }
+
+                                if (data.type === "error") {
+                                    throw new Error(data.message);
+                                }
+                            } catch (e) {
+                                // Ignore JSON parse errors for incomplete chunks
+                            }
+                        }
+                    }
                 }
 
-                // Determine the message to show
-                let finalMessage = response.content || "";
-                if (!finalMessage && generatedMessages.length > 0) {
-                    finalMessage = generatedMessages.join(". ");
+                // If no content but we have tool calls, use generated messages
+                if (!fullContent && generatedMessages.length > 0) {
+                    fullContent = generatedMessages.join(". ");
                 }
-                if (!finalMessage) {
-                    finalMessage = "Listo!";
+                if (!fullContent) {
+                    fullContent = "Listo!";
                 }
 
-                // Update assistant message
+                // Update final message
                 setMessages((prev) =>
                     prev.map((msg) =>
                         msg.id === assistantId
                             ? {
                                   ...msg,
-                                  content: finalMessage,
+                                  content: fullContent,
                                   isLoading: false,
                                   action: executedAction || undefined,
                               }
                             : msg
                     )
                 );
-            } catch (error) {
-                console.error("AI chat error:", error);
+            } catch (err) {
+                console.error("AI chat error:", err);
+                const errorMessage =
+                    err instanceof Error
+                        ? err.message
+                        : "Error. Intenta de nuevo.";
+                setError(errorMessage);
                 setMessages((prev) =>
                     prev.map((msg) =>
                         msg.id === assistantId
                             ? {
                                   ...msg,
-                                  content: "Error. Intenta de nuevo.",
+                                  content: errorMessage,
                                   isLoading: false,
                               }
                             : msg
@@ -312,13 +344,13 @@ export function AIProvider({
                 setIsGenerating(false);
             }
         },
-        [isEngineReady, isGenerating, messages, previewLinks, executeToolCall]
+        [isGenerating, messages, previewLinks, executeToolCall]
     );
 
     // Clear chat history
     const clearChat = useCallback(() => {
         setMessages([]);
-        webllmService.resetChat();
+        setError(null);
     }, []);
 
     // Apply preview changes to the real state
@@ -341,17 +373,12 @@ export function AIProvider({
     }, [baseLinks]);
 
     const value: AIContextValue = {
-        isEngineReady,
-        isEngineLoading,
-        engineProgress,
-        engineError,
-        currentModel,
         messages,
         isGenerating,
+        error,
         previewLinks,
         previewDesign,
         hasUnsavedChanges,
-        initializeEngine,
         sendMessage,
         clearChat,
         applyChanges,
