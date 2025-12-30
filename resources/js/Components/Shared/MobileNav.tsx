@@ -55,6 +55,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
             icon: <Sparkles size={20} />,
             label: "IA",
             route: "panel.ai",
+            badge: "Beta",
         },
         {
             id: "appearance",
@@ -191,18 +192,24 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                 </Menu>
             </div>
 
-            {/* Bottom Row: Navigation Tabs - Unchanged */}
+            {/* Bottom Row: Navigation Tabs */}
             <div className="flex items-center justify-between px-2 py-1">
                 {navItems.map((item) => (
-                    <MobileNavLink
-                        key={item.id}
-                        href={route(item.route) as string}
-                        icon={item.icon}
-                        label={item.label}
-                        isActive={activeTab === item.id}
-                        variant="panel"
-                        expandOnActive
-                    />
+                    <div key={item.id} className="relative">
+                        <MobileNavLink
+                            href={route(item.route) as string}
+                            icon={item.icon}
+                            label={item.label}
+                            isActive={activeTab === item.id}
+                            variant="panel"
+                            expandOnActive
+                        />
+                        {item.badge && (
+                            <span className="absolute -top-1 right-0 px-1 py-px text-[7px] font-bold text-white bg-gradient-to-r from-brand-500 to-pink-500 rounded-full shadow-sm">
+                                {item.badge}
+                            </span>
+                        )}
+                    </div>
                 ))}
             </div>
         </div>

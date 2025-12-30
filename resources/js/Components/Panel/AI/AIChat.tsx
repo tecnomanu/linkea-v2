@@ -5,7 +5,7 @@
  * Messages from the AI may contain actions that update the preview.
  */
 
-import { useAI, UIChatMessage, AIAction } from "@/contexts/AIContext";
+import { AIAction, UIChatMessage, useAI } from "@/contexts/AIContext";
 import {
     Check,
     Edit,
@@ -23,9 +23,10 @@ interface ChatMessageProps {
     message: UIChatMessage;
 }
 
-function getActionLabel(
-    action: AIAction
-): { icon: React.ReactNode; text: string } {
+function getActionLabel(action: AIAction): {
+    icon: React.ReactNode;
+    text: string;
+} {
     switch (action.action) {
         case "add_block":
             return {

@@ -49,6 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             label: "IA",
             route: "panel.ai",
             highlight: true,
+            badge: "Beta",
         },
         {
             id: "appearance",
@@ -77,15 +78,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* Navigation */}
             <nav className="flex-1 flex flex-col gap-6 w-full px-2">
                 {navItems.map((item) => (
-                    <NavLink
-                        key={item.id}
-                        href={route(item.route) as string}
-                        icon={item.icon}
-                        label={item.label}
-                        isActive={activeTab === item.id}
-                        variant="panel"
-                        iconOnly
-                    />
+                    <div key={item.id} className="relative">
+                        <NavLink
+                            href={route(item.route) as string}
+                            icon={item.icon}
+                            label={item.label}
+                            isActive={activeTab === item.id}
+                            variant="panel"
+                            iconOnly
+                        />
+                        {item.badge && (
+                            <span className="absolute -top-1 -right-1 px-1 py-px text-[8px] font-bold text-white bg-gradient-to-r from-brand-500 to-pink-500 rounded-full shadow-sm">
+                                {item.badge}
+                            </span>
+                        )}
+                    </div>
                 ))}
             </nav>
 

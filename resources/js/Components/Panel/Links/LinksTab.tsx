@@ -181,10 +181,14 @@ export const LinksTab: React.FC<LinksTabProps> = ({
                         </button>
                         <Link
                             href={route("panel.ai") as string}
-                            className="px-4 md:px-8 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-400 hover:to-brand-500 text-white rounded-[20px] md:rounded-[24px] font-bold transition-all hover:shadow-glow hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+                            className="relative px-4 md:px-8 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-400 hover:to-brand-500 text-white rounded-[20px] md:rounded-[24px] font-bold transition-all hover:shadow-glow hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
                         >
                             <Sparkles size={18} className="animate-pulse" />
                             <span className="hidden sm:inline">IA Magica</span>
+                            {/* Beta badge */}
+                            <span className="absolute -top-2 -right-2 px-1.5 py-0.5 text-[10px] font-bold text-white bg-gradient-to-r from-brand-500 to-pink-500 rounded-full shadow-lg animate-pulse">
+                                Beta
+                            </span>
                         </Link>
                     </div>
                 ) : (

@@ -58,10 +58,10 @@ export function generateMessageFromTool(
             if (type === "tiktok") return `Agregue tu TikTok`;
             if (type === "vimeo") return `Agregue tu video de Vimeo`;
             if (type === "soundcloud") return `Agregue tu SoundCloud`;
-            
+
             // Link with icon
             if (icon) return `Listo! Agregue tu link de ${icon}`;
-            
+
             return `Agregue "${title || "nuevo bloque"}"`;
         }
 
