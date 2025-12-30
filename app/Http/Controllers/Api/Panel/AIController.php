@@ -29,17 +29,20 @@ class AIController extends Controller
             'messages.*.role' => 'required|in:user,assistant',
             'messages.*.content' => 'required|string',
             'currentBlocks' => 'array',
+            'currentDesign' => 'array',
         ]);
 
         $messages = $request->input('messages');
         $currentBlocks = $request->input('currentBlocks', []);
+        $currentDesign = $request->input('currentDesign', []);
 
         Log::info('=== AI CHAT ENDPOINT CALLED ===', [
             'messages_count' => count($messages),
             'blocks_count' => count($currentBlocks),
+            'design' => $currentDesign,
         ]);
 
-        return new StreamedResponse(function () use ($messages, $currentBlocks) {
+        return new StreamedResponse(function () use ($messages, $currentBlocks, $currentDesign) {
             // Disable output buffering
             if (ob_get_level()) {
                 ob_end_clean();
@@ -47,7 +50,7 @@ class AIController extends Controller
 
             try {
                 // Use non-streaming for now (more reliable with tool calls)
-                $response = $this->groqService->chat($messages, $currentBlocks);
+                $response = $this->groqService->chat($messages, $currentBlocks, $currentDesign);
 
                 // Send content if present
                 if ($response['content']) {
@@ -110,13 +113,15 @@ class AIController extends Controller
             'messages.*.role' => 'required|in:user,assistant',
             'messages.*.content' => 'required|string',
             'currentBlocks' => 'array',
+            'currentDesign' => 'array',
         ]);
 
         $messages = $request->input('messages');
         $currentBlocks = $request->input('currentBlocks', []);
+        $currentDesign = $request->input('currentDesign', []);
 
         try {
-            $response = $this->groqService->chat($messages, $currentBlocks);
+            $response = $this->groqService->chat($messages, $currentBlocks, $currentDesign);
 
             return response()->json([
                 'success' => true,

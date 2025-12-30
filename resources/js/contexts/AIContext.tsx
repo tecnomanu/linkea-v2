@@ -136,12 +136,33 @@ export function AIProvider({
                     newBlock.phoneNumber = args.phoneNumber as string;
                 if (args.emailAddress)
                     newBlock.emailAddress = args.emailAddress as string;
+                if (args.mapAddress)
+                    newBlock.mapAddress = args.mapAddress as string;
                 if (args.icon) {
                     newBlock.icon = { type: "brands", name: args.icon as string };
                 }
 
                 console.log("Adding block:", newBlock);
                 setPreviewLinks((prev) => [newBlock, ...prev]);
+                return toolCallToAction(toolCall);
+            }
+
+            case "edit_block": {
+                const currentTitle = ((args.currentTitle as string) || "").toLowerCase();
+                setPreviewLinks((prev) =>
+                    prev.map((link) => {
+                        if (link.title.toLowerCase() === currentTitle) {
+                            const updated = { ...link };
+                            if (args.newTitle) updated.title = args.newTitle as string;
+                            if (args.newUrl) updated.url = args.newUrl as string;
+                            if (args.newIcon) {
+                                updated.icon = { type: "brands", name: args.newIcon as string };
+                            }
+                            return updated;
+                        }
+                        return link;
+                    })
+                );
                 return toolCallToAction(toolCall);
             }
 
@@ -156,6 +177,18 @@ export function AIProvider({
                     }),
                     ...(args.buttonTextColor && {
                         buttonTextColor: args.buttonTextColor as string,
+                    }),
+                    ...(args.buttonStyle && {
+                        buttonStyle: args.buttonStyle as string,
+                    }),
+                    ...(args.buttonShape && {
+                        buttonShape: args.buttonShape as string,
+                    }),
+                    ...(args.fontPair && {
+                        fontPair: args.fontPair as string,
+                    }),
+                    ...(args.roundedAvatar !== undefined && {
+                        roundedAvatar: args.roundedAvatar as boolean,
                     }),
                 }));
                 return toolCallToAction(toolCall);
@@ -221,6 +254,17 @@ export function AIProvider({
                 }));
                 chatHistory.push({ role: "user", content });
 
+                // Prepare current design for context
+                const currentDesign = {
+                    backgroundColor: baseDesign.backgroundColor,
+                    buttonColor: baseDesign.buttonColor,
+                    buttonTextColor: baseDesign.buttonTextColor,
+                    buttonStyle: baseDesign.buttonStyle,
+                    buttonShape: baseDesign.buttonShape,
+                    fontPair: baseDesign.fontPair,
+                    roundedAvatar: baseDesign.roundedAvatar,
+                };
+
                 // Call API with SSE
                 const response = await fetch("/api/panel/ai/chat", {
                     method: "POST",
@@ -235,6 +279,7 @@ export function AIProvider({
                     body: JSON.stringify({
                         messages: chatHistory,
                         currentBlocks,
+                        currentDesign,
                     }),
                 });
 

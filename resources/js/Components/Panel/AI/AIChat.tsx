@@ -8,6 +8,7 @@
 import { useAI, UIChatMessage, AIAction } from "@/contexts/AIContext";
 import {
     Check,
+    Edit,
     Loader2,
     Palette,
     Plus,
@@ -33,17 +34,28 @@ function getActionLabel(
                     ? `Agregado: ${action.title}`
                     : "Bloque agregado",
             };
-        case "update_design":
+        case "edit_block":
+            return {
+                icon: <Edit size={12} />,
+                text: action.currentTitle
+                    ? `Editado: ${action.currentTitle}`
+                    : "Bloque editado",
+            };
+        case "update_design": {
             const changes = [];
             if (action.backgroundColor) changes.push("fondo");
             if (action.buttonColor) changes.push("botones");
             if (action.buttonTextColor) changes.push("texto");
+            if (action.buttonStyle) changes.push("estilo");
+            if (action.buttonShape) changes.push("forma");
+            if (action.fontPair) changes.push("fuente");
             return {
                 icon: <Palette size={12} />,
                 text: changes.length
-                    ? `Colores: ${changes.join(", ")}`
+                    ? `Diseno: ${changes.join(", ")}`
                     : "Diseno actualizado",
             };
+        }
         case "remove_block":
             return {
                 icon: <Trash2 size={12} />,

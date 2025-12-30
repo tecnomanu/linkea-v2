@@ -13,92 +13,78 @@ use Illuminate\Support\Facades\Log;
 class GroqService
 {
     private $client;
-    // Model optimized for tool/function calling
     private string $model = 'llama-3.3-70b-versatile';
 
-    // Tools for Linkea block management
-    private array $tools = [
-        [
-            'type' => 'function',
-            'function' => [
-                'name' => 'add_block',
-                'description' => 'Add a new block (link, header, whatsapp, youtube, spotify, email) to the landing page',
-                'parameters' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'type' => [
-                            'type' => 'string',
-                            'enum' => ['link', 'header', 'whatsapp', 'youtube', 'spotify', 'email'],
-                            'description' => 'Type of block to add',
-                        ],
-                        'title' => [
-                            'type' => 'string',
-                            'description' => 'Display title/text for the block',
-                        ],
-                        'url' => [
-                            'type' => 'string',
-                            'description' => 'URL for link/youtube/spotify blocks. Build it yourself from username.',
-                        ],
-                        'phoneNumber' => [
-                            'type' => 'string',
-                            'description' => 'Phone number with country code for WhatsApp (e.g. +5491155667788)',
-                        ],
-                        'emailAddress' => [
-                            'type' => 'string',
-                            'description' => 'Email address for email blocks',
-                        ],
-                        'icon' => [
-                            'type' => 'string',
-                            'description' => 'Icon name: instagram, facebook, twitter, tiktok, youtube, linkedin, github, discord, twitch, spotify',
-                        ],
-                    ],
-                    'required' => ['type', 'title'],
-                ],
-            ],
+    /**
+     * All available block types with their properties
+     * Maps to resources/js/Components/Shared/blocks/blockConfig.ts
+     */
+    private const BLOCK_TYPES = [
+        'link' => [
+            'description' => 'Standard link to any website. Use icon param for social networks.',
+            'requiresUrl' => true,
         ],
-        [
-            'type' => 'function',
-            'function' => [
-                'name' => 'update_design',
-                'description' => 'Change the visual design/colors of the landing page',
-                'parameters' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'backgroundColor' => [
-                            'type' => 'string',
-                            'description' => 'Background color hex (yellow=#FFEB3B, red=#F44336, blue=#2196F3, green=#4CAF50, dark=#1a1a1a, pink=#E91E63)',
-                        ],
-                        'buttonColor' => [
-                            'type' => 'string',
-                            'description' => 'Button background color in hex format',
-                        ],
-                        'buttonTextColor' => [
-                            'type' => 'string',
-                            'description' => 'Button text color in hex format',
-                        ],
-                    ],
-                    'required' => [],
-                ],
-            ],
+        'header' => [
+            'description' => 'Section divider/title to organize blocks',
+            'requiresUrl' => false,
         ],
-        [
-            'type' => 'function',
-            'function' => [
-                'name' => 'remove_block',
-                'description' => 'Remove a block from the landing page by its title',
-                'parameters' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'title' => [
-                            'type' => 'string',
-                            'description' => 'Title of the block to remove',
-                        ],
-                    ],
-                    'required' => ['title'],
-                ],
-            ],
+        'whatsapp' => [
+            'description' => 'WhatsApp button with direct chat. Requires phoneNumber with country code.',
+            'requiresUrl' => false,
+        ],
+        'youtube' => [
+            'description' => 'YouTube video with embedded player',
+            'requiresUrl' => true,
+        ],
+        'spotify' => [
+            'description' => 'Spotify song/album with embedded player',
+            'requiresUrl' => true,
+        ],
+        'twitch' => [
+            'description' => 'Twitch channel with live stream embed',
+            'requiresUrl' => true,
+        ],
+        'tiktok' => [
+            'description' => 'TikTok video embed',
+            'requiresUrl' => true,
+        ],
+        'vimeo' => [
+            'description' => 'Vimeo video embed',
+            'requiresUrl' => true,
+        ],
+        'soundcloud' => [
+            'description' => 'SoundCloud track embed',
+            'requiresUrl' => true,
+        ],
+        'calendar' => [
+            'description' => 'Booking calendar (Calendly/Cal.com)',
+            'requiresUrl' => true,
+        ],
+        'email' => [
+            'description' => 'Email contact button. Requires emailAddress.',
+            'requiresUrl' => false,
+        ],
+        'map' => [
+            'description' => 'Google Maps location. Requires mapAddress.',
+            'requiresUrl' => false,
+        ],
+        'mastodon' => [
+            'description' => 'Mastodon profile verification',
+            'requiresUrl' => true,
         ],
     ];
+
+    /**
+     * Button style options
+     */
+    private const BUTTON_STYLES = ['solid', 'outline', 'soft', 'hard'];
+    private const BUTTON_SHAPES = ['sharp', 'rounded', 'pill'];
+    private const FONT_PAIRS = ['modern', 'elegant', 'mono'];
+
+    /**
+     * Function tools for the AI
+     */
+    private array $tools;
 
     public function __construct()
     {
@@ -106,78 +92,255 @@ class GroqService
 
         Log::info('GroqService initialized', [
             'api_key_set' => !empty($apiKey),
-            'api_key_prefix' => $apiKey ? substr($apiKey, 0, 10) . '...' : 'NOT SET',
         ]);
 
         $this->client = OpenAI::factory()
             ->withApiKey($apiKey)
             ->withBaseUri('https://api.groq.com/openai/v1')
             ->make();
+
+        $this->tools = $this->buildTools();
     }
 
     /**
-     * Generate system prompt with current blocks context
+     * Build the tools array with all block types and functions
      */
-    public function getSystemPrompt(array $currentBlocks = []): string
+    private function buildTools(): array
     {
+        $blockTypes = array_keys(self::BLOCK_TYPES);
+
+        return [
+            // Add block
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'add_block',
+                    'description' => 'Add a new block to the landing page',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'type' => [
+                                'type' => 'string',
+                                'enum' => $blockTypes,
+                                'description' => 'Block type: ' . implode(', ', array_map(
+                                    fn($t, $d) => "$t ({$d['description']})",
+                                    $blockTypes,
+                                    array_values(self::BLOCK_TYPES)
+                                )),
+                            ],
+                            'title' => [
+                                'type' => 'string',
+                                'description' => 'Display title for the block',
+                            ],
+                            'url' => [
+                                'type' => 'string',
+                                'description' => 'URL for link/media blocks. Build full URLs from usernames.',
+                            ],
+                            'phoneNumber' => [
+                                'type' => 'string',
+                                'description' => 'WhatsApp phone with country code (e.g. +5491155667788)',
+                            ],
+                            'emailAddress' => [
+                                'type' => 'string',
+                                'description' => 'Email address for email blocks',
+                            ],
+                            'mapAddress' => [
+                                'type' => 'string',
+                                'description' => 'Physical address for map blocks',
+                            ],
+                            'icon' => [
+                                'type' => 'string',
+                                'description' => 'Icon for link type: instagram, facebook, twitter, tiktok, youtube, linkedin, github, discord, twitch, spotify, threads, telegram, pinterest, snapchat',
+                            ],
+                        ],
+                        'required' => ['type', 'title'],
+                    ],
+                ],
+            ],
+            // Edit block
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'edit_block',
+                    'description' => 'Edit an existing block by its title',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'currentTitle' => [
+                                'type' => 'string',
+                                'description' => 'Current title of the block to edit',
+                            ],
+                            'newTitle' => [
+                                'type' => 'string',
+                                'description' => 'New title (optional)',
+                            ],
+                            'newUrl' => [
+                                'type' => 'string',
+                                'description' => 'New URL (optional)',
+                            ],
+                            'newIcon' => [
+                                'type' => 'string',
+                                'description' => 'New icon (optional)',
+                            ],
+                        ],
+                        'required' => ['currentTitle'],
+                    ],
+                ],
+            ],
+            // Remove block
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'remove_block',
+                    'description' => 'Remove a block from the landing page',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'title' => [
+                                'type' => 'string',
+                                'description' => 'Title of the block to remove',
+                            ],
+                        ],
+                        'required' => ['title'],
+                    ],
+                ],
+            ],
+            // Update design
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'update_design',
+                    'description' => 'Change the visual design of the landing page',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'backgroundColor' => [
+                                'type' => 'string',
+                                'description' => 'Background color in hex format (#RRGGBB)',
+                            ],
+                            'buttonColor' => [
+                                'type' => 'string',
+                                'description' => 'Button background color in hex',
+                            ],
+                            'buttonTextColor' => [
+                                'type' => 'string',
+                                'description' => 'Button text color in hex',
+                            ],
+                            'buttonStyle' => [
+                                'type' => 'string',
+                                'enum' => self::BUTTON_STYLES,
+                                'description' => 'Button style: solid (filled), outline (border only), soft (semi-transparent), hard (brutalist/shadow)',
+                            ],
+                            'buttonShape' => [
+                                'type' => 'string',
+                                'enum' => self::BUTTON_SHAPES,
+                                'description' => 'Button shape: sharp (square corners), rounded (soft corners), pill (fully rounded)',
+                            ],
+                            'fontPair' => [
+                                'type' => 'string',
+                                'enum' => self::FONT_PAIRS,
+                                'description' => 'Font style: modern (sans-serif), elegant (serif), mono (monospace)',
+                            ],
+                            'roundedAvatar' => [
+                                'type' => 'boolean',
+                                'description' => 'Whether avatar should be circular',
+                            ],
+                        ],
+                        'required' => [],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Generate system prompt with current context
+     */
+    public function getSystemPrompt(array $currentBlocks = [], array $currentDesign = []): string
+    {
+        // Format blocks
         $blocksSummary = empty($currentBlocks)
-            ? 'empty'
-            : collect($currentBlocks)->map(fn($b) => "\"{$b['title']}\" ({$b['type']})")->implode(', ');
+            ? 'ninguno'
+            : collect($currentBlocks)->map(fn($b) => "- \"{$b['title']}\" (tipo: {$b['type']})")->implode("\n");
+
+        // Format design
+        $designSummary = '';
+        if (!empty($currentDesign)) {
+            $parts = [];
+            if (!empty($currentDesign['backgroundColor'])) $parts[] = "Fondo: {$currentDesign['backgroundColor']}";
+            if (!empty($currentDesign['buttonColor'])) $parts[] = "Color botones: {$currentDesign['buttonColor']}";
+            if (!empty($currentDesign['buttonTextColor'])) $parts[] = "Texto botones: {$currentDesign['buttonTextColor']}";
+            if (!empty($currentDesign['buttonStyle'])) $parts[] = "Estilo: {$currentDesign['buttonStyle']}";
+            if (!empty($currentDesign['buttonShape'])) $parts[] = "Forma: {$currentDesign['buttonShape']}";
+            if (!empty($currentDesign['fontPair'])) $parts[] = "Fuente: {$currentDesign['fontPair']}";
+            $designSummary = implode(', ', $parts);
+        }
 
         return <<<PROMPT
-You are Linkea's assistant. Help users create their "link in bio" page.
-Respond in the user's language. Be friendly and brief.
+Sos el asistente de Linkea, una plataforma de "link in bio".
+Responde siempre en el idioma del usuario. Se amable y breve.
 
-Current blocks on page: {$blocksSummary}
+=== ESTADO ACTUAL ===
+Bloques en la pagina:
+{$blocksSummary}
 
-You have tools to:
-- add_block: Add links, headers, WhatsApp, YouTube, Spotify, email
-- update_design: Change colors (background, buttons)
-- remove_block: Delete blocks by title
+Diseño actual: {$designSummary}
 
-IMPORTANT RULES:
-1. If user gives a username like @john or john, BUILD THE FULL URL:
-   - Instagram: https://instagram.com/john
-   - TikTok: https://tiktok.com/@john
-   - Twitter/X: https://twitter.com/john
-   - YouTube: https://youtube.com/@john
-   - Facebook: https://facebook.com/john
-   - LinkedIn: https://linkedin.com/in/john
-   - GitHub: https://github.com/john
-   - Twitch: https://twitch.tv/john
-   - Discord: https://discord.gg/john
-   - Spotify: https://open.spotify.com/artist/john
+=== TIPOS DE BLOQUES DISPONIBLES ===
+- link: Enlace estandar. Usa "icon" para redes sociales (instagram, twitter, tiktok, youtube, linkedin, github, facebook, discord, twitch, threads, telegram, pinterest)
+- header: Titulo/separador de seccion
+- whatsapp: Boton de WhatsApp (requiere phoneNumber con codigo de pais como +54)
+- youtube: Video de YouTube con reproductor embebido
+- spotify: Cancion/album de Spotify con reproductor
+- twitch: Canal de Twitch con stream en vivo
+- tiktok: Video de TikTok
+- vimeo: Video de Vimeo
+- soundcloud: Audio de SoundCloud
+- calendar: Agenda de citas (Calendly, Cal.com)
+- email: Boton de email (requiere emailAddress)
+- map: Ubicacion en mapa (requiere mapAddress)
 
-2. If required info is MISSING (no username, no phone), ask before calling tools.
+=== REGLAS ===
+1. CONSTRUYE URLs completas desde usernames:
+   - Instagram: https://instagram.com/USERNAME
+   - TikTok: https://tiktok.com/@USERNAME
+   - Twitter/X: https://twitter.com/USERNAME
+   - YouTube: https://youtube.com/@USERNAME
+   - Twitch: https://twitch.tv/USERNAME
+   - GitHub: https://github.com/USERNAME
+   - LinkedIn: https://linkedin.com/in/USERNAME
+   - Facebook: https://facebook.com/USERNAME
+   - Threads: https://threads.net/@USERNAME
+   - Discord: https://discord.gg/INVITE_CODE
+   - Telegram: https://t.me/USERNAME
+   - Pinterest: https://pinterest.com/USERNAME
 
-3. For WhatsApp, phone must include country code (+5491155667788).
+2. Si falta informacion necesaria (username, telefono, email), PREGUNTA antes de ejecutar.
 
-4. For social links, use icon name: instagram, tiktok, twitter, youtube, etc.
+3. Usa el TIPO CORRECTO:
+   - Para Twitch usa type="twitch", NO type="link"
+   - Para YouTube usa type="youtube", NO type="link"
+   - Para redes sociales sin embed especial (Instagram, Twitter, etc), usa type="link" con icon correspondiente
 
-5. Common colors: yellow=#FFEB3B, red=#F44336, blue=#2196F3, green=#4CAF50, 
-   dark=#1a1a1a, white=#FFFFFF, pink=#E91E63, purple=#9C27B0
-
-6. Always respond with a brief friendly message after executing tools.
+4. Responde brevemente despues de ejecutar acciones.
 PROMPT;
     }
 
     /**
      * Chat with function calling (non-streaming)
      */
-    public function chat(array $messages, array $currentBlocks = []): array
+    public function chat(array $messages, array $currentBlocks = [], array $currentDesign = []): array
     {
-        $systemPrompt = $this->getSystemPrompt($currentBlocks);
+        $systemPrompt = $this->getSystemPrompt($currentBlocks, $currentDesign);
 
         $allMessages = array_merge(
             [['role' => 'system', 'content' => $systemPrompt]],
             $messages
         );
 
-        // Log the request
         Log::info('=== GROQ CHAT REQUEST ===');
         Log::info('System Prompt:', ['prompt' => $systemPrompt]);
         Log::info('Messages:', ['messages' => $messages]);
-        Log::info('Current Blocks:', ['blocks' => $currentBlocks]);
 
         try {
             $response = $this->client->chat()->create([
@@ -185,7 +348,7 @@ PROMPT;
                 'messages' => $allMessages,
                 'tools' => $this->tools,
                 'tool_choice' => 'auto',
-                'temperature' => 0.6,
+                'temperature' => 0.5,
                 'max_tokens' => 512,
             ]);
 
@@ -201,7 +364,6 @@ PROMPT;
                 }
             }
 
-            // Log the response
             Log::info('=== GROQ CHAT RESPONSE ===');
             Log::info('Content:', ['content' => $message->content]);
             Log::info('Tool Calls:', ['toolCalls' => $toolCalls]);
@@ -218,22 +380,18 @@ PROMPT;
 
     /**
      * Stream chat response with function calling
-     * Returns a generator for SSE streaming
      */
-    public function streamChat(array $messages, array $currentBlocks = []): \Generator
+    public function streamChat(array $messages, array $currentBlocks = [], array $currentDesign = []): \Generator
     {
-        $systemPrompt = $this->getSystemPrompt($currentBlocks);
+        $systemPrompt = $this->getSystemPrompt($currentBlocks, $currentDesign);
 
         $allMessages = array_merge(
             [['role' => 'system', 'content' => $systemPrompt]],
             $messages
         );
 
-        // Log the request
         Log::info('=== GROQ STREAM REQUEST ===');
-        Log::info('System Prompt:', ['prompt' => $systemPrompt]);
         Log::info('Messages:', ['messages' => $messages]);
-        Log::info('Current Blocks:', ['blocks' => $currentBlocks]);
 
         try {
             $stream = $this->client->chat()->createStreamed([
@@ -241,34 +399,30 @@ PROMPT;
                 'messages' => $allMessages,
                 'tools' => $this->tools,
                 'tool_choice' => 'auto',
-                'temperature' => 0.6,
+                'temperature' => 0.5,
                 'max_tokens' => 512,
             ]);
 
             $toolCalls = [];
-            $currentToolCall = null;
+            $fullContent = '';
 
             foreach ($stream as $response) {
                 $delta = $response->choices[0]->delta;
 
-                // Handle content streaming
                 if ($delta->content) {
+                    $fullContent .= $delta->content;
                     yield [
                         'type' => 'content',
                         'content' => $delta->content,
                     ];
                 }
 
-                // Handle tool calls
                 if ($delta->toolCalls) {
                     foreach ($delta->toolCalls as $toolCallDelta) {
                         $index = $toolCallDelta->index;
 
                         if (!isset($toolCalls[$index])) {
-                            $toolCalls[$index] = [
-                                'name' => '',
-                                'arguments' => '',
-                            ];
+                            $toolCalls[$index] = ['name' => '', 'arguments' => ''];
                         }
 
                         if ($toolCallDelta->function->name) {
@@ -281,23 +435,18 @@ PROMPT;
                     }
                 }
 
-                // Check for finish reason
                 if ($response->choices[0]->finishReason) {
                     break;
                 }
             }
 
-            // Log and yield tool calls at the end
             Log::info('=== GROQ STREAM RESPONSE ===');
+            Log::info('Content:', ['content' => $fullContent]);
             Log::info('Tool Calls:', ['toolCalls' => $toolCalls]);
 
             foreach ($toolCalls as $call) {
                 if ($call['name'] && $call['arguments']) {
                     $parsedArgs = json_decode($call['arguments'], true);
-                    Log::info('Executing tool:', [
-                        'name' => $call['name'],
-                        'arguments' => $parsedArgs,
-                    ]);
                     yield [
                         'type' => 'tool_call',
                         'name' => $call['name'],
@@ -308,9 +457,7 @@ PROMPT;
 
             yield ['type' => 'done'];
         } catch (\Exception $e) {
-            Log::error('Groq streaming error: ' . $e->getMessage(), [
-                'exception' => $e->getTraceAsString(),
-            ]);
+            Log::error('Groq streaming error: ' . $e->getMessage());
             yield [
                 'type' => 'error',
                 'message' => 'Error en la conexion con el asistente',
