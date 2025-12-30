@@ -103,7 +103,7 @@ class GroqService
     public function __construct()
     {
         $apiKey = config('services.groq.api_key');
-        
+
         Log::info('GroqService initialized', [
             'api_key_set' => !empty($apiKey),
             'api_key_prefix' => $apiKey ? substr($apiKey, 0, 10) . '...' : 'NOT SET',
@@ -139,11 +139,14 @@ IMPORTANT RULES:
 1. If user gives a username like @john or john, BUILD THE FULL URL:
    - Instagram: https://instagram.com/john
    - TikTok: https://tiktok.com/@john
-   - Twitter: https://twitter.com/john
+   - Twitter/X: https://twitter.com/john
    - YouTube: https://youtube.com/@john
    - Facebook: https://facebook.com/john
    - LinkedIn: https://linkedin.com/in/john
    - GitHub: https://github.com/john
+   - Twitch: https://twitch.tv/john
+   - Discord: https://discord.gg/john
+   - Spotify: https://open.spotify.com/artist/john
 
 2. If required info is MISSING (no username, no phone), ask before calling tools.
 

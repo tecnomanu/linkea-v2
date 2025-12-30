@@ -67,7 +67,6 @@ class AIController extends Controller
                 }
 
                 $this->sendSSE(['type' => 'done']);
-
             } catch (\Exception $e) {
                 Log::error('AI chat error: ' . $e->getMessage(), [
                     'trace' => $e->getTraceAsString(),

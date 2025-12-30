@@ -116,7 +116,10 @@ export function AIProvider({
             case "add_block": {
                 const blockType = (args.type as string) || "link";
                 const defaults = createBlockDefaults(blockType as any);
+                
+                // Build block with defaults first, then override with AI args
                 const newBlock: LinkBlock = {
+                    ...defaults,
                     id: Math.random().toString(36).substr(2, 9),
                     isEnabled: true,
                     clicks: 0,
@@ -124,11 +127,11 @@ export function AIProvider({
                         .fill(0)
                         .map(() => ({ value: 0 })),
                     type: blockType as any,
-                    title: (args.title as string) || "",
-                    url: (args.url as string) || "",
-                    ...defaults,
+                    title: (args.title as string) || defaults.title || "",
+                    url: (args.url as string) || defaults.url || "",
                 };
 
+                // Override with AI-provided values
                 if (args.phoneNumber)
                     newBlock.phoneNumber = args.phoneNumber as string;
                 if (args.emailAddress)
@@ -137,6 +140,7 @@ export function AIProvider({
                     newBlock.icon = { type: "brands", name: args.icon as string };
                 }
 
+                console.log("Adding block:", newBlock);
                 setPreviewLinks((prev) => [newBlock, ...prev]);
                 return toolCallToAction(toolCall);
             }
