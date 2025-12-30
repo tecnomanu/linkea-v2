@@ -34,58 +34,66 @@ export interface ToolCall {
 }
 
 /**
- * Generate a friendly message from a tool call
+ * Generate a friendly message from a tool call (fallback when AI doesn't send one)
  */
 export function generateMessageFromTool(
     toolName: string,
     args: Record<string, unknown>
 ): string {
+    // Friendly prefixes for variety
+    const addPrefixes = ["Dale!", "Perfecto!", "Listo!", "Ahi va!"];
+    const editPrefixes = ["Hecho!", "Listo!", "Ya esta!"];
+    const removePrefixes = ["Ya lo saque!", "Eliminado!", "Listo!"];
+    
+    const randomPrefix = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+
     switch (toolName) {
         case "add_block": {
             const type = args.type as string;
             const title = args.title as string;
             const icon = args.icon as string;
+            const prefix = randomPrefix(addPrefixes);
 
             // Specific block types
-            if (type === "whatsapp") return "Listo! Agregue tu WhatsApp";
-            if (type === "header") return `Agregue el encabezado "${title}"`;
-            if (type === "email") return "Agregue un boton de email";
-            if (type === "map") return "Agregue tu ubicacion en el mapa";
-            if (type === "calendar") return "Agregue tu calendario de citas";
-            if (type === "youtube") return `Agregue tu video de YouTube`;
-            if (type === "spotify") return `Agregue tu Spotify`;
-            if (type === "twitch") return `Agregue tu canal de Twitch`;
-            if (type === "tiktok") return `Agregue tu TikTok`;
-            if (type === "vimeo") return `Agregue tu video de Vimeo`;
-            if (type === "soundcloud") return `Agregue tu SoundCloud`;
-
-            // Link with icon
-            if (icon) return `Listo! Agregue tu link de ${icon}`;
-
-            return `Agregue "${title || "nuevo bloque"}"`;
+            if (type === "whatsapp") return `${prefix} Agregue tu WhatsApp`;
+            if (type === "header") return `${prefix} Agregue el encabezado "${title}"`;
+            if (type === "email") return `${prefix} Agregue tu boton de email`;
+            if (type === "map") return `${prefix} Agregue tu ubicacion`;
+            if (type === "calendar") return `${prefix} Agregue tu calendario`;
+            if (type === "youtube") return `${prefix} Agregue tu video de YouTube`;
+            if (type === "spotify") return `${prefix} Agregue tu Spotify`;
+            if (type === "twitch") return `${prefix} Agregue tu canal de Twitch`;
+            if (type === "tiktok") return `${prefix} Agregue tu TikTok`;
+            if (type === "vimeo") return `${prefix} Agregue tu video de Vimeo`;
+            if (type === "soundcloud") return `${prefix} Agregue tu SoundCloud`;
+            
+            // Link with icon (social networks)
+            if (icon) return `${prefix} Agregue tu ${icon}`;
+            
+            return `${prefix} Agregue "${title || "nuevo bloque"}"`;
         }
 
         case "edit_block": {
             const currentTitle = args.currentTitle as string;
-            return `Edite "${currentTitle}"`;
+            return `${randomPrefix(editPrefixes)} Modifique "${currentTitle}"`;
         }
 
         case "update_design": {
             const changes = [];
-            if (args.backgroundColor) changes.push("fondo");
-            if (args.buttonColor) changes.push("color de botones");
-            if (args.buttonTextColor) changes.push("texto de botones");
-            if (args.buttonStyle) changes.push(`estilo ${args.buttonStyle}`);
-            if (args.buttonShape) changes.push(`forma ${args.buttonShape}`);
-            if (args.fontPair) changes.push(`fuente ${args.fontPair}`);
-            if (args.roundedAvatar !== undefined) changes.push("avatar");
+            if (args.backgroundColor) changes.push("el fondo");
+            if (args.buttonColor) changes.push("los botones");
+            if (args.buttonTextColor) changes.push("el texto");
+            if (args.buttonStyle) changes.push("el estilo");
+            if (args.buttonShape) changes.push("la forma");
+            if (args.fontPair) changes.push("la fuente");
+            if (args.roundedAvatar !== undefined) changes.push("el avatar");
             return changes.length
-                ? `Cambie ${changes.join(", ")}!`
+                ? `${randomPrefix(editPrefixes)} Cambie ${changes.join(" y ")}!`
                 : "Diseno actualizado!";
         }
 
         case "remove_block":
-            return `Elimine "${args.title}"`;
+            return `${randomPrefix(removePrefixes)} "${args.title}"`;
 
         default:
             return "Listo!";
