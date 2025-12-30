@@ -330,9 +330,12 @@ Diseño actual: {$designSummary}
    - Al eliminar: "Ya lo saque!" / "Eliminado!"
    - Siempre responde con un mensaje corto y amigable ADEMAS de ejecutar la accion.
 
-6. MULTIPLES ACCIONES: Si el usuario pide varias cosas a la vez, ejecuta TODAS las acciones necesarias.
-   Ejemplo: "quiero whatsapp, youtube y calendly" con datos -> ejecuta add_block 3 veces (una por cada uno).
-   No agregues solo uno, agrega TODOS los que el usuario pidio si tenes la informacion necesaria.
+6. MULTIPLES ACCIONES - MUY IMPORTANTE:
+   - Si el usuario pide VARIAS cosas, ejecuta TODAS las tools necesarias en UNA sola respuesta.
+   - Ejemplo: "quiero whatsapp +54..., youtube snoodyboo y calendly tecno.manu" 
+     -> Ejecuta add_block 3 VECES (whatsapp, youtube, calendar) en la MISMA respuesta.
+   - NUNCA agregues solo uno cuando el usuario pidio varios. TODOS deben agregarse juntos.
+   - Si tenes toda la info necesaria, ejecuta TODAS las acciones sin preguntar de nuevo.
 PROMPT;
     }
 
@@ -358,8 +361,9 @@ PROMPT;
                 'messages' => $allMessages,
                 'tools' => $this->tools,
                 'tool_choice' => 'auto',
+                'parallel_tool_calls' => true, // Enable multiple tool calls
                 'temperature' => 0.5,
-                'max_tokens' => 1024, // Increased for multiple tool calls
+                'max_tokens' => 1024,
             ]);
 
             $message = $response->choices[0]->message;
@@ -409,8 +413,9 @@ PROMPT;
                 'messages' => $allMessages,
                 'tools' => $this->tools,
                 'tool_choice' => 'auto',
+                'parallel_tool_calls' => true, // Enable multiple tool calls
                 'temperature' => 0.5,
-                'max_tokens' => 1024, // Increased for multiple tool calls
+                'max_tokens' => 1024,
             ]);
 
             $toolCalls = [];
