@@ -329,6 +329,10 @@ Diseño actual: {$designSummary}
    - Al modificar: "Hecho! Ya lo cambie." / "Listo, modificado!"
    - Al eliminar: "Ya lo saque!" / "Eliminado!"
    - Siempre responde con un mensaje corto y amigable ADEMAS de ejecutar la accion.
+
+6. MULTIPLES ACCIONES: Si el usuario pide varias cosas a la vez, ejecuta TODAS las acciones necesarias.
+   Ejemplo: "quiero whatsapp, youtube y calendly" con datos -> ejecuta add_block 3 veces (una por cada uno).
+   No agregues solo uno, agrega TODOS los que el usuario pidio si tenes la informacion necesaria.
 PROMPT;
     }
 
@@ -355,7 +359,7 @@ PROMPT;
                 'tools' => $this->tools,
                 'tool_choice' => 'auto',
                 'temperature' => 0.5,
-                'max_tokens' => 512,
+                'max_tokens' => 1024, // Increased for multiple tool calls
             ]);
 
             $message = $response->choices[0]->message;
@@ -406,7 +410,7 @@ PROMPT;
                 'tools' => $this->tools,
                 'tool_choice' => 'auto',
                 'temperature' => 0.5,
-                'max_tokens' => 512,
+                'max_tokens' => 1024, // Increased for multiple tool calls
             ]);
 
             $toolCalls = [];

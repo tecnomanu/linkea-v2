@@ -32,6 +32,7 @@ export interface UIChatMessage {
     timestamp: Date;
     isLoading?: boolean;
     action?: AIAction;
+    actions?: AIAction[]; // Support multiple actions
 }
 
 interface AIContextValue {
@@ -298,7 +299,7 @@ export function AIProvider({
                 }
 
                 let fullContent = "";
-                let executedAction: AIAction | null = null;
+                const executedActions: AIAction[] = [];
                 const generatedMessages: string[] = [];
 
                 // Read SSE stream
@@ -334,7 +335,8 @@ export function AIProvider({
                                         name: data.name,
                                         arguments: data.arguments,
                                     };
-                                    executedAction = executeToolCall(toolCall);
+                                    const action = executeToolCall(toolCall);
+                                    if (action) executedActions.push(action);
                                     generatedMessages.push(
                                         generateMessageFromTool(
                                             data.name,
@@ -361,7 +363,7 @@ export function AIProvider({
                     fullContent = "Listo!";
                 }
 
-                // Update final message
+                // Update final message with all executed actions
                 setMessages((prev) =>
                     prev.map((msg) =>
                         msg.id === assistantId
@@ -369,7 +371,8 @@ export function AIProvider({
                                   ...msg,
                                   content: fullContent,
                                   isLoading: false,
-                                  action: executedAction || undefined,
+                                  action: executedActions[0] || undefined,
+                                  actions: executedActions.length > 0 ? executedActions : undefined,
                               }
                             : msg
                     )

@@ -44,8 +44,9 @@ export function generateMessageFromTool(
     const addPrefixes = ["Dale!", "Perfecto!", "Listo!", "Ahi va!"];
     const editPrefixes = ["Hecho!", "Listo!", "Ya esta!"];
     const removePrefixes = ["Ya lo saque!", "Eliminado!", "Listo!"];
-    
-    const randomPrefix = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+
+    const randomPrefix = (arr: string[]) =>
+        arr[Math.floor(Math.random() * arr.length)];
 
     switch (toolName) {
         case "add_block": {
@@ -56,20 +57,23 @@ export function generateMessageFromTool(
 
             // Specific block types
             if (type === "whatsapp") return `${prefix} Agregue tu WhatsApp`;
-            if (type === "header") return `${prefix} Agregue el encabezado "${title}"`;
+            if (type === "header")
+                return `${prefix} Agregue el encabezado "${title}"`;
             if (type === "email") return `${prefix} Agregue tu boton de email`;
             if (type === "map") return `${prefix} Agregue tu ubicacion`;
             if (type === "calendar") return `${prefix} Agregue tu calendario`;
-            if (type === "youtube") return `${prefix} Agregue tu video de YouTube`;
+            if (type === "youtube")
+                return `${prefix} Agregue tu video de YouTube`;
             if (type === "spotify") return `${prefix} Agregue tu Spotify`;
-            if (type === "twitch") return `${prefix} Agregue tu canal de Twitch`;
+            if (type === "twitch")
+                return `${prefix} Agregue tu canal de Twitch`;
             if (type === "tiktok") return `${prefix} Agregue tu TikTok`;
             if (type === "vimeo") return `${prefix} Agregue tu video de Vimeo`;
             if (type === "soundcloud") return `${prefix} Agregue tu SoundCloud`;
-            
+
             // Link with icon (social networks)
             if (icon) return `${prefix} Agregue tu ${icon}`;
-            
+
             return `${prefix} Agregue "${title || "nuevo bloque"}"`;
         }
 

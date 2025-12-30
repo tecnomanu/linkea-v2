@@ -116,13 +116,18 @@ function ChatMessageBubble({ message }: ChatMessageProps) {
                     </span>
                 )}
 
-                {/* Action indicator */}
-                {message.action && !message.isLoading && (
-                    <div className="mt-2 pt-2 border-t border-neutral-200 dark:border-neutral-600">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-green-600 dark:text-green-400">
-                            {getActionLabel(message.action).icon}
-                            {getActionLabel(message.action).text}
-                        </span>
+                {/* Action indicator(s) */}
+                {((message.actions && message.actions.length > 0) || message.action) && !message.isLoading && (
+                    <div className="mt-2 pt-2 border-t border-neutral-200 dark:border-neutral-600 space-y-1">
+                        {(message.actions || (message.action ? [message.action] : [])).map((action, idx) => (
+                            <span 
+                                key={idx}
+                                className="flex items-center gap-1.5 text-xs font-medium text-green-600 dark:text-green-400"
+                            >
+                                {getActionLabel(action).icon}
+                                {getActionLabel(action).text}
+                            </span>
+                        ))}
                     </div>
                 )}
             </div>
