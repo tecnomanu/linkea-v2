@@ -647,7 +647,9 @@ export default function Dashboard({
                             {activeTab === "links" && (
                                 <div className="flex bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl mt-4">
                                     <button
-                                        onClick={() => setCurrentLinkType("blocks")}
+                                        onClick={() =>
+                                            setCurrentLinkType("blocks")
+                                        }
                                         className={`flex-1 px-4 py-2.5 rounded-lg font-bold text-sm transition-all ${
                                             currentLinkType === "blocks"
                                                 ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-md"
@@ -657,7 +659,9 @@ export default function Dashboard({
                                         BLOQUES
                                     </button>
                                     <button
-                                        onClick={() => setCurrentLinkType("social")}
+                                        onClick={() =>
+                                            setCurrentLinkType("social")
+                                        }
                                         className={`flex-1 px-4 py-2.5 rounded-lg font-bold text-sm transition-all ${
                                             currentLinkType === "social"
                                                 ? "bg-gradient-to-r from-brand-500 to-pink-500 text-white shadow-md"
@@ -673,11 +677,13 @@ export default function Dashboard({
 
                     {/* Sticky LinkBar - Shows public URL (hidden on profile, links, and AI tabs) */}
                     {/* Note: Links tab has its own sticky container, AI tab has its own layout */}
-                    {activeTab !== "profile" && activeTab !== "links" && activeTab !== "ai" && (
-                        <div className="sticky top-0 md:top-20 z-30 bg-slate-50/95 dark:bg-neutral-950/95 backdrop-blur-xl -mx-4 px-4 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12 py-4">
-                            <LinkBar landing={landing} user={auth.user} />
-                        </div>
-                    )}
+                    {activeTab !== "profile" &&
+                        activeTab !== "links" &&
+                        activeTab !== "ai" && (
+                            <div className="sticky top-0 md:top-20 z-30 bg-slate-50/95 dark:bg-neutral-950/95 backdrop-blur-xl -mx-4 px-4 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12 py-4">
+                                <LinkBar landing={landing} user={auth.user} />
+                            </div>
+                        )}
 
                     {/* Content Rendering based on activeTab */}
                     {activeTab === "dashboard" && (
@@ -726,7 +732,8 @@ export default function Dashboard({
                 </div>
             </div>
 
-            {/* Right: Live Preview (Desktop Sticky - Only Mobile Mode) */}
+            {/* Right: Live Preview (Desktop Sticky) - Hidden on AI tab (has its own preview) */}
+            {activeTab !== "ai" && (
             <div className="w-[440px] hidden xl:flex flex-col items-center justify-center gap-4 py-6 sticky top-0 h-screen bg-white/50 dark:bg-neutral-900/50 backdrop-blur-xl border-l border-neutral-200/50 dark:border-neutral-800/50">
                 {/* Live Preview Badge - shows AI indicator when in AI tab */}
                 <span className="text-[10px] font-bold tracking-[0.2em] text-neutral-400 uppercase bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full shrink-0">
@@ -768,6 +775,7 @@ export default function Dashboard({
                     <span>Vista expandida</span>
                 </button>
             </div>
+            )}
 
             {/* Fullscreen Responsive Preview Modal */}
             <DevicePreviewModal

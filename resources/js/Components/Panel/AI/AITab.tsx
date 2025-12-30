@@ -1,11 +1,11 @@
 /**
  * AITab - Main AI assistant interface
  *
- * Displays:
- * - Chat interface (always ready - API-based)
- * - Save/Discard buttons for changes
- * - Desktop: Chat + Preview side by side
- * - Mobile: Chat + Preview button (opens drawer)
+ * Layout:
+ * - Desktop/Tablet (md+): Chat + Preview side by side (50/50)
+ * - Mobile (<md): Chat only + Preview button opens drawer
+ *
+ * Chat has fixed height with internal scroll
  */
 
 import { SocialLink } from "@/Components/Panel/Links/LinksTab";
@@ -77,13 +77,13 @@ function AITabInner({ user, socialLinks, onPreviewChange }: AITabInnerProps) {
 
                         {/* Action buttons */}
                         <div className="flex items-center gap-2">
-                            {/* Mobile Preview button */}
+                            {/* Mobile Preview button - only visible below md */}
                             <button
                                 onClick={() => setIsPreviewOpen(true)}
-                                className="xl:hidden flex items-center gap-2 px-3 py-2.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-xl font-medium text-sm hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                                className="md:hidden flex items-center gap-2 px-3 py-2.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-xl font-medium text-sm hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
                             >
                                 <Eye size={16} />
-                                <span className="hidden sm:inline">Preview</span>
+                                <span>Preview</span>
                             </button>
 
                             {messages.length > 0 && (
@@ -133,37 +133,37 @@ function AITabInner({ user, socialLinks, onPreviewChange }: AITabInnerProps) {
                 )}
             </div>
 
-            {/* Main content area - Chat + Preview side by side on desktop */}
-            <div className="mt-6 pb-8 xl:pb-32">
-                <div className="flex flex-col xl:flex-row gap-6">
-                    {/* Chat area */}
-                    <div className="flex-1 bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-soft-xl overflow-hidden min-h-[400px] xl:min-h-[600px] flex flex-col">
+            {/* Main content area - Fixed height container */}
+            <div className="mt-6 pb-8">
+                <div className="flex flex-col md:flex-row gap-6 h-[calc(100vh-280px)] min-h-[500px]">
+                    {/* Chat area - Fixed height with internal scroll */}
+                    <div className="flex-1 bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-soft-xl overflow-hidden flex flex-col h-full">
                         <AIChat />
                     </div>
 
-                    {/* Desktop Preview - Only visible on xl screens */}
-                    <div className="hidden xl:flex flex-col items-center bg-neutral-100 dark:bg-neutral-800/50 rounded-3xl p-6 w-[320px] shrink-0">
-                        <span className="text-[10px] font-bold tracking-widest text-neutral-400 uppercase mb-4">
+                    {/* Preview - Only visible on md+ screens */}
+                    <div className="hidden md:flex flex-col items-center bg-neutral-100 dark:bg-neutral-800/50 rounded-3xl p-4 lg:p-6 w-full md:w-[300px] lg:w-[340px] shrink-0 h-full">
+                        <span className="text-[10px] font-bold tracking-widest text-neutral-400 uppercase mb-3">
                             Preview IA
                         </span>
-                        <div className="sticky top-32">
+                        <div className="flex-1 flex items-center justify-center overflow-hidden">
                             <PhonePreview
                                 user={previewUser}
                                 links={previewLinks}
                                 socialLinks={socialLinks}
                                 device="mobile"
-                                scale={0.6}
+                                scale={0.55}
                             />
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Mobile Preview Drawer */}
+            {/* Mobile Preview Drawer - Only for mobile (<md) */}
             <Dialog
                 open={isPreviewOpen}
                 onClose={() => setIsPreviewOpen(false)}
-                className="relative z-50 xl:hidden"
+                className="relative z-50 md:hidden"
             >
                 {/* Backdrop */}
                 <div
@@ -194,13 +194,13 @@ function AITabInner({ user, socialLinks, onPreviewChange }: AITabInnerProps) {
 
                         {/* Preview content */}
                         <div className="p-4 overflow-y-auto max-h-[calc(85vh-60px)] flex justify-center">
-                            <div className="w-full max-w-[300px]">
+                            <div className="w-full max-w-[280px]">
                                 <PhonePreview
                                     user={previewUser}
                                     links={previewLinks}
                                     socialLinks={socialLinks}
                                     device="mobile"
-                                    scale={0.65}
+                                    scale={0.6}
                                 />
                             </div>
                         </div>
