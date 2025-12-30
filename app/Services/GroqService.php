@@ -152,6 +152,10 @@ class GroqService
                                 'type' => 'string',
                                 'description' => 'Icon for link type: instagram, facebook, twitter, tiktok, youtube, linkedin, github, discord, twitch, spotify, threads, telegram, pinterest, snapchat',
                             ],
+                            'showInlinePlayer' => [
+                                'type' => 'boolean',
+                                'description' => 'Show embedded player for youtube/spotify/twitch/vimeo/soundcloud. Default true for these types.',
+                            ],
                         ],
                         'required' => ['type', 'title'],
                     ],

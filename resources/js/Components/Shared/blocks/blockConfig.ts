@@ -314,7 +314,7 @@ export const BLOCK_TYPES: Record<BlockType, BlockTypeConfig> = {
         defaults: {
             title: "Mi Canal de Twitch",
             url: "",
-            showInlinePlayer: false,
+            showInlinePlayer: true,
         },
     },
 

@@ -141,6 +141,9 @@ export function AIProvider({
                 if (args.icon) {
                     newBlock.icon = { type: "brands", name: args.icon as string };
                 }
+                if (args.showInlinePlayer !== undefined) {
+                    newBlock.showInlinePlayer = args.showInlinePlayer as boolean;
+                }
 
                 console.log("Adding block:", newBlock);
                 setPreviewLinks((prev) => [newBlock, ...prev]);
