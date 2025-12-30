@@ -734,47 +734,47 @@ export default function Dashboard({
 
             {/* Right: Live Preview (Desktop Sticky) - Hidden on AI tab (has its own preview) */}
             {activeTab !== "ai" && (
-            <div className="w-[440px] hidden xl:flex flex-col items-center justify-center gap-4 py-6 sticky top-0 h-screen bg-white/50 dark:bg-neutral-900/50 backdrop-blur-xl border-l border-neutral-200/50 dark:border-neutral-800/50">
-                {/* Live Preview Badge - shows AI indicator when in AI tab */}
-                <span className="text-[10px] font-bold tracking-[0.2em] text-neutral-400 uppercase bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full shrink-0">
-                    {activeTab === "ai" ? "Preview IA" : "Vista previa"}
-                </span>
+                <div className="w-[440px] hidden xl:flex flex-col items-center justify-center gap-4 py-6 sticky top-0 h-screen bg-white/50 dark:bg-neutral-900/50 backdrop-blur-xl border-l border-neutral-200/50 dark:border-neutral-800/50">
+                    {/* Live Preview Badge - shows AI indicator when in AI tab */}
+                    <span className="text-[10px] font-bold tracking-[0.2em] text-neutral-400 uppercase bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full shrink-0">
+                        {activeTab === "ai" ? "Preview IA" : "Vista previa"}
+                    </span>
 
-                {/* Phone Component Container - Scales based on available height */}
-                {/* When in AI tab, show AI preview; otherwise show normal preview */}
-                <div className="flex-1 flex items-center justify-center min-h-0 w-full">
-                    <PhonePreview
-                        user={
-                            activeTab === "ai" && aiPreviewDesign
-                                ? {
-                                      ...user,
-                                      customDesign: {
-                                          ...user.customDesign,
-                                          ...aiPreviewDesign,
-                                      },
-                                  }
-                                : user
-                        }
-                        links={
-                            activeTab === "ai" && aiPreviewLinks
-                                ? aiPreviewLinks
-                                : links
-                        }
-                        socialLinks={socialLinks}
-                        device="mobile"
-                        scale={0.8}
-                    />
+                    {/* Phone Component Container - Scales based on available height */}
+                    {/* When in AI tab, show AI preview; otherwise show normal preview */}
+                    <div className="flex-1 flex items-center justify-center min-h-0 w-full">
+                        <PhonePreview
+                            user={
+                                activeTab === "ai" && aiPreviewDesign
+                                    ? {
+                                          ...user,
+                                          customDesign: {
+                                              ...user.customDesign,
+                                              ...aiPreviewDesign,
+                                          },
+                                      }
+                                    : user
+                            }
+                            links={
+                                activeTab === "ai" && aiPreviewLinks
+                                    ? aiPreviewLinks
+                                    : links
+                            }
+                            socialLinks={socialLinks}
+                            device="mobile"
+                            scale={0.8}
+                        />
+                    </div>
+
+                    {/* Desktop Fullscreen Trigger */}
+                    <button
+                        onClick={() => openPreview("desktop")}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-full font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all shrink-0"
+                    >
+                        <Maximize2 size={16} />
+                        <span>Vista expandida</span>
+                    </button>
                 </div>
-
-                {/* Desktop Fullscreen Trigger */}
-                <button
-                    onClick={() => openPreview("desktop")}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-full font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all shrink-0"
-                >
-                    <Maximize2 size={16} />
-                    <span>Vista expandida</span>
-                </button>
-            </div>
             )}
 
             {/* Fullscreen Responsive Preview Modal */}
