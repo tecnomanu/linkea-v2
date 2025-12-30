@@ -606,70 +606,74 @@ export default function Dashboard({
                                 </div>
                             )}
                         </div>
-                        {/* Auto-save status, preview button, and manual save */}
-                        <div className="flex items-center gap-3">
-                            <AutoSaveBadge />
-                            {/* Preview button - visible when Live Preview sidebar is hidden */}
-                            <button
-                                onClick={() => openPreview("mobile")}
-                                className="xl:hidden flex items-center gap-2 px-4 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-semibold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all"
-                            >
-                                <Eye size={16} />
-                                <span>Vista previa</span>
-                            </button>
-                            <ManualSaveButton onClick={handleManualSave} />
-                        </div>
-                    </header>
-
-                    {/* Mobile Title */}
-                    <div className="md:hidden mb-4">
-                        <div className="flex justify-between items-center">
-                            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white capitalize">
-                                {activeTab === "dashboard"
-                                    ? "Resumen"
-                                    : activeTab}
-                            </h1>
-                            <button
-                                onClick={() => openPreview("mobile")}
-                                className="p-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all"
-                                aria-label="Vista previa"
-                            >
-                                <Eye size={18} />
-                            </button>
-                        </div>
-                        <div className="mt-2">
-                            <AutoSaveBadge />
-                        </div>
-                        {/* Links Tab Switcher - Mobile */}
-                        {activeTab === "links" && (
-                            <div className="flex bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl mt-4">
+                        {/* Auto-save status, preview button, and manual save - hidden on AI tab */}
+                        {activeTab !== "ai" && (
+                            <div className="flex items-center gap-3">
+                                <AutoSaveBadge />
+                                {/* Preview button - visible when Live Preview sidebar is hidden */}
                                 <button
-                                    onClick={() => setCurrentLinkType("blocks")}
-                                    className={`flex-1 px-4 py-2.5 rounded-lg font-bold text-sm transition-all ${
-                                        currentLinkType === "blocks"
-                                            ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-md"
-                                            : "text-neutral-500 dark:text-neutral-400"
-                                    }`}
+                                    onClick={() => openPreview("mobile")}
+                                    className="xl:hidden flex items-center gap-2 px-4 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-semibold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all"
                                 >
-                                    BLOQUES
+                                    <Eye size={16} />
+                                    <span>Vista previa</span>
                                 </button>
-                                <button
-                                    onClick={() => setCurrentLinkType("social")}
-                                    className={`flex-1 px-4 py-2.5 rounded-lg font-bold text-sm transition-all ${
-                                        currentLinkType === "social"
-                                            ? "bg-gradient-to-r from-brand-500 to-pink-500 text-white shadow-md"
-                                            : "bg-gradient-to-r from-brand-200/50 to-pink-200/50 dark:from-brand-900/30 dark:to-pink-900/30 text-brand-600 dark:text-brand-400"
-                                    }`}
-                                >
-                                    REDES
-                                </button>
+                                <ManualSaveButton onClick={handleManualSave} />
                             </div>
                         )}
-                    </div>
+                    </header>
 
-                    {/* Sticky LinkBar - Shows public URL (visible on all tabs except profile and links) */}
-                    {/* Note: Links tab has its own sticky container that includes LinkBar */}
-                    {activeTab !== "profile" && activeTab !== "links" && (
+                    {/* Mobile Title - hidden on AI tab (AI tab has its own header) */}
+                    {activeTab !== "ai" && (
+                        <div className="md:hidden mb-4">
+                            <div className="flex justify-between items-center">
+                                <h1 className="text-2xl font-bold text-neutral-900 dark:text-white capitalize">
+                                    {activeTab === "dashboard"
+                                        ? "Resumen"
+                                        : activeTab}
+                                </h1>
+                                <button
+                                    onClick={() => openPreview("mobile")}
+                                    className="p-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all"
+                                    aria-label="Vista previa"
+                                >
+                                    <Eye size={18} />
+                                </button>
+                            </div>
+                            <div className="mt-2">
+                                <AutoSaveBadge />
+                            </div>
+                            {/* Links Tab Switcher - Mobile */}
+                            {activeTab === "links" && (
+                                <div className="flex bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl mt-4">
+                                    <button
+                                        onClick={() => setCurrentLinkType("blocks")}
+                                        className={`flex-1 px-4 py-2.5 rounded-lg font-bold text-sm transition-all ${
+                                            currentLinkType === "blocks"
+                                                ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-md"
+                                                : "text-neutral-500 dark:text-neutral-400"
+                                        }`}
+                                    >
+                                        BLOQUES
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentLinkType("social")}
+                                        className={`flex-1 px-4 py-2.5 rounded-lg font-bold text-sm transition-all ${
+                                            currentLinkType === "social"
+                                                ? "bg-gradient-to-r from-brand-500 to-pink-500 text-white shadow-md"
+                                                : "bg-gradient-to-r from-brand-200/50 to-pink-200/50 dark:from-brand-900/30 dark:to-pink-900/30 text-brand-600 dark:text-brand-400"
+                                        }`}
+                                    >
+                                        REDES
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Sticky LinkBar - Shows public URL (hidden on profile, links, and AI tabs) */}
+                    {/* Note: Links tab has its own sticky container, AI tab has its own layout */}
+                    {activeTab !== "profile" && activeTab !== "links" && activeTab !== "ai" && (
                         <div className="sticky top-0 md:top-20 z-30 bg-slate-50/95 dark:bg-neutral-950/95 backdrop-blur-xl -mx-4 px-4 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12 py-4">
                             <LinkBar landing={landing} user={auth.user} />
                         </div>
