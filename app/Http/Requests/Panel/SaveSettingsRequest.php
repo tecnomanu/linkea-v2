@@ -4,7 +4,6 @@ namespace App\Http\Requests\Panel;
 
 use App\Constants\ReservedSlugs;
 use App\Constants\UserRoles;
-use App\Models\User;
 use App\Support\Helpers\StringHelper;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -16,19 +15,35 @@ class SaveSettingsRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Normalize handle before validation runs.
+     * This ensures Rule::unique searches for the correct value.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('handle') && $this->handle) {
+            $this->merge([
+                'handle' => StringHelper::normalizeHandle($this->handle),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
+        $landingId = $this->route('landingId');
+
         return [
             'handle' => [
                 'nullable',
                 'string',
                 'min:3',
                 'max:30',
-                'regex:/^@?[a-z0-9][a-z0-9._-]*[a-z0-9]$/i',
-                Rule::unique('landings', 'slug')->ignore(
-                    $this->route('landingId')
-                ),
-                // Custom validation for reserved slugs and user collision
+                'regex:/^[a-z0-9][a-z0-9._-]*[a-z0-9]$/i',
+                // Check uniqueness in slug field (excluding current landing)
+                Rule::unique('landings', 'slug')->ignore($landingId),
+                // Check uniqueness in domain_name field (excluding current landing)
+                Rule::unique('landings', 'domain_name')->ignore($landingId),
+                // Custom validation for reserved slugs
                 function ($attribute, $value, $fail) {
                     $this->validateHandleAvailability($value, $fail);
                 },
@@ -43,7 +58,8 @@ class SaveSettingsRequest extends FormRequest
 
     /**
      * Custom validation for handle availability.
-     * Checks reserved slugs (root can bypass) and user collision.
+     * Checks reserved slugs (root can bypass).
+     * Uniqueness is already handled by Rule::unique for slug and domain_name.
      */
     protected function validateHandleAvailability($value, $fail): void
     {
@@ -51,35 +67,12 @@ class SaveSettingsRequest extends FormRequest
             return;
         }
 
-        $normalized = StringHelper::normalizeHandle($value);
         $user = $this->user();
         $isRoot = $user && $user->hasRole(UserRoles::ROOT);
 
         // Check reserved slugs (root users can bypass)
-        if (!$isRoot && ReservedSlugs::isReserved($normalized)) {
+        if (!$isRoot && ReservedSlugs::isReserved($value)) {
             $fail('Este nombre de usuario no esta disponible');
-            return;
-        }
-
-        // Check collision with existing usernames (excluding current user)
-        $userQuery = User::where('username', $normalized);
-        if ($user) {
-            $userQuery->where('id', '!=', $user->id);
-        }
-
-        if ($userQuery->exists()) {
-            $fail('Este nombre de usuario ya esta en uso');
-            return;
-        }
-
-        // Check collision with domain_name in landings (different field than slug)
-        $landingId = $this->route('landingId');
-        $domainExists = \App\Models\Landing::where('domain_name', $normalized)
-            ->where('id', '!=', $landingId)
-            ->exists();
-
-        if ($domainExists) {
-            $fail('Este nombre de usuario ya esta en uso');
         }
     }
 
@@ -101,16 +94,10 @@ class SaveSettingsRequest extends FormRequest
         $data = $this->validated();
         $handle = $data['handle'] ?? null;
 
-        // Normalize handle (remove @ prefix, lowercase)
-        if ($handle) {
-            $handle = StringHelper::normalizeHandle($handle);
-        }
-
         // Build meta object for SEO fields
         $meta = array_filter([
             'title' => $data['seoTitle'] ?? null,
             'description' => $data['seoDescription'] ?? null,
-            // 'image' => $data['seoImage'] ?? null, // Future: custom OG image
         ], fn($v) => $v !== null);
 
         // Build analytics object
