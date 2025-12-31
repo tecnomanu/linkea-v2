@@ -261,18 +261,18 @@ function MiniLandingPreview({
     }
 
     const handle = landing.user.handle.replace("@", "");
-    
+
     // Two-stage scaling for better quality:
     // 1. Render PhonePreview at 50% (190x390) - good quality intermediate size
     // 2. Scale container to final size
     const internalScale = 0.5;
     const intermediateWidth = 380 * internalScale; // 190
     const intermediateHeight = 780 * internalScale; // 390
-    
+
     // Final container size
     const finalWidth = compact ? 84 : 100;
     const finalHeight = compact ? 172 : 205;
-    
+
     // Container scale to go from intermediate to final
     const containerScale = finalWidth / intermediateWidth;
 
