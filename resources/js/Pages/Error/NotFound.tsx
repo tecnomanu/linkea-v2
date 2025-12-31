@@ -261,10 +261,20 @@ function MiniLandingPreview({
     }
 
     const handle = landing.user.handle.replace("@", "");
-    const scale = compact ? 0.22 : 0.26;
-    // PhonePreview is 380x780, so scaled dimensions:
-    const width = Math.round(380 * scale);
-    const height = Math.round(780 * scale);
+    
+    // Two-stage scaling for better quality:
+    // 1. Render PhonePreview at 50% (190x390) - good quality intermediate size
+    // 2. Scale container to final size
+    const internalScale = 0.5;
+    const intermediateWidth = 380 * internalScale; // 190
+    const intermediateHeight = 780 * internalScale; // 390
+    
+    // Final container size
+    const finalWidth = compact ? 84 : 100;
+    const finalHeight = compact ? 172 : 205;
+    
+    // Container scale to go from intermediate to final
+    const containerScale = finalWidth / intermediateWidth;
 
     return (
         <a
@@ -273,28 +283,38 @@ function MiniLandingPreview({
             rel="noopener noreferrer"
             className="group flex flex-col items-center"
         >
-            {/* Phone container with exact dimensions */}
+            {/* Outer container with final dimensions */}
             <div
                 className="relative overflow-hidden rounded-2xl shadow-lg group-hover:shadow-xl transition-shadow duration-300"
-                style={{ width, height }}
+                style={{ width: finalWidth, height: finalHeight }}
             >
-                {/* PhonePreview scaled down - disable internal links */}
+                {/* Scale down from intermediate size to final size */}
                 <div
-                    className="pointer-events-none"
                     style={{
-                        transform: `scale(${scale})`,
+                        transform: `scale(${containerScale})`,
                         transformOrigin: "top left",
-                        width: 380,
-                        height: 780,
+                        width: intermediateWidth,
+                        height: intermediateHeight,
                     }}
                 >
-                    <PhonePreview
-                        user={landing.user}
-                        links={landing.links}
-                        device="mobile"
-                        scale={1}
-                        isPreview={true}
-                    />
+                    {/* PhonePreview at intermediate scale - disable internal links */}
+                    <div
+                        className="pointer-events-none"
+                        style={{
+                            transform: `scale(${internalScale})`,
+                            transformOrigin: "top left",
+                            width: 380,
+                            height: 780,
+                        }}
+                    >
+                        <PhonePreview
+                            user={landing.user}
+                            links={landing.links}
+                            device="mobile"
+                            scale={1}
+                            isPreview={true}
+                        />
+                    </div>
                 </div>
                 {/* Hover overlay */}
                 <div className="absolute inset-0 bg-brand-500/0 group-hover:bg-brand-500/10 transition-colors duration-300 rounded-2xl" />
