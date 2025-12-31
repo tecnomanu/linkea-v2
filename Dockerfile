@@ -46,8 +46,8 @@ COPY ./docker-compose/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY ./docker-compose/nginx/conf.d/app.conf /etc/nginx/http.d/default.conf
 COPY ./docker-compose/supervisord/supervisord.ini /etc/supervisor.d/supervisord.ini
 COPY ./docker-compose/crontab /etc/crontabs/root
-COPY ./docker-compose/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY ./docker-compose/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 WORKDIR /var/www
 EXPOSE 80
@@ -59,10 +59,12 @@ EXPOSE 80
 FROM node:22-alpine AS assets
 WORKDIR /var/www
 
+# Copy .env first (contains VITE_ variables needed for build)
+COPY .env ./
+
 # Install dependencies
 COPY package.json package-lock.json ./
 RUN npm ci
-
 # Build assets
 COPY vite.config.js ./
 COPY tailwind.config.js ./
@@ -93,5 +95,5 @@ RUN mkdir -p /var/www/storage/logs /var/www/bootstrap/cache && \
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
 EXPOSE 80
-CMD ["supervisord", "-c", "/etc/supervisor.d/supervisord.ini"]
 
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

@@ -205,9 +205,11 @@ export default function LandingView({ landing }: LandingViewProps) {
                 | "fixed",
             backgroundRepeat: bgConfig.backgroundRepeat,
             buttonStyle:
-                buttons.style as UserProfile["customDesign"]["buttonStyle"],
+                (buttons.style as UserProfile["customDesign"]["buttonStyle"]) ||
+                "solid",
             buttonShape:
-                buttons.shape as UserProfile["customDesign"]["buttonShape"],
+                (buttons.shape as UserProfile["customDesign"]["buttonShape"]) ||
+                "rounded",
             buttonSize:
                 (buttons.size as UserProfile["customDesign"]["buttonSize"]) ||
                 "compact",

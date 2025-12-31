@@ -240,14 +240,23 @@ class MongoImportSeeder extends Seeder
             }
 
             // Sanitize domain_name for URLs (preserves . _ - but removes special chars like ¥)
-            $domainName = $this->sanitizeSlugForUrl($landingData['domain_name'] ?? $landingData['slug'] ?? '');
+            $originalDomainName = $landingData['domain_name'] ?? $landingData['slug'] ?? '';
+            $domainName = $this->sanitizeSlugForUrl($originalDomainName);
             if (empty($domainName)) {
                 $domainName = 'landing-' . substr($mongoId, -8);
             }
 
             // Check for duplicate domain_name
+            $isDuplicate = false;
             if (Landing::where('domain_name', $domainName)->exists()) {
                 $domainName = $domainName . '-' . substr($mongoId, -4);
+                $isDuplicate = true;
+            }
+
+            // Debug: show modified domain names
+            if ($originalDomainName !== $domainName) {
+                $reason = $isDuplicate ? '(duplicate)' : '(sanitized)';
+                $this->command->comment("  Renamed: {$originalDomainName} -> {$domainName} {$reason}");
             }
 
             // Process logo
@@ -513,15 +522,59 @@ class MongoImportSeeder extends Seeder
         }
         $config['header']['avatarFloating'] = false;
 
-        // Ensure buttons config exists and set size to compact (legacy default)
-        if (!isset($config['buttons'])) {
-            $config['buttons'] = [];
-        }
-        if (!isset($config['buttons']['size'])) {
-            $config['buttons']['size'] = 'compact';
-        }
+        // Convert legacy buttons format to new format
+        // Pass icons from template_config level (legacy stores icons separately)
+        $legacyIcons = $config['icons'] ?? [];
+        $config['buttons'] = $this->convertLegacyButtons($config['buttons'] ?? [], $legacyIcons);
 
         return $config;
+    }
+
+    /**
+     * Convert legacy buttons config to new v2 format.
+     *
+     * Legacy format:
+     *   buttons: { backgroundColor, backgroundHoverColor, textColor, textHoverColor, borderShow, borderColor }
+     *   icons: { show, position (left|align|right), size }
+     *
+     * New format:
+     *   buttons: { style, shape, size, backgroundColor, textColor, borderColor, showIcons, iconAlignment }
+     */
+    private function convertLegacyButtons(array $buttons, array $legacyIcons = []): array
+    {
+        $bgColor = $buttons['backgroundColor'] ?? '#000000';
+        $textColor = $buttons['textColor'] ?? '#ffffff';
+        $borderShow = $buttons['borderShow'] ?? false;
+        $borderColor = $buttons['borderColor'] ?? null;
+
+        // Determine style based on legacy borderShow + colors
+        $style = 'solid'; // Default
+        $finalBorderColor = null;
+
+        if ($borderShow && $borderColor) {
+            // If borderColor differs from backgroundColor, it's outline
+            // If they're the same, it's solid (border is just decorative, same color)
+            if (strtolower($borderColor) !== strtolower($bgColor)) {
+                $style = 'outline';
+                $finalBorderColor = $borderColor;
+            }
+            // If same color, keep solid (no need for separate borderColor)
+        }
+
+        // Map icon position: legacy "align" → v2 "inline"
+        $legacyPosition = $legacyIcons['position'] ?? ($buttons['icons']['position'] ?? 'left');
+        $iconAlignment = $legacyPosition === 'align' ? 'inline' : $legacyPosition;
+
+        return [
+            'style' => $style,
+            'shape' => $buttons['shape'] ?? 'rounded',
+            'size' => $buttons['size'] ?? 'compact',
+            'backgroundColor' => $bgColor,
+            'textColor' => $textColor,
+            'borderColor' => $finalBorderColor,
+            'showIcons' => $legacyIcons['show'] ?? ($buttons['showIcons'] ?? true),
+            'iconAlignment' => $iconAlignment,
+        ];
     }
 
     /**

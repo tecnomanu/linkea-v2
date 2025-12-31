@@ -162,51 +162,21 @@ class PublicLandingResource extends JsonResource
     }
 
     /**
-     * Resolve button style from legacy config.
-     * Legacy uses borderShow boolean; new uses style string.
+     * Get button style from config.
+     * After MongoImportSeeder migration, all data should have new format.
      */
     protected function resolveButtonStyle(array $buttons): string
     {
-        // If style is already set, use it
-        if (!empty($buttons['style'])) {
-            return $buttons['style'];
-        }
-
-        // Legacy: borderShow = true means outline style
-        if (!empty($buttons['borderShow'])) {
-            return 'outline';
-        }
-
-        return 'solid';
+        return $buttons['style'] ?? 'solid';
     }
 
     /**
-     * Resolve border color from config.
-     * Handles both legacy (borderShow + borderColor) and new (direct borderColor) formats.
+     * Get border color from config.
+     * After MongoImportSeeder migration, borderColor is only set when different from bg.
      */
     protected function resolveBorderColor(array $buttons): ?string
     {
-        $borderColor = $buttons['borderColor'] ?? null;
-
-        if (empty($borderColor)) {
-            return null;
-        }
-
-        // Return borderColor if it's set and different from backgroundColor
-        $bgColor = $buttons['backgroundColor'] ?? ($buttons['color'] ?? '#000000');
-
-        if (strtolower($borderColor) !== strtolower($bgColor)) {
-            return $borderColor;
-        }
-
-        // If borderColor equals backgroundColor, only return it for outline style
-        // (outline needs the color even if same, for the border itself)
-        $style = $buttons['style'] ?? 'solid';
-        if ($style === 'outline') {
-            return $borderColor;
-        }
-
-        return null;
+        return $buttons['borderColor'] ?? null;
     }
 
     /**
