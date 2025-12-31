@@ -538,27 +538,25 @@ class MongoImportSeeder extends Seeder
      *   icons: { show, position (left|align|right), size }
      *
      * New format:
-     *   buttons: { style, shape, size, backgroundColor, textColor, borderColor, showIcons, iconAlignment }
+     *   buttons: { style, shape, size, backgroundColor, textColor, borderColor, borderEnabled, showIcons, iconAlignment }
      */
     private function convertLegacyButtons(array $buttons, array $legacyIcons = []): array
     {
         $bgColor = $buttons['backgroundColor'] ?? '#000000';
         $textColor = $buttons['textColor'] ?? '#ffffff';
         $borderShow = $buttons['borderShow'] ?? false;
-        $borderColor = $buttons['borderColor'] ?? null;
+        // Always preserve borderColor from legacy (default: black)
+        $borderColor = $buttons['borderColor'] ?? '#000000';
 
         // Determine style based on legacy borderShow + colors
         $style = 'solid'; // Default
-        $finalBorderColor = null;
 
         if ($borderShow && $borderColor) {
             // If borderColor differs from backgroundColor, it's outline
             // If they're the same, it's solid (border is just decorative, same color)
             if (strtolower($borderColor) !== strtolower($bgColor)) {
                 $style = 'outline';
-                $finalBorderColor = $borderColor;
             }
-            // If same color, keep solid (no need for separate borderColor)
         }
 
         // Map icon position: legacy "align" → v2 "inline"
@@ -571,7 +569,10 @@ class MongoImportSeeder extends Seeder
             'size' => $buttons['size'] ?? 'compact',
             'backgroundColor' => $bgColor,
             'textColor' => $textColor,
-            'borderColor' => $finalBorderColor,
+            // Always store borderColor (even if disabled) so it's available when user enables it
+            'borderColor' => $borderColor,
+            // Store whether border was originally enabled (for future use)
+            'borderEnabled' => (bool) $borderShow,
             'showIcons' => $legacyIcons['show'] ?? ($buttons['showIcons'] ?? true),
             'iconAlignment' => $iconAlignment,
         ];

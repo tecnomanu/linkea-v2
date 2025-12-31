@@ -1192,7 +1192,7 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                             </p>
                         </div>
                         <div className="space-y-4">
-                            <div className="flex gap-8 flex-wrap">
+                            <div className="flex gap-8 flex-wrap items-end">
                                 <ColorPicker
                                     value={user.customDesign.buttonColor}
                                     onChange={(color) =>
@@ -1216,8 +1216,7 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                                     <ColorPicker
                                         value={
                                             user.customDesign
-                                                .buttonBorderColor ||
-                                            user.customDesign.buttonColor
+                                                .buttonBorderColor || "#000000"
                                         }
                                         onChange={(color) =>
                                             handleCustomChange(
@@ -1228,38 +1227,31 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                                         label="Borde"
                                         size="md"
                                         disabled={
-                                            !user.customDesign.buttonBorderColor
+                                            !user.customDesign
+                                                .buttonBorderEnabled
                                         }
                                     />
-                                    {user.customDesign.buttonBorderColor && (
-                                        <button
-                                            onClick={() =>
-                                                handleCustomChange(
-                                                    "buttonBorderColor",
-                                                    ""
-                                                )
-                                            }
-                                            className="text-xs text-red-500 hover:text-red-600"
-                                        >
-                                            Quitar borde
-                                        </button>
-                                    )}
+                                    <Toggle
+                                        checked={
+                                            user.customDesign
+                                                .buttonBorderEnabled === true
+                                        }
+                                        onChange={(checked) =>
+                                            handleCustomChange(
+                                                "buttonBorderEnabled",
+                                                checked
+                                            )
+                                        }
+                                        label={
+                                            user.customDesign
+                                                .buttonBorderEnabled
+                                                ? "Quitar borde"
+                                                : "Agregar borde"
+                                        }
+                                        size="sm"
+                                    />
                                 </div>
                             </div>
-                            {!user.customDesign.buttonBorderColor && (
-                                <button
-                                    onClick={() =>
-                                        handleCustomChange(
-                                            "buttonBorderColor",
-                                            user.customDesign.buttonColor ||
-                                                "#000000"
-                                        )
-                                    }
-                                    className="text-sm text-brand-500 hover:text-brand-600 font-medium"
-                                >
-                                    + Agregar color de borde diferente
-                                </button>
-                            )}
                         </div>
                     </div>
 

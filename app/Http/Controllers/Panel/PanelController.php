@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\PanelLandingResource;
 use App\Services\LandingService;
 use App\Services\LinkService;
 use App\Services\StatisticsService;
@@ -70,10 +71,14 @@ class PanelController extends Controller
             ? $this->statisticsService->getLandingDashboardStats($landing->id)
             : null;
 
+        // Transform landing data using PanelLandingResource for consistency
+        // The Resource includes links and socialLinks already transformed
+        $landingData = $landing
+            ? PanelLandingResource::withLinks($landing, $links, $socialLinks)
+            : null;
+
         return Inertia::render('Panel/Dashboard', [
-            'landing' => $landing,
-            'links' => $links,
-            'socialLinks' => $socialLinks,
+            'landing' => $landingData,
             'auth' => ['user' => $user],
             'activeTab' => $activeTab,
             'dashboardStats' => $dashboardStats,

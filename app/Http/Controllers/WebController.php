@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\FeaturedLandingResource;
 use App\Services\LandingService;
 use Inertia\Inertia;
 
@@ -23,7 +24,7 @@ class WebController extends Controller
         }
 
         return Inertia::render('Web/Home', [
-            'featuredLandings' => $featuredLandings,
+            'featuredLandings' => FeaturedLandingResource::collection($featuredLandings)->resolve(),
             'stats' => $stats,
         ]);
     }
@@ -39,7 +40,7 @@ class WebController extends Controller
         $result = $this->landingService->getAllPublicLandings(30, $search);
 
         return Inertia::render('Web/Gallery', [
-            'landings' => $result['data'],
+            'landings' => FeaturedLandingResource::collection($result['data'])->resolve(),
             'meta' => $result['meta'],
             'filters' => [
                 'search' => $search,

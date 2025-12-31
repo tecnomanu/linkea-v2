@@ -78,7 +78,8 @@ export interface CustomDesignConfig {
     buttonSize?: ButtonSize;
     buttonColor: string;
     buttonTextColor: string;
-    buttonBorderColor?: string; // Optional: separate border color (legacy support)
+    buttonBorderColor?: string; // Border color (always stored, default: #000000)
+    buttonBorderEnabled?: boolean; // Whether border is visible (default: false)
 
     showButtonIcons?: boolean;
     buttonIconAlignment?: "left" | "inline" | "right";

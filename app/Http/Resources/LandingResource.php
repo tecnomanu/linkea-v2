@@ -45,7 +45,8 @@ class LandingResource extends JsonResource
                 'buttonSize' => $this->template_config['buttons']['size'] ?? 'compact',
                 'buttonColor' => $this->template_config['buttons']['backgroundColor'] ?? '#000000',
                 'buttonTextColor' => $this->template_config['buttons']['textColor'] ?? '#ffffff',
-                'buttonBorderColor' => $this->template_config['buttons']['borderColor'] ?? null,
+                'buttonBorderColor' => $this->template_config['buttons']['borderColor'] ?? '#000000',
+                'buttonBorderEnabled' => (bool) ($this->template_config['buttons']['borderEnabled'] ?? false),
 
                 'showButtonIcons' => $this->template_config['buttons']['showIcons'] ?? true,
                 'buttonIconAlignment' => $this->template_config['buttons']['iconAlignment'] ?? 'left',
