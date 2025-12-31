@@ -1,8 +1,11 @@
 /**
  * SEOHead - Centralized SEO meta tags component
  *
- * All SEO is handled from React, not from app.blade.php.
- * This prevents duplication and allows per-page customization.
+ * Used for client-side SPA navigation (Inertia).
+ * Server-side meta tags are handled by app.blade.php using SeoDefaults.php.
+ *
+ * SEO defaults come from PHP via Inertia shared data (seoDefaults prop).
+ * This ensures a single source of truth in app/Constants/SeoDefaults.php.
  *
  * Usage:
  *   <SEOHead
@@ -12,7 +15,8 @@
  *   />
  */
 
-import { Head } from "@inertiajs/react";
+import { SharedProps } from "@/types/inertia";
+import { Head, usePage } from "@inertiajs/react";
 
 interface SEOHeadProps {
     title: string;
@@ -24,35 +28,41 @@ interface SEOHeadProps {
     jsonLd?: object;
     /** Custom favicon URL (defaults to Linkea favicon) */
     favicon?: string;
-    /** Base URL for the site (defaults to APP_URL from Inertia props) */
-    baseUrl?: string;
 }
 
-// Fallback only - prefer using appUrl from Inertia props
-const DEFAULT_BASE_URL = "https://linkea.ar";
-const DEFAULT_IMAGE = "/assets/images/meta_tag_image.jpg";
-const DEFAULT_FAVICON = "/favicon-32x32.png";
-const DEFAULT_APPLE_ICON = "/apple-touch-icon.png";
-const DEFAULT_DESCRIPTION =
-    "Linkea - Todos tus enlaces en un solo lugar. Crea tu pagina de links personalizada gratis.";
+/**
+ * Build full URL from relative path.
+ */
+function buildUrl(path: string, baseUrl: string): string {
+    if (path.startsWith("http")) {
+        return path;
+    }
+    return `${baseUrl.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+}
 
 export default function SEOHead({
     title,
-    description = DEFAULT_DESCRIPTION,
-    image = DEFAULT_IMAGE,
+    description,
+    image,
     canonical,
     type = "website",
     noIndex = false,
     jsonLd,
     favicon,
-    baseUrl = DEFAULT_BASE_URL,
 }: SEOHeadProps) {
-    const fullImage = image.startsWith("http") ? image : `${baseUrl}${image}`;
-    const canonicalUrl = canonical ? `${baseUrl}${canonical}` : undefined;
+    // Get SEO defaults from PHP via Inertia shared data
+    const { appUrl, seoDefaults } = usePage<SharedProps>().props;
 
-    // Use custom favicon if provided, otherwise defaults
-    const faviconUrl = favicon || DEFAULT_FAVICON;
-    const appleIconUrl = favicon || DEFAULT_APPLE_ICON;
+    // Use defaults from PHP if not provided
+    const finalDescription = description || seoDefaults.defaultDescription;
+    const finalImage = image
+        ? buildUrl(image, appUrl)
+        : seoDefaults.defaultImage;
+    const canonicalUrl = canonical ? `${appUrl}${canonical}` : undefined;
+
+    // Use custom favicon if provided, otherwise defaults from PHP
+    const faviconUrl = favicon || seoDefaults.favicon;
+    const appleIconUrl = favicon || seoDefaults.appleTouchIcon;
 
     return (
         <Head>
@@ -64,7 +74,7 @@ export default function SEOHead({
             <link rel="apple-touch-icon" sizes="180x180" href={appleIconUrl} />
 
             {/* Basic SEO */}
-            <meta name="description" content={description} />
+            <meta name="description" content={finalDescription} />
             {noIndex ? (
                 <meta name="robots" content="noindex, nofollow" />
             ) : (
@@ -75,21 +85,27 @@ export default function SEOHead({
             {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
 
             {/* Open Graph */}
-            <meta property="og:site_name" content="Linkea" />
-            <meta property="og:locale" content="es_AR" />
+            <meta property="og:site_name" content={seoDefaults.siteName} />
+            <meta property="og:locale" content={seoDefaults.locale} />
             <meta property="og:type" content={type} />
             <meta property="og:title" content={title} />
-            <meta property="og:description" content={description} />
-            <meta property="og:image" content={fullImage} />
-            <meta property="og:image:width" content="1200" />
-            <meta property="og:image:height" content="630" />
+            <meta property="og:description" content={finalDescription} />
+            <meta property="og:image" content={finalImage} />
+            <meta
+                property="og:image:width"
+                content={seoDefaults.ogImageWidth}
+            />
+            <meta
+                property="og:image:height"
+                content={seoDefaults.ogImageHeight}
+            />
             {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
 
             {/* Twitter Card */}
             <meta name="twitter:card" content="summary_large_image" />
             <meta name="twitter:title" content={title} />
-            <meta name="twitter:description" content={description} />
-            <meta name="twitter:image" content={fullImage} />
+            <meta name="twitter:description" content={finalDescription} />
+            <meta name="twitter:image" content={finalImage} />
 
             {/* JSON-LD Structured Data */}
             {jsonLd && (
@@ -104,11 +120,11 @@ export default function SEOHead({
 /**
  * Generate JSON-LD for the main website (Home page)
  */
-export function websiteJsonLd(baseUrl: string = DEFAULT_BASE_URL) {
+export function websiteJsonLd(baseUrl: string, siteName: string = "Linkea") {
     return {
         "@context": "https://schema.org",
         "@type": "WebApplication",
-        name: "Linkea",
+        name: siteName,
         url: baseUrl,
         description:
             "Plataforma argentina de link in bio. Crea tu pagina de links personalizada gratis.",
@@ -121,7 +137,7 @@ export function websiteJsonLd(baseUrl: string = DEFAULT_BASE_URL) {
         },
         author: {
             "@type": "Organization",
-            name: "Linkea",
+            name: siteName,
             url: baseUrl,
         },
     };
@@ -135,7 +151,7 @@ export function landingJsonLd(
     handle: string,
     bio?: string,
     avatar?: string,
-    baseUrl: string = DEFAULT_BASE_URL
+    baseUrl?: string
 ) {
     return {
         "@context": "https://schema.org",
@@ -143,7 +159,7 @@ export function landingJsonLd(
         mainEntity: {
             "@type": "Person",
             name: name,
-            url: `${baseUrl}/${handle}`,
+            url: baseUrl ? `${baseUrl}/${handle}` : undefined,
             ...(bio && { description: bio }),
             ...(avatar && { image: avatar }),
         },
@@ -151,36 +167,14 @@ export function landingJsonLd(
 }
 
 /**
- * Generate JSON-LD breadcrumb for navigation
- * Useful for pages with hierarchical structure (e.g., blog posts, categories)
- * NOT needed for flat onepage landings
- */
-export function breadcrumbJsonLd(items: { name: string; url: string }[], baseUrl: string = DEFAULT_BASE_URL) {
-    return {
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
-        itemListElement: items.map((item, index) => ({
-            "@type": "ListItem",
-            position: index + 1,
-            name: item.name,
-            item: item.url.startsWith("http")
-                ? item.url
-                : `${baseUrl}${item.url}`,
-        })),
-    };
-}
-
-/**
  * JSON-LD for landing pages - just ProfilePage
- * Breadcrumbs removed: landings are onepage with flat URLs, no internal navigation hierarchy
  */
 export function landingFullJsonLd(
     name: string,
     handle: string,
     bio?: string,
     avatar?: string,
-    baseUrl: string = DEFAULT_BASE_URL
+    baseUrl?: string
 ) {
-    // Only ProfilePage - breadcrumbs don't add value for onepage landings
     return landingJsonLd(name, handle, bio, avatar, baseUrl);
 }

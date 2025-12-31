@@ -1,3 +1,4 @@
+import { SharedProps } from "@/types/inertia";
 import { usePage } from "@inertiajs/react";
 import React from "react";
 import SEOHead, { websiteJsonLd } from "../Components/Shared/SEOHead";
@@ -15,24 +16,24 @@ interface WebLayoutProps {
 
 export default function WebLayout({
     children,
-    title = "Linkea - Todos tus enlaces en un solo lugar",
+    title,
     description,
     image,
     canonical,
     jsonLd,
 }: WebLayoutProps) {
-    const { appUrl } = usePage<{ appUrl: string }>().props;
-    const finalJsonLd = jsonLd || websiteJsonLd(appUrl);
-    
+    const { appUrl, seoDefaults } = usePage<SharedProps>().props;
+    const finalTitle = title || seoDefaults.defaultTitle;
+    const finalJsonLd = jsonLd || websiteJsonLd(appUrl, seoDefaults.siteName);
+
     return (
         <div className="min-h-screen bg-white font-sans antialiased text-gray-900 selection:bg-primary-500 selection:text-white">
             <SEOHead
-                title={title}
+                title={finalTitle}
                 description={description}
                 image={image}
                 canonical={canonical}
                 jsonLd={finalJsonLd}
-                baseUrl={appUrl}
             />
 
             <Header />

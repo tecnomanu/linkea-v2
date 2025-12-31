@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Constants\SeoDefaults;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,10 +36,12 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $baseUrl = rtrim(config('app.url', 'https://linkea.ar'), '/');
+
         return [
             ...parent::share($request),
             'appName' => config('app.name', 'Linkea'),
-            'appUrl' => rtrim(config('app.url', 'https://linkea.ar'), '/'),
+            'appUrl' => $baseUrl,
             'auth' => [
                 'user' => $request->user() ? [
                     'id' => $request->user()->id,
@@ -51,6 +54,18 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => fn() => $request->session()->get('success'),
                 'error' => fn() => $request->session()->get('error'),
+            ],
+            // SEO defaults - single source of truth from PHP
+            'seoDefaults' => [
+                'siteName' => SeoDefaults::SITE_NAME,
+                'locale' => SeoDefaults::LOCALE,
+                'defaultTitle' => SeoDefaults::DEFAULT_TITLE,
+                'defaultDescription' => SeoDefaults::DEFAULT_DESCRIPTION,
+                'defaultImage' => SeoDefaults::imageUrl(SeoDefaults::DEFAULT_OG_IMAGE, $baseUrl),
+                'ogImageWidth' => (string) SeoDefaults::OG_IMAGE_WIDTH,
+                'ogImageHeight' => (string) SeoDefaults::OG_IMAGE_HEIGHT,
+                'favicon' => SeoDefaults::FAVICON,
+                'appleTouchIcon' => SeoDefaults::APPLE_TOUCH_ICON,
             ],
         ];
     }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Middleware\HandleSeoMeta;
+use App\Constants\SeoDefaults;
 use App\Http\Resources\PublicLandingResource;
 use App\Models\Landing;
 use App\Services\LandingService;
@@ -41,12 +41,11 @@ class SystemRouterController extends Controller
     public function privacy()
     {
         return Inertia::render('Privacy')->withViewData([
-            'seo' => HandleSeoMeta::buildMeta([
-                'title' => 'Politica de Privacidad - Linkea',
-                'description' => 'Conoce nuestra politica de privacidad y como protegemos tus datos en Linkea.',
-                'url' => config('app.url') . '/privacy',
-                'type' => 'website',
-            ]),
+            'seo' => SeoDefaults::forPage(
+                SeoDefaults::PRIVACY_TITLE,
+                SeoDefaults::PRIVACY_DESCRIPTION,
+                '/privacy'
+            ),
         ]);
     }
 
@@ -72,25 +71,16 @@ class SystemRouterController extends Controller
             $resource = new PublicLandingResource($landing);
             $data = $resource->resolve();
 
-            // Build SEO meta for crawlers
-            $seoImage = $data['seoImage'] ?? null;
-            if ($seoImage && !str_starts_with($seoImage, 'http')) {
-                $seoImage = config('app.url') . $seoImage;
-            }
-
-            $isPrivate = $data['isPrivate'] ?? false;
-            $handle = $data['slug'] ?? $data['domain_name'] ?? $path;
-
             return Inertia::render('LandingView', [
                 'landing' => $data,
             ])->withViewData([
-                'seo' => HandleSeoMeta::buildMeta([
-                    'title' => ($data['seoTitle'] ?? $data['name'] ?? 'Landing') . ' | Linkea',
-                    'description' => $data['seoDescription'] ?? "Links de {$data['name']} - Creado con Linkea",
-                    'image' => $seoImage,
-                    'url' => config('app.url') . '/' . $handle,
-                    'type' => 'profile',
-                    'robots' => $isPrivate ? 'noindex, nofollow' : 'index, follow',
+                'seo' => SeoDefaults::forLanding([
+                    'name' => $data['name'] ?? 'Landing',
+                    'handle' => $data['slug'] ?? $data['domain_name'] ?? $path,
+                    'seoTitle' => $data['seoTitle'] ?? null,
+                    'seoDescription' => $data['seoDescription'] ?? null,
+                    'seoImage' => $data['seoImage'] ?? null,
+                    'isPrivate' => $data['isPrivate'] ?? false,
                 ]),
             ]);
         }

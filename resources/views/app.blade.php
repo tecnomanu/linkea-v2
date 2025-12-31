@@ -9,21 +9,21 @@
             SEO Meta Tags - Rendered server-side for social media crawlers.
             These are required because Facebook, Twitter, etc. don't execute JavaScript.
             React components (SEOHead) will also render these for client-side navigation.
+            
+            Values come from SeoDefaults::forPage() or SeoDefaults::forLanding()
+            passed via withViewData() in controllers.
         --}}
         @php
+            use App\Constants\SeoDefaults;
+            
             $seo = $seo ?? [];
-            $seoTitle = $seo['title'] ?? config('app.name', 'Linkea');
-            $seoDescription = $seo['description'] ?? 'Crea tu pagina de links personalizada gratis. Comparte todos tus enlaces en un solo lugar con Linkea.';
-            $seoImage = $seo['image'] ?? url('/assets/images/meta_tag_image.jpg');
+            $seoTitle = $seo['title'] ?? SeoDefaults::DEFAULT_TITLE;
+            $seoDescription = $seo['description'] ?? SeoDefaults::DEFAULT_DESCRIPTION;
+            $seoImage = $seo['image'] ?? SeoDefaults::imageUrl(SeoDefaults::DEFAULT_OG_IMAGE);
             $seoUrl = $seo['url'] ?? url()->current();
             $seoType = $seo['type'] ?? 'website';
             $seoRobots = $seo['robots'] ?? 'index, follow';
             $seoCanonical = $seo['canonical'] ?? $seoUrl;
-            
-            // Ensure absolute URLs
-            if (!str_starts_with($seoImage, 'http')) {
-                $seoImage = url($seoImage);
-            }
         @endphp
 
         <title>{{ $seoTitle }}</title>
@@ -32,14 +32,14 @@
 
         {{-- Open Graph / Facebook --}}
         <meta property="og:type" content="{{ $seoType }}">
-        <meta property="og:site_name" content="Linkea">
-        <meta property="og:locale" content="es_AR">
+        <meta property="og:site_name" content="{{ SeoDefaults::SITE_NAME }}">
+        <meta property="og:locale" content="{{ SeoDefaults::LOCALE }}">
         <meta property="og:url" content="{{ $seoUrl }}">
         <meta property="og:title" content="{{ $seoTitle }}">
         <meta property="og:description" content="{{ $seoDescription }}">
         <meta property="og:image" content="{{ $seoImage }}">
-        <meta property="og:image:width" content="1200">
-        <meta property="og:image:height" content="630">
+        <meta property="og:image:width" content="{{ SeoDefaults::OG_IMAGE_WIDTH }}">
+        <meta property="og:image:height" content="{{ SeoDefaults::OG_IMAGE_HEIGHT }}">
 
         {{-- Twitter Card --}}
         <meta name="twitter:card" content="summary_large_image">
@@ -51,13 +51,13 @@
         <link rel="canonical" href="{{ $seoCanonical }}">
         
         {{-- Favicons --}}
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-        <link rel="shortcut icon" href="/favicon-32x32.png">
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ SeoDefaults::FAVICON }}">
+        <link rel="shortcut icon" href="{{ SeoDefaults::FAVICON }}">
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ SeoDefaults::APPLE_TOUCH_ICON }}">
         
         {{-- Theme color for mobile browsers --}}
-        <meta name="theme-color" content="#f97316">
-        <meta name="msapplication-TileColor" content="#f97316">
+        <meta name="theme-color" content="{{ SeoDefaults::THEME_COLOR }}">
+        <meta name="msapplication-TileColor" content="{{ SeoDefaults::MS_TILE_COLOR }}">
         
         {{-- hreflang - Currently Spanish only --}}
         <link rel="alternate" hreflang="es" href="{{ url()->current() }}">

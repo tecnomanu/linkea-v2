@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\SeoDefaults;
 use App\Http\Middleware\HandleSeoMeta;
 use App\Http\Resources\FeaturedLandingResource;
 use App\Services\LandingService;
@@ -28,13 +29,11 @@ class WebController extends Controller
             'featuredLandings' => FeaturedLandingResource::collection($featuredLandings)->resolve(),
             'stats' => $stats,
         ])->withViewData([
-            'seo' => HandleSeoMeta::buildMeta([
-                'title' => 'Linkea - Todos tus enlaces en un solo lugar | Link in Bio Argentina',
-                'description' => 'Crea tu pagina de links personalizada gratis. Comparte todos tus enlaces en un solo lugar con Linkea, la mejor alternativa argentina a Linktree. 100% gratis, sin limites.',
-                'image' => '/assets/images/meta_tag_image.jpg',
-                'url' => config('app.url'),
-                'type' => 'website',
-            ]),
+            'seo' => SeoDefaults::forPage(
+                SeoDefaults::HOME_TITLE,
+                SeoDefaults::HOME_DESCRIPTION,
+                '/'
+            ),
         ]);
     }
 
@@ -55,13 +54,11 @@ class WebController extends Controller
                 'search' => $search,
             ],
         ])->withViewData([
-            'seo' => HandleSeoMeta::buildMeta([
-                'title' => 'Galeria de Linkeas - Descubre perfiles inspiradores',
-                'description' => 'Explora la galeria de Linkea y descubre perfiles creativos de la comunidad. Inspira tu propio diseno viendo los mejores ejemplos de link in bio.',
-                'image' => '/assets/images/meta_tag_image.jpg',
-                'url' => config('app.url') . '/gallery',
-                'type' => 'website',
-            ]),
+            'seo' => SeoDefaults::forPage(
+                SeoDefaults::GALLERY_TITLE,
+                SeoDefaults::GALLERY_DESCRIPTION,
+                '/gallery'
+            ),
         ]);
     }
 }
