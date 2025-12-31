@@ -57,7 +57,7 @@ function AITabInner({ user, socialLinks, onPreviewChange }: AITabInnerProps) {
         : user;
 
     return (
-        <div className="flex flex-col h-full max-h-[calc(100dvh-160px)] md:max-h-[calc(100dvh-100px)] animate-in fade-in duration-300">
+        <div className="flex flex-col h-[calc(100dvh-200px)] md:h-[calc(100dvh-180px)] animate-in fade-in duration-300">
             {/* Compact Header with Save/Discard buttons */}
             <div className="shrink-0 mb-2">
                 <div className="bg-gradient-to-r from-brand-500 to-pink-500 rounded-2xl p-0.5">
