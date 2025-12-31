@@ -74,6 +74,30 @@ export const BlockButton: React.FC<BlockButtonProps> = ({
             ? "animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards"
             : "";
 
+    const iconAlignment = design.buttonIconAlignment || "left";
+
+    // Render icon element
+    const renderIcon = () =>
+        showIcon && (
+            <div className={iconStyles.className} style={iconStyles.style}>
+                {icon}
+            </div>
+        );
+
+    // Render text content - for inline, text doesn't expand (no flex-1)
+    const renderText = () => (
+        <div
+            className={`min-w-0 ${
+                iconAlignment === "inline" ? "text-center" : "flex-1 text-left"
+            }`}
+        >
+            <h3 className="text-base font-bold truncate">{title}</h3>
+            {subtitle && (
+                <p className="text-xs truncate opacity-70">{subtitle}</p>
+            )}
+        </div>
+    );
+
     return (
         <a
             href={href}
@@ -88,29 +112,25 @@ export const BlockButton: React.FC<BlockButtonProps> = ({
                 }),
             }}
         >
-            <div className="flex items-center p-3">
-                {/* Icon */}
-                {showIcon && (
-                    <div
-                        className={iconStyles.className}
-                        style={iconStyles.style}
-                    >
-                        {icon}
-                    </div>
-                )}
+            <div
+                className={`flex items-center p-3 ${
+                    iconAlignment === "inline" ? "justify-center gap-2" : ""
+                }`}
+            >
+                {/* Left: icon first, then text expands */}
+                {iconAlignment === "left" && renderIcon()}
+                {iconAlignment === "left" && renderText()}
 
-                {/* Text content */}
-                <div className="flex-1 min-w-0 text-left">
-                    <h3 className="text-base font-bold truncate">{title}</h3>
-                    {subtitle && (
-                        <p className="text-xs truncate opacity-70">
-                            {subtitle}
-                        </p>
-                    )}
-                </div>
+                {/* Inline: icon and text centered together */}
+                {iconAlignment === "inline" && renderIcon()}
+                {iconAlignment === "inline" && renderText()}
 
-                {/* Right content (badge, indicator, etc.) */}
-                {rightContent}
+                {/* Right: text expands, then icon */}
+                {iconAlignment === "right" && renderText()}
+                {iconAlignment === "right" && renderIcon()}
+
+                {/* Right content (badge, indicator, etc.) - only for non-right alignment */}
+                {iconAlignment !== "right" && rightContent}
             </div>
         </a>
     );

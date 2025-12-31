@@ -61,10 +61,12 @@ EXPOSE 80
 FROM node:22-alpine AS assets
 WORKDIR /var/www
 
+# Copy .env first (contains VITE_ variables needed for build)
+COPY .env ./
+
 # Install dependencies
 COPY package.json package-lock.json ./
 RUN npm ci
-
 # Build assets
 COPY vite.config.js ./
 COPY tailwind.config.js ./
@@ -95,5 +97,6 @@ RUN mkdir -p /var/www/storage/logs /var/www/bootstrap/cache && \
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
 EXPOSE 80
-CMD ["supervisord", "-c", "/etc/supervisor.d/supervisord.ini"]
+
+ENTRYPOINT ["/entrypoint.sh"]
 

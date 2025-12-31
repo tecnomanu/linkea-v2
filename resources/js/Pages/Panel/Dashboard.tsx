@@ -18,7 +18,7 @@ import {
 import { INITIAL_LINKS } from "@/constants";
 import { useAutoSaveContext } from "@/contexts/AutoSaveContext";
 import PanelLayout from "@/Layouts/PanelLayout";
-import { BlockType, LinkBlock, UserProfile } from "@/types";
+import { LinkBlock, UserProfile } from "@/types";
 import { Head } from "@inertiajs/react";
 import { Eye, Maximize2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -47,21 +47,90 @@ interface DashboardStats {
     }[];
 }
 
+/**
+ * Landing data from PanelLandingResource.
+ * Already transformed to frontend format.
+ */
+interface PanelLandingData {
+    id: string;
+    name: string;
+    slug: string;
+    domain_name: string;
+    verify: boolean;
+    mongo_id?: string;
+    logo: { image: string | null; thumb: string | null };
+    template_config: {
+        title: string;
+        subtitle: string;
+        showTitle: boolean;
+        showSubtitle: boolean;
+        background: {
+            bgName: string;
+            backgroundColor: string;
+            backgroundImage: string | null;
+            backgroundEnabled: boolean;
+            backgroundSize: string;
+            backgroundPosition: string;
+            backgroundAttachment: string;
+            backgroundRepeat: string;
+            props?: any;
+            controls?: any;
+        };
+        buttons: {
+            style: string;
+            shape: string;
+            size: string;
+            backgroundColor: string;
+            textColor: string;
+            borderColor: string | null;
+            showIcons: boolean;
+            iconAlignment: string;
+        };
+        textColor: string | null;
+        fontPair: string;
+        header: {
+            roundedAvatar: boolean;
+            avatarFloating: boolean;
+        };
+        showLinkSubtext: boolean;
+        savedCustomThemes?: any[];
+        lastCustomDesign?: any;
+    };
+    options: {
+        meta: {
+            title: string;
+            description: string;
+            image?: string | null;
+        };
+        analytics: {
+            google_code: string;
+            facebook_pixel: string;
+        };
+        is_private: boolean;
+        bio?: string;
+    };
+    links: LinkBlock[];
+    socialLinks: Array<{
+        id: string;
+        url: string;
+        icon?: { type?: string; name?: string };
+        isEnabled: boolean;
+        clicks: number;
+        sparklineData: { value: number }[];
+    }>;
+}
+
 interface DashboardProps {
-    landing: any;
-    links: any[];
-    socialLinks?: any[];
+    landing: PanelLandingData | null;
     auth: {
         user: any;
     };
-    activeTab?: string; // Passed from controller
+    activeTab?: string;
     dashboardStats?: DashboardStats | null;
 }
 
 export default function Dashboard({
     landing,
-    links: serverLinks,
-    socialLinks: serverSocialLinks = [],
     auth,
     activeTab: serverActiveTab = "dashboard",
     dashboardStats = null,
@@ -69,170 +138,71 @@ export default function Dashboard({
     // Sync state with prop if needed, but primarily rely on prop for the "View"
     const activeTab = serverActiveTab;
 
-    // Serialize server links to frontend LinkBlock format
-    const initialLinks: LinkBlock[] = serverLinks.map((link) => ({
-        id: link.id.toString(),
-        title: link.text,
-        url: link.link,
-        isEnabled: !!link.state, // Ensure boolean
-        clicks: link.visited || 0,
-        type: (link.type as BlockType) || "link", // Default to link if unknown
-        icon: link.icon || undefined, // Legacy icon data {name, type}
-        sparklineData:
-            link.sparklineData ||
-            Array(7)
-                .fill(0)
-                .map(() => ({ value: 0 })), // Use server data or fallback to zeros
-        // Config fields - from config JSON column
-        headerSize: link.config?.header_size,
-        mediaDisplayMode: link.config?.media_display_mode,
-        showInlinePlayer: link.config?.show_inline_player,
-        autoPlay: link.config?.auto_play,
-        startMuted: link.config?.start_muted,
-        playerSize: link.config?.player_size,
-        phoneNumber: link.config?.phone_number,
-        predefinedMessage: link.config?.predefined_message,
-        // Calendar specific
-        calendarProvider: link.config?.calendar_provider,
-        calendarDisplayMode: link.config?.calendar_display_mode,
-        // Email specific
-        emailAddress: link.config?.email_address,
-        emailSubject: link.config?.email_subject,
-        emailBody: link.config?.email_body,
-        // Map specific
-        mapAddress: link.config?.map_address,
-        mapQuery: link.config?.map_query,
-        mapZoom: link.config?.map_zoom,
-        mapDisplayMode: link.config?.map_display_mode,
-        // Video embeds (Vimeo, TikTok, Twitch)
-        videoId: link.config?.video_id,
-        // SoundCloud
-        soundcloudUrl: link.config?.soundcloud_url,
-    }));
+    // Links come pre-transformed from PanelLandingResource
+    const initialLinks: LinkBlock[] = landing?.links || INITIAL_LINKS;
 
-    // Serialize server user/landing to frontend UserProfile format
-    // Title and subtitle come from template_config (as in legacy)
-    const displayTitle =
-        landing?.template_config?.title ?? landing?.domain_name ?? "";
-    const displaySubtitle = landing?.template_config?.subtitle ?? "";
-
-    // Determine if background image should be enabled (default true if image exists)
-    const bgImage = landing?.template_config?.background?.backgroundImage;
-    const hasBackgroundImage =
-        bgImage &&
-        typeof bgImage === "string" &&
-        (bgImage.includes("http") ||
-            bgImage.includes("data:image") ||
-            bgImage.startsWith("url("));
-    const backgroundEnabled =
-        landing?.template_config?.background?.backgroundEnabled ??
-        hasBackgroundImage;
+    // Build UserProfile from pre-transformed landing data
+    const tc = landing?.template_config;
+    const bg = tc?.background;
+    const buttons = tc?.buttons;
+    const header = tc?.header;
+    const opts = landing?.options;
 
     const initialUser: UserProfile = {
-        name: landing?.name || "", // Internal name (not displayed)
+        name: landing?.name || "",
         handle: landing?.domain_name || landing?.slug || "",
         avatar:
             landing?.logo?.image ||
             auth.user.avatar ||
             "/images/logos/logo-icon.webp",
-        title: displayTitle,
-        subtitle: displaySubtitle,
-        showTitle: landing?.template_config?.showTitle ?? true,
-        showSubtitle: landing?.template_config?.showSubtitle ?? true,
-
-        theme:
-            (landing?.template_config?.background?.bgName as any) || "custom",
-
+        title: tc?.title || landing?.domain_name || "",
+        subtitle: tc?.subtitle || "",
+        showTitle: tc?.showTitle ?? true,
+        showSubtitle: tc?.showSubtitle ?? true,
+        theme: (bg?.bgName as any) || "custom",
         customDesign: {
-            backgroundColor:
-                landing?.template_config?.background?.backgroundColor ||
-                "#ffffff",
-            backgroundImage:
-                landing?.template_config?.background?.backgroundImage ||
-                undefined,
-            backgroundEnabled: backgroundEnabled,
-            backgroundSize:
-                landing?.template_config?.background?.backgroundSize ||
-                undefined,
-            backgroundPosition:
-                landing?.template_config?.background?.backgroundPosition ||
-                undefined,
-            backgroundRepeat:
-                landing?.template_config?.background?.backgroundRepeat ||
-                undefined,
-            backgroundAttachment:
-                landing?.template_config?.background?.backgroundAttachment ||
-                undefined,
-            // Legacy background editor props (colors, opacity, scale)
-            backgroundProps:
-                landing?.template_config?.background?.props || undefined,
-            backgroundControls:
-                landing?.template_config?.background?.controls || undefined,
-            buttonStyle: landing?.template_config?.buttons?.style || "solid",
-            buttonShape: landing?.template_config?.buttons?.shape || "rounded",
-            buttonColor:
-                landing?.template_config?.buttons?.backgroundColor || "#000000",
-            buttonTextColor:
-                landing?.template_config?.buttons?.textColor || "#ffffff",
-            buttonBorderColor:
-                landing?.template_config?.buttons?.borderColor || undefined,
-            // Button icon options
-            showButtonIcons:
-                landing?.template_config?.buttons?.showIcons ?? true,
-            buttonIconAlignment:
-                landing?.template_config?.buttons?.iconAlignment || "left",
-            // Show URL/link text under button titles
-            showLinkSubtext: landing?.template_config?.showLinkSubtext ?? false,
-            fontPair: landing?.template_config?.fontPair || "modern",
-            // Text color for landing content (auto-calculated if not set)
-            textColor: landing?.template_config?.textColor || undefined,
-            roundedAvatar:
-                landing?.template_config?.header?.roundedAvatar ?? true,
-            avatarFloating:
-                landing?.template_config?.header?.avatarFloating ?? true,
+            backgroundColor: bg?.backgroundColor || "#ffffff",
+            backgroundImage: bg?.backgroundImage || undefined,
+            backgroundEnabled: bg?.backgroundEnabled ?? true,
+            backgroundSize: bg?.backgroundSize || "cover",
+            backgroundPosition: bg?.backgroundPosition || "center",
+            backgroundRepeat: bg?.backgroundRepeat || "no-repeat",
+            backgroundAttachment: bg?.backgroundAttachment || "scroll",
+            backgroundProps: bg?.props || undefined,
+            backgroundControls: bg?.controls || undefined,
+            buttonStyle: buttons?.style || "solid",
+            buttonShape: buttons?.shape || "rounded",
+            buttonColor: buttons?.backgroundColor || "#000000",
+            buttonTextColor: buttons?.textColor || "#ffffff",
+            buttonBorderColor: buttons?.borderColor || "#000000",
+            buttonBorderEnabled: buttons?.borderEnabled ?? false,
+            showButtonIcons: buttons?.showIcons ?? true,
+            buttonIconAlignment: buttons?.iconAlignment || "left",
+            showLinkSubtext: tc?.showLinkSubtext ?? false,
+            fontPair: tc?.fontPair || "modern",
+            textColor: tc?.textColor || undefined,
+            roundedAvatar: header?.roundedAvatar ?? true,
+            avatarFloating: header?.avatarFloating ?? true,
         },
-
-        // Saved custom themes (max 2)
-        savedCustomThemes: landing?.template_config?.savedCustomThemes || [],
-
-        // Last custom design backup
-        lastCustomDesign:
-            landing?.template_config?.lastCustomDesign || undefined,
-
-        // SEO - new structure: options.meta.*, with legacy fallback
-        seoTitle:
-            landing?.options?.meta?.title || landing?.options?.title || "",
-        seoDescription:
-            landing?.options?.meta?.description ||
-            landing?.options?.description ||
-            "",
-
-        // Analytics - new structure: options.analytics.*, with legacy fallback
-        googleAnalyticsId:
-            landing?.options?.analytics?.google_code ||
-            landing?.options?.google_analytics_id ||
-            "",
-        facebookPixelId:
-            landing?.options?.analytics?.facebook_pixel ||
-            landing?.options?.facebook_pixel_id ||
-            "",
-
-        // Privacy
-        isPrivate: landing?.options?.is_private || false,
-
-        // Verification & Legacy
+        savedCustomThemes: tc?.savedCustomThemes || [],
+        lastCustomDesign: tc?.lastCustomDesign || undefined,
+        seoTitle: opts?.meta?.title || "",
+        seoDescription: opts?.meta?.description || "",
+        googleAnalyticsId: opts?.analytics?.google_code || "",
+        facebookPixelId: opts?.analytics?.facebook_pixel || "",
+        isPrivate: opts?.is_private || false,
         isVerified: landing?.verify || false,
         isLegacy: !!landing?.mongo_id,
     };
 
-    // Serialize server social links to frontend format
-    const initialSocialLinks: SocialLink[] = serverSocialLinks.map(
-        (link: any) => ({
-            id: link.id.toString(),
-            url: link.link || "",
+    // Social links come pre-transformed from PanelLandingResource
+    const initialSocialLinks: SocialLink[] = (landing?.socialLinks || []).map(
+        (link) => ({
+            id: link.id,
+            url: link.url || "",
             icon: link.icon || undefined,
-            active: link.state ?? true,
-            clicks: link.visited || 0,
+            active: link.isEnabled ?? true,
+            clicks: link.clicks || 0,
             sparklineData:
                 link.sparklineData ||
                 Array(7)

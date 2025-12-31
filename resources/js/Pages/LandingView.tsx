@@ -57,6 +57,7 @@ interface LandingViewProps {
                 backgroundColor: string;
                 textColor: string;
                 borderColor?: string | null;
+                borderEnabled?: boolean;
                 showIcons: boolean;
                 iconAlignment: string;
             };
@@ -127,7 +128,8 @@ export default function LandingView({ landing }: LandingViewProps) {
             size: "compact",
             backgroundColor: "#000000",
             textColor: "#ffffff",
-            borderColor: null,
+            borderColor: "#000000",
+            borderEnabled: false,
             showIcons: true,
             iconAlignment: "left",
         },
@@ -205,17 +207,23 @@ export default function LandingView({ landing }: LandingViewProps) {
                 | "fixed",
             backgroundRepeat: bgConfig.backgroundRepeat,
             buttonStyle:
-                buttons.style as UserProfile["customDesign"]["buttonStyle"],
+                (buttons.style as UserProfile["customDesign"]["buttonStyle"]) ||
+                "solid",
             buttonShape:
-                buttons.shape as UserProfile["customDesign"]["buttonShape"],
+                (buttons.shape as UserProfile["customDesign"]["buttonShape"]) ||
+                "rounded",
             buttonSize:
                 (buttons.size as UserProfile["customDesign"]["buttonSize"]) ||
                 "compact",
             buttonColor: buttons.backgroundColor,
             buttonTextColor: buttons.textColor,
-            buttonBorderColor: buttons.borderColor || undefined,
+            buttonBorderColor: buttons.borderColor || "#000000",
+            buttonBorderEnabled: buttons.borderEnabled ?? false,
             showButtonIcons: buttons.showIcons,
-            buttonIconAlignment: buttons.iconAlignment as "left" | "right",
+            buttonIconAlignment: buttons.iconAlignment as
+                | "left"
+                | "inline"
+                | "right",
             fontPair:
                 templateConfig.fontPair as UserProfile["customDesign"]["fontPair"],
             textColor: templateConfig.textColor || undefined,

@@ -53,3 +53,4 @@ Homestead.yaml
 
 # Old admin resources
 resources/linkea.ar-admin-2.0
+*.gz

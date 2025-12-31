@@ -3,12 +3,16 @@ set -e
 
 echo "Starting Linkea v2 container..."
 
-# Wait for MySQL to be ready
-echo "Waiting for MySQL..."
-while ! mysqladmin ping -h"$DB_HOST" --silent; do
-    sleep 1
-done
-echo "MySQL is ready!"
+# Wait for MySQL to be ready (only if mysqladmin exists)
+if command -v mysqladmin > /dev/null 2>&1; then
+    echo "Waiting for MySQL..."
+    while ! mysqladmin ping -h"${DB_HOST:-mysql}" --silent; do
+        sleep 1
+    done
+    echo "MySQL is ready!"
+else
+    echo "mysqladmin not found, skipping MySQL wait. If you need DB readiness-check, install mysql-client."
+fi
 
 # Run migrations if needed
 if [ "$RUN_MIGRATIONS" = "true" ]; then

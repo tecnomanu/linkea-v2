@@ -8,7 +8,6 @@ use App\Models\Landing;
 use App\Models\Link;
 use App\Repositories\Contracts\LandingRepository;
 use App\Support\Helpers\ArrayHelper;
-use App\Support\Helpers\StorageHelper;
 use Illuminate\Support\Str;
 
 /**
@@ -358,9 +357,7 @@ class LandingService
         $pageItems = $scored->slice($offset, $perPage);
 
         return [
-            'data' => $pageItems->map(function ($landing) {
-                return $this->transformLandingForDisplay($landing);
-            })->values()->toArray(),
+            'data' => $pageItems->values(),
             'meta' => [
                 'current_page' => $page,
                 'last_page' => max(1, $lastPage),
@@ -399,10 +396,13 @@ class LandingService
     /**
      * Get featured landings for homepage display.
      * Returns verified landings with real images (no generated avatars) and multiple links.
+     * 
+     * Note: Returns Landing models. Use FeaturedLandingResource in controller
+     * for consistent transformation.
      */
-    public function getFeaturedForHomepage(int $limit = 5): array
+    public function getFeaturedForHomepage(int $limit = 5)
     {
-        $landings = Landing::query()
+        return Landing::query()
             ->where('logo', 'NOT LIKE', '%dicebear%')
             ->where('verify', true)
             ->with(['links' => function ($query) {
@@ -413,165 +413,6 @@ class LandingService
             ->get()
             ->filter(fn($l) => $l->links->count() > 1) // Filter those with 2+ links
             ->take($limit);
-
-        return $landings->map(function ($landing) {
-            return $this->transformLandingForDisplay($landing);
-        })->values()->toArray();
-    }
-
-    /**
-     * Transform landing data for frontend display (PhonePreview format).
-     */
-    protected function transformLandingForDisplay(Landing $landing): array
-    {
-        // Resolve avatar URL using StorageHelper
-        $logo = $landing->logo;
-        $avatarPath = '';
-        if (is_array($logo)) {
-            $avatarPath = $logo['image'] ?? $logo['thumb'] ?? '';
-        } elseif (is_string($logo)) {
-            $avatarPath = $logo;
-        }
-        $avatar = StorageHelper::url($avatarPath) ?: '';
-
-        $templateConfig = $landing->template_config ?? [];
-        $options = $landing->options ?? [];
-
-        // Map bgName to theme - 'static' means custom solid color
-        $bgName = $templateConfig['background']['bgName'] ?? 'custom';
-        $theme = ($bgName === 'static') ? 'custom' : $bgName;
-
-        // Get background color
-        $bgColor = $templateConfig['background']['backgroundColor']
-            ?? $templateConfig['background']['color']
-            ?? '#ffffff';
-
-        // Get button styling
-        $buttons = $templateConfig['buttons'] ?? [];
-        $buttonColor = $buttons['backgroundColor'] ?? $buttons['color'] ?? '#3b82f6';
-        $buttonTextColor = $buttons['textColor'] ?? '#ffffff';
-
-        // Resolve button style
-        $buttonStyle = $buttons['style'] ?? 'solid';
-        if (isset($buttons['borderShow']) && $buttons['borderShow']) {
-            $buttonStyle = 'outline';
-        }
-
-        // Resolve border color using logic similar to PublicLandingResource
-        // Legacy support: if outline (via borderShow) + borderColor -> use it
-        $buttonBorderColor = null;
-        if (!empty($buttons['borderShow']) && !empty($buttons['borderColor'])) {
-            $borderColor = $buttons['borderColor'];
-            if (strtolower($borderColor) !== strtolower($buttonColor)) {
-                $buttonBorderColor = $borderColor;
-            }
-        }
-        // New mode: explicit borderColor
-        elseif (!empty($buttons['borderColor']) && empty($buttons['borderShow'])) {
-            $buttonBorderColor = $buttons['borderColor'];
-        }
-
-        // Get background image - resolve to CSS url("...") format using StorageHelper
-        $backgroundImage = $this->resolveBackgroundImage($templateConfig['background']['backgroundImage'] ?? null);
-
-        // Background enabled - default to true if there's an image
-        $backgroundEnabled = $templateConfig['background']['backgroundEnabled'] ?? ($backgroundImage !== null);
-
-        return [
-            'id' => $landing->id,
-            'user' => [
-                'name' => $landing->name,
-                'handle' => $landing->slug ?? $landing->domain_name,
-                'avatar' => $avatar,
-                'bio' => $options['bio'] ?? '',
-                'theme' => $theme,
-                'isVerified' => $landing->verify,
-                'customDesign' => [
-                    'backgroundColor' => $bgColor,
-                    'buttonStyle' => $buttonStyle,
-                    'buttonShape' => $buttons['shape'] ?? 'rounded',
-                    'buttonSize' => $buttons['size'] ?? 'compact',
-                    'buttonColor' => $buttonColor,
-                    'buttonTextColor' => $buttonTextColor,
-                    'buttonBorderColor' => $buttonBorderColor,
-                    'showButtonIcons' => $buttons['showIcons'] ?? true,
-                    'buttonIconAlignment' => $buttons['iconAlignment'] ?? 'left',
-
-                    'fontPair' => $templateConfig['fontPair'] ?? $templateConfig['typography']['fontPair'] ?? 'modern',
-                    'textColor' => $templateConfig['textColor'] ?? null,
-
-                    'roundedAvatar' => $templateConfig['image_rounded'] ?? $templateConfig['header']['roundedAvatar'] ?? true,
-                    'avatarFloating' => $templateConfig['image_floating'] ?? $templateConfig['header']['avatarFloating'] ?? true,
-
-                    'backgroundImage' => $backgroundImage,
-                    'backgroundEnabled' => $backgroundEnabled,
-                    'backgroundSize' => $templateConfig['background']['backgroundSize'] ?? 'cover',
-                    'backgroundPosition' => $templateConfig['background']['backgroundPosition'] ?? 'center',
-                    'backgroundRepeat' => $templateConfig['background']['backgroundRepeat'] ?? 'no-repeat',
-                    'backgroundAttachment' => $templateConfig['background']['backgroundAttachment'] ?? 'scroll',
-
-                    'showLinkSubtext' => $templateConfig['showLinkSubtext'] ?? false,
-                ],
-            ],
-            'links' => $landing->links->map(function ($link) {
-                return [
-                    'id' => $link->id,
-                    'title' => $link->text,
-                    'url' => $link->link,
-                    'isEnabled' => (bool) $link->state,
-                    'type' => $link->type ?? 'link',
-                    'clicks' => $link->visited ?? 0,
-                    'icon' => $link->icon,
-                    'sparklineData' => [],
-                    'headerSize' => $link->options['headerSize'] ?? 'medium',
-                    'showInlinePlayer' => $link->options['showInlinePlayer'] ?? false,
-                    'phoneNumber' => $link->options['phoneNumber'] ?? null,
-                    'predefinedMessage' => $link->options['predefinedMessage'] ?? null,
-                ];
-            })->values()->toArray(),
-        ];
-    }
-
-    /**
-     * Resolve background image to CSS url("...") format.
-     * Handles: object {image: 'path'}, CSS strings, gradients, full URLs.
-     */
-    protected function resolveBackgroundImage($bgImage): ?string
-    {
-        if (empty($bgImage)) {
-            return null;
-        }
-
-        // Object format {image: 'path', thumb: 'path'}
-        if (is_array($bgImage) && isset($bgImage['image'])) {
-            $imagePath = $bgImage['image'];
-            $url = StorageHelper::url($imagePath);
-            return $url ? 'url("' . $url . '")' : null;
-        }
-
-        // String format
-        if (is_string($bgImage)) {
-            // Already CSS formatted (url(...), linear-gradient, data:, SVG patterns)
-            if (
-                str_starts_with($bgImage, 'url(') ||
-                str_starts_with($bgImage, 'linear-gradient') ||
-                str_starts_with($bgImage, 'radial-gradient') ||
-                str_starts_with($bgImage, 'data:')
-            ) {
-                return $bgImage;
-            }
-
-            // Full URL - wrap in url()
-            if (str_starts_with($bgImage, 'http://') || str_starts_with($bgImage, 'https://')) {
-                return 'url("' . $bgImage . '")';
-            }
-
-            // Relative path - resolve via StorageHelper
-            $url = StorageHelper::url($bgImage);
-            return $url ? 'url("' . $url . '")' : null;
-        }
-
-        return null;
     }
 
     /**

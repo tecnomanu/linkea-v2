@@ -10,7 +10,8 @@ import { ButtonShape, ButtonSize, ButtonStyle, UserProfile } from "@/types";
 export interface BlockDesign {
     buttonColor: string;
     buttonTextColor: string;
-    buttonBorderColor?: string; // Optional separate border color (legacy support)
+    buttonBorderColor?: string; // Border color (always stored, default: #000000)
+    buttonBorderEnabled?: boolean; // Whether border is visible (default: false)
     buttonStyle: ButtonStyle;
     buttonShape: ButtonShape;
     buttonSize?: ButtonSize;
@@ -76,16 +77,17 @@ export const getButtonStyles = (
     let className = base;
     let style: React.CSSProperties = {};
 
-    // Check if we have a separate border color (legacy support)
-    const hasSeparateBorder = !!design.buttonBorderColor;
+    // Check if border is enabled (new system) - respects buttonBorderEnabled flag
+    const borderEnabled = design.buttonBorderEnabled === true;
+    const borderColor = design.buttonBorderColor || "#000000";
 
     switch (design.buttonStyle) {
         case "outline":
             className += " border-2";
-            if (hasSeparateBorder) {
-                // Legacy mode: border color + background color + text color all separate
+            if (borderEnabled) {
+                // Border enabled: use separate border color + background color
                 style = {
-                    borderColor: design.buttonBorderColor,
+                    borderColor: borderColor,
                     backgroundColor: design.buttonColor,
                     color: design.buttonTextColor,
                 };
@@ -104,16 +106,16 @@ export const getButtonStyles = (
                 backgroundColor: `${design.buttonColor}CC`,
                 color: design.buttonTextColor,
             };
-            if (hasSeparateBorder) {
+            if (borderEnabled) {
                 className += " border-2";
-                style.borderColor = design.buttonBorderColor;
+                style.borderColor = borderColor;
             }
             break;
 
         case "hard":
-            // Brutalist style - border and shadow
-            const hardBorderColor = hasSeparateBorder
-                ? design.buttonBorderColor
+            // Brutalist style - always has border and shadow
+            const hardBorderColor = borderEnabled
+                ? borderColor
                 : isDarkTheme
                 ? "white"
                 : "black";
@@ -137,9 +139,9 @@ export const getButtonStyles = (
                 backgroundColor: design.buttonColor,
                 color: design.buttonTextColor,
             };
-            if (hasSeparateBorder) {
+            if (borderEnabled) {
                 className += " border-2";
-                style.borderColor = design.buttonBorderColor;
+                style.borderColor = borderColor;
             }
             break;
     }
@@ -212,16 +214,16 @@ export const getIconContainerStyles = (
     // Size based on buttonSize: compact (legacy) vs normal
     const sizeClass =
         design.buttonSize === "normal" ? "w-11 h-11 mr-4" : "w-9 h-9 mr-3";
-    // For outline without separate border, use subtle bg; otherwise use white/20
-    const hasBg =
-        design.buttonStyle !== "outline" || !!design.buttonBorderColor;
+    // For outline without border enabled, use subtle bg; otherwise use white/20
+    const borderEnabled = design.buttonBorderEnabled === true;
+    const hasBg = design.buttonStyle !== "outline" || borderEnabled;
 
     return {
         className: `${sizeClass} flex items-center justify-center shrink-0 ${rounding} ${
             hasBg ? "bg-white/20" : ""
         }`,
         style:
-            design.buttonStyle === "outline" && !design.buttonBorderColor
+            design.buttonStyle === "outline" && !borderEnabled
                 ? { backgroundColor: `${design.buttonColor}15` }
                 : {},
     };
