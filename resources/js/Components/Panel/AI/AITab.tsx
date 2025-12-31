@@ -57,9 +57,9 @@ function AITabInner({ user, socialLinks, onPreviewChange }: AITabInnerProps) {
         : user;
 
     return (
-        <div className="flex flex-col h-[calc(100vh-120px)] md:h-[calc(100vh-80px)] animate-in fade-in duration-300">
+        <div className="flex flex-col h-full max-h-[calc(100dvh-160px)] md:max-h-[calc(100dvh-100px)] animate-in fade-in duration-300">
             {/* Compact Header with Save/Discard buttons */}
-            <div className="shrink-0 mb-3">
+            <div className="shrink-0 mb-2">
                 <div className="bg-gradient-to-r from-brand-500 to-pink-500 rounded-2xl p-0.5">
                     <div className="bg-white dark:bg-neutral-900 rounded-[14px] px-3 py-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -134,7 +134,7 @@ function AITabInner({ user, socialLinks, onPreviewChange }: AITabInnerProps) {
             </div>
 
             {/* Main content area - Full height, flex grow */}
-            <div className="flex-1 flex gap-4 min-h-0">
+            <div className="flex-1 flex gap-3 min-h-0 overflow-hidden">
                 {/* Chat area - Full height with internal scroll */}
                 <div className="flex-1 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-soft-xl overflow-hidden flex flex-col">
                     <AIChat />
