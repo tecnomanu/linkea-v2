@@ -2,10 +2,11 @@
  * AITab - Main AI assistant interface
  *
  * Layout:
- * - Desktop/Tablet (md+): Chat + Preview side by side (50/50)
+ * - Desktop xl+: Chat only (sidebar preview from Dashboard)
+ * - Tablet md-xl: Chat + inline Preview side by side
  * - Mobile (<md): Chat only + Preview button opens drawer
  *
- * Chat has fixed height with internal scroll
+ * Full height layout, only messages scroll
  */
 
 import { SocialLink } from "@/Components/Panel/Links/LinksTab";
@@ -56,43 +57,43 @@ function AITabInner({ user, socialLinks, onPreviewChange }: AITabInnerProps) {
         : user;
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Header with Save/Discard buttons */}
-            <div className="sticky top-0 md:top-20 z-30 bg-slate-50/95 dark:bg-neutral-950/95 backdrop-blur-xl -mx-4 px-4 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12 py-4">
-                <div className="bg-gradient-to-r from-brand-500 to-pink-500 rounded-[28px] md:rounded-[32px] p-1">
-                    <div className="bg-white dark:bg-neutral-900 rounded-[24px] md:rounded-[28px] p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-pink-500 flex items-center justify-center">
-                                <Sparkles size={20} className="text-white" />
+        <div className="flex flex-col h-[calc(100vh-120px)] md:h-[calc(100vh-80px)] animate-in fade-in duration-300">
+            {/* Compact Header with Save/Discard buttons */}
+            <div className="shrink-0 mb-3">
+                <div className="bg-gradient-to-r from-brand-500 to-pink-500 rounded-2xl p-0.5">
+                    <div className="bg-white dark:bg-neutral-900 rounded-[14px] px-3 py-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-pink-500 flex items-center justify-center">
+                                <Sparkles size={16} className="text-white" />
                             </div>
                             <div>
-                                <h2 className="font-bold text-neutral-900 dark:text-white">
+                                <h2 className="font-bold text-sm text-neutral-900 dark:text-white">
                                     Asistente IA
                                 </h2>
-                                <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                                    Listo para ayudarte a crear tu landing
+                                <p className="text-[10px] text-neutral-500 dark:text-neutral-400 hidden sm:block">
+                                    Listo para ayudarte
                                 </p>
                             </div>
                         </div>
 
                         {/* Action buttons */}
-                        <div className="flex items-center gap-2">
-                            {/* Mobile Preview button - only visible below md */}
+                        <div className="flex items-center gap-1.5">
+                            {/* Mobile/Tablet Preview button - visible below xl */}
                             <button
                                 onClick={() => setIsPreviewOpen(true)}
-                                className="md:hidden flex items-center gap-2 px-3 py-2.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-xl font-medium text-sm hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                                className="xl:hidden flex items-center gap-1.5 px-2.5 py-1.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-lg font-medium text-xs hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
                             >
-                                <Eye size={16} />
-                                <span>Preview</span>
+                                <Eye size={14} />
+                                <span className="hidden sm:inline">Preview</span>
                             </button>
 
                             {messages.length > 0 && (
                                 <button
                                     onClick={clearChat}
-                                    className="p-2.5 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-colors"
+                                    className="p-1.5 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
                                     title="Limpiar chat"
                                 >
-                                    <Trash2 size={18} />
+                                    <Trash2 size={16} />
                                 </button>
                             )}
 
@@ -100,20 +101,20 @@ function AITabInner({ user, socialLinks, onPreviewChange }: AITabInnerProps) {
                                 <>
                                     <button
                                         onClick={discardChanges}
-                                        className="flex items-center gap-2 px-4 py-2.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-xl font-medium text-sm hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                                        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-lg font-medium text-xs hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
                                     >
-                                        <RotateCcw size={16} />
+                                        <RotateCcw size={14} />
                                         <span className="hidden sm:inline">
                                             Deshacer
                                         </span>
                                     </button>
                                     <button
                                         onClick={applyChanges}
-                                        className="flex items-center gap-2 px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-bold text-sm transition-colors shadow-lg shadow-brand-500/20"
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-500 hover:bg-brand-600 text-white rounded-lg font-bold text-xs transition-colors shadow-lg shadow-brand-500/20"
                                     >
-                                        <Check size={16} />
+                                        <Check size={14} />
                                         <span className="hidden sm:inline">
-                                            Guardar cambios
+                                            Guardar
                                         </span>
                                     </button>
                                 </>
@@ -122,39 +123,36 @@ function AITabInner({ user, socialLinks, onPreviewChange }: AITabInnerProps) {
                     </div>
                 </div>
 
-                {/* Unsaved changes indicator */}
+                {/* Unsaved changes indicator - compact */}
                 {hasUnsavedChanges && (
-                    <div className="mt-2 px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-center">
-                        <p className="text-sm text-amber-700 dark:text-amber-300">
-                            Tenes cambios sin guardar. Hace clic en "Guardar
-                            cambios" para aplicarlos.
+                    <div className="mt-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-center">
+                        <p className="text-xs text-amber-700 dark:text-amber-300">
+                            Cambios sin guardar
                         </p>
                     </div>
                 )}
             </div>
 
-            {/* Main content area - Fixed height container */}
-            <div className="mt-6 pb-8">
-                <div className="flex flex-col md:flex-row gap-6 h-[calc(100vh-280px)] min-h-[500px]">
-                    {/* Chat area - Fixed height with internal scroll */}
-                    <div className="flex-1 bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-soft-xl overflow-hidden flex flex-col h-full">
-                        <AIChat />
-                    </div>
+            {/* Main content area - Full height, flex grow */}
+            <div className="flex-1 flex gap-4 min-h-0">
+                {/* Chat area - Full height with internal scroll */}
+                <div className="flex-1 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-soft-xl overflow-hidden flex flex-col">
+                    <AIChat />
+                </div>
 
-                    {/* Preview - Only visible on md+ screens */}
-                    <div className="hidden md:flex flex-col items-center bg-neutral-100 dark:bg-neutral-800/50 rounded-3xl p-4 lg:p-6 w-full md:w-[300px] lg:w-[340px] shrink-0 h-full">
-                        <span className="text-[10px] font-bold tracking-widest text-neutral-400 uppercase mb-3">
-                            Preview IA
-                        </span>
-                        <div className="flex-1 flex items-center justify-center overflow-hidden">
-                            <PhonePreview
-                                user={previewUser}
-                                links={previewLinks}
-                                socialLinks={socialLinks}
-                                device="mobile"
-                                scale={0.55}
-                            />
-                        </div>
+                {/* Inline Preview - Only visible on md-xl (xl+ uses sidebar) */}
+                <div className="hidden md:flex xl:hidden flex-col items-center bg-neutral-100 dark:bg-neutral-800/50 rounded-2xl p-3 w-[280px] lg:w-[300px] shrink-0">
+                    <span className="text-[9px] font-bold tracking-widest text-neutral-400 uppercase mb-2">
+                        Preview IA
+                    </span>
+                    <div className="flex-1 flex items-center justify-center overflow-hidden">
+                        <PhonePreview
+                            user={previewUser}
+                            links={previewLinks}
+                            socialLinks={socialLinks}
+                            device="mobile"
+                            scale={0.5}
+                        />
                     </div>
                 </div>
             </div>
@@ -163,7 +161,7 @@ function AITabInner({ user, socialLinks, onPreviewChange }: AITabInnerProps) {
             <Dialog
                 open={isPreviewOpen}
                 onClose={() => setIsPreviewOpen(false)}
-                className="relative z-50 md:hidden"
+                className="relative z-50 xl:hidden"
             >
                 {/* Backdrop */}
                 <div
@@ -175,32 +173,32 @@ function AITabInner({ user, socialLinks, onPreviewChange }: AITabInnerProps) {
                 <div className="fixed inset-0 flex items-end justify-center">
                     <DialogPanel className="w-full max-h-[85vh] bg-white dark:bg-neutral-900 rounded-t-3xl shadow-2xl animate-in slide-in-from-bottom duration-300 overflow-hidden">
                         {/* Header */}
-                        <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-800">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-pink-500 flex items-center justify-center">
-                                    <Eye size={16} className="text-white" />
+                        <div className="flex items-center justify-between p-3 border-b border-neutral-200 dark:border-neutral-800">
+                            <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-brand-500 to-pink-500 flex items-center justify-center">
+                                    <Eye size={14} className="text-white" />
                                 </div>
-                                <span className="font-bold text-neutral-900 dark:text-white">
+                                <span className="font-bold text-sm text-neutral-900 dark:text-white">
                                     Preview en vivo
                                 </span>
                             </div>
                             <button
                                 onClick={() => setIsPreviewOpen(false)}
-                                className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-colors"
+                                className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
                             >
-                                <X size={20} className="text-neutral-500" />
+                                <X size={18} className="text-neutral-500" />
                             </button>
                         </div>
 
                         {/* Preview content */}
-                        <div className="p-4 overflow-y-auto max-h-[calc(85vh-60px)] flex justify-center">
-                            <div className="w-full max-w-[280px]">
+                        <div className="p-4 overflow-y-auto max-h-[calc(85vh-50px)] flex justify-center">
+                            <div className="w-full max-w-[260px]">
                                 <PhonePreview
                                     user={previewUser}
                                     links={previewLinks}
                                     socialLinks={socialLinks}
                                     device="mobile"
-                                    scale={0.6}
+                                    scale={0.55}
                                 />
                             </div>
                         </div>
