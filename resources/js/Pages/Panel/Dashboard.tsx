@@ -519,10 +519,10 @@ export default function Dashboard({
             />
 
             {/* Added top padding for mobile to account for fixed MobileNav */}
-            <div className={`flex-1 w-full mx-auto p-4 md:p-8 lg:p-12 pt-32 md:pt-8 h-screen relative ${activeTab === "ai" ? "overflow-hidden" : "overflow-y-auto overlay-scrollbar"}`}>
+            <div className={`flex-1 w-full mx-auto h-screen relative ${activeTab === "ai" ? "p-3 md:p-4 lg:p-6 pt-28 md:pt-4 overflow-hidden" : "p-4 md:p-8 lg:p-12 pt-32 md:pt-8 overflow-y-auto overlay-scrollbar"}`}>
                 <div className={`mx-auto ${activeTab === "ai" ? "max-w-none h-full" : "max-w-5xl"}`}>
                     {/* Header - Hidden on Mobile to save space (MobileNav has context) */}
-                    <header className="hidden md:flex justify-between items-end mb-8 sticky top-0 z-40 bg-slate-50/90 dark:bg-neutral-950/90 backdrop-blur-xl py-4 -mx-4 px-4 lg:-mx-12 lg:px-12 transition-all">
+                    <header className={`hidden md:flex justify-between items-end sticky top-0 z-40 bg-slate-50/90 dark:bg-neutral-950/90 backdrop-blur-xl py-4 -mx-4 px-4 lg:-mx-12 lg:px-12 transition-all ${activeTab === "ai" ? "mb-2" : "mb-8"}`}>
                         <div className="flex items-center gap-6">
                             <div>
                                 <div className="flex items-center gap-2 text-sm font-bold text-neutral-400 mb-1 uppercase tracking-wider">
