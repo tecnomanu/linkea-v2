@@ -46,6 +46,8 @@ COPY ./docker-compose/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY ./docker-compose/nginx/conf.d/app.conf /etc/nginx/http.d/default.conf
 COPY ./docker-compose/supervisord/supervisord.ini /etc/supervisor.d/supervisord.ini
 COPY ./docker-compose/crontab /etc/crontabs/root
+
+
 COPY ./docker-compose/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

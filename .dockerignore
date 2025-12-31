@@ -12,6 +12,7 @@ public/hot
 .cursor
 *.swp
 *.swo
+*~
 
 # Dependencies (will be installed during build)
 node_modules
