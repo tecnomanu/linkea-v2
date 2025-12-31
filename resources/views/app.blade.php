@@ -26,7 +26,9 @@
             $seoCanonical = $seo['canonical'] ?? $seoUrl;
         @endphp
 
-        <title>{{ $seoTitle }}</title>
+        {{-- Title is handled by @inertiaHead from React components --}}
+        {{-- Server-side title for crawlers (they don't execute JS) --}}
+        <title inertia>{{ $seoTitle }}</title>
         <meta name="description" content="{{ $seoDescription }}">
         <meta name="robots" content="{{ $seoRobots }}">
 

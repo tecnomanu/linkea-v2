@@ -10,7 +10,7 @@ import { Logo } from "@/Components/Shared/Logo";
 import { LostIllustration } from "@/Components/Shared/LostIllustration";
 import { PhonePreview } from "@/Components/Shared/PhonePreview";
 import { FeaturedLanding } from "@/Components/Web/Home/HeroSection";
-import { Link, usePage } from "@inertiajs/react";
+import { Head, Link, usePage } from "@inertiajs/react";
 import {
     ArrowRight,
     Compass,
@@ -21,7 +21,7 @@ import {
     Search,
 } from "lucide-react";
 
-// Fallback featured landings (same as HeroSection)
+// Fallback featured landings for 404 page
 const fallbackLandings: FeaturedLanding[] = [
     {
         id: "example-1",
@@ -29,7 +29,8 @@ const fallbackLandings: FeaturedLanding[] = [
             name: "Sofia Music",
             handle: "sofimusic",
             avatar: "/assets/images/screenshots/screen1.webp",
-            bio: "Cantante y compositora",
+            title: "Sofia Music",
+            subtitle: "Cantante y compositora",
             theme: "ocean",
             customDesign: {
                 backgroundColor: "#38bdf8",
@@ -68,7 +69,8 @@ const fallbackLandings: FeaturedLanding[] = [
             name: "Tech Studio",
             handle: "techstudio",
             avatar: "/assets/images/screenshots/screen2.webp",
-            bio: "Desarrollo web y apps",
+            title: "Tech Studio",
+            subtitle: "Desarrollo web y apps",
             theme: "sunset",
             customDesign: {
                 backgroundColor: "#fbbf24",
@@ -107,7 +109,8 @@ const fallbackLandings: FeaturedLanding[] = [
             name: "Fitness Pro",
             handle: "fitnesspro",
             avatar: "/assets/images/screenshots/screen3.webp",
-            bio: "Entrenador personal certificado",
+            title: "Fitness Pro",
+            subtitle: "Entrenador personal certificado",
             theme: "forest",
             customDesign: {
                 backgroundColor: "#22c55e",
@@ -146,7 +149,8 @@ const fallbackLandings: FeaturedLanding[] = [
             name: "Food Blog",
             handle: "foodblog",
             avatar: "/assets/images/screenshots/screen1.webp",
-            bio: "Recetas faciles y ricas",
+            title: "Food Blog",
+            subtitle: "Recetas faciles y ricas",
             theme: "coral",
             customDesign: {
                 backgroundColor: "#f97316",
@@ -185,7 +189,8 @@ const fallbackLandings: FeaturedLanding[] = [
             name: "DJ Night",
             handle: "djnight",
             avatar: "/assets/images/screenshots/screen2.webp",
-            bio: "Musica electronica",
+            title: "DJ Night",
+            subtitle: "Musica electronica",
             theme: "neon",
             customDesign: {
                 backgroundColor: "#a855f7",
@@ -227,9 +232,12 @@ interface NotFoundProps {
 export default function NotFound({ featuredLandings }: NotFoundProps) {
     const { auth } = usePage().props as { auth?: { user?: any } };
     const isAuthenticated = !!auth?.user;
-    const landings = featuredLandings?.length
-        ? featuredLandings
-        : fallbackLandings;
+
+    // Use backend landings if available, otherwise use fallback (same pattern as HeroSection)
+    const landings =
+        featuredLandings && featuredLandings.length > 0
+            ? featuredLandings
+            : fallbackLandings;
 
     if (isAuthenticated) {
         return <AuthenticatedNotFound user={auth.user} landings={landings} />;
@@ -247,6 +255,11 @@ function MiniLandingPreview({
     landing: FeaturedLanding;
     compact?: boolean;
 }) {
+    // Guard clause: skip render if landing data is incomplete
+    if (!landing?.user?.handle) {
+        return null;
+    }
+
     const handle = landing.user.handle.replace("@", "");
     const scale = compact ? 0.22 : 0.26;
     // PhonePreview is 380x780, so scaled dimensions:
@@ -254,14 +267,20 @@ function MiniLandingPreview({
     const height = Math.round(780 * scale);
 
     return (
-        <Link href={`/${handle}`} className="group flex flex-col items-center">
+        <a
+            href={`/${handle}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex flex-col items-center"
+        >
             {/* Phone container with exact dimensions */}
             <div
                 className="relative overflow-hidden rounded-2xl shadow-lg group-hover:shadow-xl transition-shadow duration-300"
                 style={{ width, height }}
             >
-                {/* PhonePreview scaled down */}
+                {/* PhonePreview scaled down - disable internal links */}
                 <div
+                    className="pointer-events-none"
                     style={{
                         transform: `scale(${scale})`,
                         transformOrigin: "top left",
@@ -297,7 +316,7 @@ function MiniLandingPreview({
                     @{handle}
                 </p>
             </div>
-        </Link>
+        </a>
     );
 }
 
@@ -306,6 +325,8 @@ function MiniLandingPreview({
 function GuestNotFound({ landings }: { landings: FeaturedLanding[] }) {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary-50 flex flex-col">
+            <Head title="Pagina no encontrada" />
+
             {/* Header */}
             <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100">
                 <div className="container mx-auto px-4 h-14 flex justify-between items-center">
@@ -435,6 +456,8 @@ function AuthenticatedNotFound({
 }) {
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-neutral-950 flex flex-col">
+            <Head title="Pagina no encontrada" />
+
             {/* Simple Header */}
             <header className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
                 <div className="container mx-auto px-4 h-14 flex justify-between items-center">

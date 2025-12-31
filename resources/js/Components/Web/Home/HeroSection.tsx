@@ -22,7 +22,8 @@ const fallbackData: FeaturedLanding[] = [
             name: "Sofi Music",
             handle: "sofimusic",
             avatar: "/assets/images/screenshots/screen1.webp",
-            bio: "Cantante y compositora",
+            title: "Sofi Music",
+            subtitle: "Cantante y compositora",
             theme: "ocean",
             customDesign: {
                 backgroundColor: "#38bdf8",
@@ -70,7 +71,8 @@ const fallbackData: FeaturedLanding[] = [
             name: "Tech Studio",
             handle: "techstudio",
             avatar: "/assets/images/screenshots/screen2.webp",
-            bio: "Desarrollo web y apps",
+            title: "Tech Studio",
+            subtitle: "Desarrollo web y apps",
             theme: "sunset",
             customDesign: {
                 backgroundColor: "#fbbf24",
@@ -118,7 +120,8 @@ const fallbackData: FeaturedLanding[] = [
             name: "Fitness Pro",
             handle: "fitnesspro",
             avatar: "/assets/images/screenshots/screen3.webp",
-            bio: "Entrenador personal",
+            title: "Fitness Pro",
+            subtitle: "Entrenador personal",
             theme: "forest",
             customDesign: {
                 backgroundColor: "#22c55e",

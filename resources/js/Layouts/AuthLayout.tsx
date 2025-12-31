@@ -21,7 +21,7 @@ export default function AuthLayout({
 }: PropsWithChildren<AuthLayoutProps>) {
     return (
         <div className="min-h-screen flex font-sans">
-            <Head title={`${title} - Linkea`}>
+            <Head title={title}>
                 <meta name="robots" content="noindex, nofollow" />
             </Head>
 

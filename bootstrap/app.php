@@ -56,7 +56,9 @@ return Application::configure(basePath: dirname(__DIR__))
             $featuredLandings = [];
             try {
                 $landingService = app(\App\Services\LandingService::class);
-                $featuredLandings = $landingService->getFeaturedForHomepage(5);
+                $landings = $landingService->getFeaturedForHomepage(5);
+                // Transform to FeaturedLanding format expected by frontend
+                $featuredLandings = \App\Http\Resources\FeaturedLandingResource::collection($landings)->resolve();
             } catch (\Throwable) {
                 // Silently fail - fallback data will be used in frontend
             }
