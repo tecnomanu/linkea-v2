@@ -88,9 +88,12 @@ export function AutoSaveProvider({ children }: { children: ReactNode }) {
     // Callback for landing updates from server (using ref to avoid closure issues)
     const onLandingUpdatedRef = useRef<((data: any) => void) | null>(null);
 
-    const setOnLandingUpdated = useCallback((callback: ((data: any) => void) | null) => {
-        onLandingUpdatedRef.current = callback;
-    }, []);
+    const setOnLandingUpdated = useCallback(
+        (callback: ((data: any) => void) | null) => {
+            onLandingUpdatedRef.current = callback;
+        },
+        []
+    );
 
     // Navigation
     const [showNavigationDialog, setShowNavigationDialog] = useState(false);
@@ -158,7 +161,7 @@ export function AutoSaveProvider({ children }: { children: ReactNode }) {
 
             setPendingChangesState((prev) => {
                 let newState: PendingChanges;
-                
+
                 if (isChanged) {
                     newState = { ...prev, [section]: data };
                 } else {
@@ -166,13 +169,13 @@ export function AutoSaveProvider({ children }: { children: ReactNode }) {
                     const { [section]: _, ...rest } = prev;
                     newState = rest;
                 }
-                
+
                 // Schedule hasChanges update after setState completes
                 // Using setTimeout to avoid "setState during render" warning
                 setTimeout(() => {
                     setHasChanges(Object.keys(newState).length > 0);
                 }, 0);
-                
+
                 return newState;
             });
         },
@@ -311,18 +314,24 @@ export function AutoSaveProvider({ children }: { children: ReactNode }) {
             for (let i = 0; i < responses.length; i++) {
                 const response = responses[i];
                 const section = Object.keys(pendingChanges)[i];
-                
+
                 if (response.ok) {
                     const responseData = await response.json();
                     // If response contains updated landing, merge it
                     if (responseData.data?.landing) {
-                        Object.assign(updatedLandingData, responseData.data.landing);
+                        Object.assign(
+                            updatedLandingData,
+                            responseData.data.landing
+                        );
                     }
                 }
             }
 
             // Trigger callback if landing data was updated (e.g., images uploaded to S3)
-            if (Object.keys(updatedLandingData).length > 0 && onLandingUpdatedRef.current) {
+            if (
+                Object.keys(updatedLandingData).length > 0 &&
+                onLandingUpdatedRef.current
+            ) {
                 onLandingUpdatedRef.current(updatedLandingData);
             }
 

@@ -11,7 +11,7 @@ interface ProfilePageProps {
 
 /**
  * Profile Page - Manages authenticated user profile (NOT landing page)
- * 
+ *
  * This page is separate from the main Dashboard because:
  * - It manages auth.user (authenticated user), not the landing profile
  * - No need for landing preview sidebar
@@ -73,4 +73,3 @@ Profile.layout = (page: any) => (
         {page}
     </PanelLayout>
 );
-

@@ -41,7 +41,10 @@ interface DesignTabProps {
     onUpdateLanding: (updates: Partial<LandingProfile>) => void;
 }
 
-export const DesignTab: React.FC<DesignTabProps> = ({ landing, onUpdateLanding }) => {
+export const DesignTab: React.FC<DesignTabProps> = ({
+    landing,
+    onUpdateLanding,
+}) => {
     // Check if landing has a custom background image
     const hasBackgroundImage = useMemo(() => {
         const bgImage = landing.customDesign.backgroundImage;
