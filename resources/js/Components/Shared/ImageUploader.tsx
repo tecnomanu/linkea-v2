@@ -12,6 +12,7 @@ import {
     ZoomOut,
 } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 // ============================================================================
 // Types
@@ -28,8 +29,8 @@ export interface ImageUploaderProps {
     placeholder?: string;
     /** Whether the image preview should be rounded */
     rounded?: boolean;
-    /** Size of the preview in pixels */
-    size?: number;
+    /** Size of the preview in pixels or string (e.g. "100%") */
+    size?: number | string;
     /** Aspect ratio for cropping (width/height). Use 1 for square. */
     aspectRatio?: number;
     /** Maximum file size in KB */
@@ -52,6 +53,8 @@ export interface ImageUploaderProps {
     label?: string;
     /** Show success indicator after upload */
     showSuccessIndicator?: boolean;
+    /** Hide the preview image (make it transparent) but keep functionality. Useful for overlays. */
+    hidePreview?: boolean;
 }
 
 interface CropState {
@@ -84,6 +87,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     canDelete = true,
     label,
     showSuccessIndicator = true,
+    hidePreview = false,
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -421,6 +425,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                 <div
                     className={`
                         relative group cursor-pointer overflow-hidden
+                        transition-all duration-300
                         ${rounded ? "rounded-full" : "rounded-xl"}
                         ${disabled ? "opacity-50 cursor-not-allowed" : ""}
                     `}
@@ -432,10 +437,19 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                         src={displayImage}
                         alt="Preview"
                         className={`
-                            w-full h-full object-cover border-4 border-neutral-50 shadow-md
+                            w-full h-full object-cover
+                            ${
+                                hidePreview
+                                    ? "opacity-0"
+                                    : "border-4 border-neutral-50 shadow-md"
+                            }
                             transition-all duration-300
                             ${rounded ? "rounded-full" : "rounded-xl"}
-                            ${!disabled ? "group-hover:opacity-80" : ""}
+                            ${
+                                !disabled && !hidePreview
+                                    ? "group-hover:opacity-80"
+                                    : ""
+                            }
                         `}
                     />
 
@@ -444,7 +458,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                         <div
                             className={`
                             absolute inset-0 flex items-center justify-center
-                            opacity-0 group-hover:opacity-100 transition-opacity duration-300
+                            opacity-0 group-hover:opacity-100 transition-all duration-300
                             bg-black/40
                             ${rounded ? "rounded-full" : "rounded-xl"}
                         `}
@@ -468,10 +482,12 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                         </button>
                     )}
 
-                    {/* Success indicator */}
+                    {/* Success indicator - centered for visibility */}
                     {uploadSuccess && showSuccessIndicator && (
-                        <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg animate-in zoom-in duration-200 z-10 border-2 border-white">
-                            <Check size={16} className="text-white" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 animate-in fade-in duration-200 z-10">
+                            <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center shadow-lg animate-in zoom-in duration-200 border-2 border-white">
+                                <Check size={24} className="text-white" />
+                            </div>
                         </div>
                     )}
                 </div>
@@ -493,40 +509,41 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             </div>
 
             {/* Crop Modal - High z-index to ensure visibility over all other elements */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-                    {/* Backdrop */}
-                    <div
-                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                        onClick={handleCancel}
-                    />
+            {isModalOpen &&
+                createPortal(
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+                        {/* Backdrop */}
+                        <div
+                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                            onClick={handleCancel}
+                        />
 
-                    {/* Modal */}
-                    <div className="relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 fade-in duration-200">
-                        {/* Header */}
-                        <div className="flex items-center gap-3 px-6 py-4 border-b border-neutral-100 dark:border-neutral-800">
-                            <div className="p-2 bg-brand-50 dark:bg-brand-900/30 rounded-xl">
-                                <Upload
-                                    size={20}
-                                    className="text-brand-600 dark:text-brand-400"
-                                />
+                        {/* Modal */}
+                        <div className="relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 fade-in duration-200">
+                            {/* Header */}
+                            <div className="flex items-center gap-3 px-6 py-4 border-b border-neutral-100 dark:border-neutral-800">
+                                <div className="p-2 bg-brand-50 dark:bg-brand-900/30 rounded-xl">
+                                    <Upload
+                                        size={20}
+                                        className="text-brand-600 dark:text-brand-400"
+                                    />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-neutral-900 dark:text-white">
+                                        Herramienta de corte
+                                    </h3>
+                                    <p className="text-sm text-neutral-500">
+                                        Ajuste su imagen antes de guardar
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="font-bold text-neutral-900 dark:text-white">
-                                    Herramienta de corte
-                                </h3>
-                                <p className="text-sm text-neutral-500">
-                                    Ajuste su imagen antes de guardar
-                                </p>
-                            </div>
-                        </div>
 
-                        {/* Image Preview Area */}
-                        <div className="p-6">
-                            {isLoading ? (
-                                /* Loading State */
-                                <div
-                                    className={`
+                            {/* Image Preview Area */}
+                            <div className="p-6">
+                                {isLoading ? (
+                                    /* Loading State */
+                                    <div
+                                        className={`
                                         mx-auto flex items-center justify-center bg-neutral-100 dark:bg-neutral-800
                                         ${
                                             rounded
@@ -534,26 +551,26 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                                                 : "rounded-xl"
                                         }
                                     `}
-                                    style={{
-                                        width: 280,
-                                        height: 280 / aspectRatio,
-                                    }}
-                                >
-                                    <div className="flex flex-col items-center gap-3">
-                                        <Loader2
-                                            size={32}
-                                            className="text-brand-500 animate-spin"
-                                        />
-                                        <span className="text-sm text-neutral-500">
-                                            Cargando imagen...
-                                        </span>
+                                        style={{
+                                            width: 280,
+                                            height: 280 / aspectRatio,
+                                        }}
+                                    >
+                                        <div className="flex flex-col items-center gap-3">
+                                            <Loader2
+                                                size={32}
+                                                className="text-brand-500 animate-spin"
+                                            />
+                                            <span className="text-sm text-neutral-500">
+                                                Cargando imagen...
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
-                            ) : (
-                                /* Crop Preview */
-                                <div
-                                    ref={previewContainerRef}
-                                    className={`
+                                ) : (
+                                    /* Crop Preview */
+                                    <div
+                                        ref={previewContainerRef}
+                                        className={`
                                         relative mx-auto overflow-hidden bg-neutral-100 dark:bg-neutral-800
                                         ${
                                             rounded
@@ -566,150 +583,157 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                                                 : "cursor-grab"
                                         }
                                     `}
-                                    style={{
-                                        width: 280,
-                                        height: 280 / aspectRatio,
-                                    }}
-                                    onMouseDown={handleDragStart}
-                                    onTouchStart={handleDragStart}
-                                >
-                                    <img
-                                        src={originalImage!}
-                                        alt="Crop preview"
-                                        className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none"
                                         style={{
-                                            transform: getImageTransform(),
-                                            transformOrigin: "center",
+                                            width: 280,
+                                            height: 280 / aspectRatio,
                                         }}
-                                        draggable={false}
-                                    />
+                                        onMouseDown={handleDragStart}
+                                        onTouchStart={handleDragStart}
+                                    >
+                                        <img
+                                            src={originalImage!}
+                                            alt="Crop preview"
+                                            className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none"
+                                            style={{
+                                                transform: getImageTransform(),
+                                                transformOrigin: "center",
+                                            }}
+                                            draggable={false}
+                                        />
 
-                                    {/* Drag hint overlay */}
-                                    {cropState.scale > 1 && !isDragging && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
-                                            <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-neutral-700">
-                                                <Move size={14} />
-                                                Arrastre para mover
+                                        {/* Drag hint overlay */}
+                                        {cropState.scale > 1 && !isDragging && (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
+                                                <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-neutral-700">
+                                                    <Move size={14} />
+                                                    Arrastre para mover
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Controls */}
-                        <div className="px-6 pb-4">
-                            <div className="flex items-center justify-center gap-2 flex-wrap">
-                                <ToolButton
-                                    icon={RotateCcw}
-                                    onClick={rotateLeft}
-                                    tooltip="Rotar izquierda"
-                                    disabled={isLoading}
-                                />
-                                <ToolButton
-                                    icon={RotateCw}
-                                    onClick={rotateRight}
-                                    tooltip="Rotar derecha"
-                                    disabled={isLoading}
-                                />
-                                <div className="w-px h-6 bg-neutral-200 dark:bg-neutral-700 mx-1" />
-                                <ToolButton
-                                    icon={FlipHorizontal}
-                                    onClick={flipHorizontal}
-                                    tooltip="Voltear horizontal"
-                                    active={cropState.flipH}
-                                    disabled={isLoading}
-                                />
-                                <ToolButton
-                                    icon={FlipVertical}
-                                    onClick={flipVertical}
-                                    tooltip="Voltear vertical"
-                                    active={cropState.flipV}
-                                    disabled={isLoading}
-                                />
-                                <div className="w-px h-6 bg-neutral-200 dark:bg-neutral-700 mx-1" />
-                                <ToolButton
-                                    icon={ZoomOut}
-                                    onClick={zoomOut}
-                                    tooltip="Alejar"
-                                    disabled={isLoading || cropState.scale <= 1}
-                                />
-                                <ToolButton
-                                    icon={ZoomIn}
-                                    onClick={zoomIn}
-                                    tooltip="Acercar"
-                                    disabled={isLoading || cropState.scale >= 3}
-                                />
-                            </div>
-
-                            {/* Zoom slider */}
-                            <div className="mt-4 flex items-center gap-3">
-                                <span className="text-xs text-neutral-500 w-12">
-                                    Zoom
-                                </span>
-                                <input
-                                    type="range"
-                                    min="1"
-                                    max="3"
-                                    step="0.1"
-                                    value={cropState.scale}
-                                    onChange={(e) =>
-                                        setCropState((s) => ({
-                                            ...s,
-                                            scale: parseFloat(e.target.value),
-                                        }))
-                                    }
-                                    className="flex-1 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-brand-500"
-                                    disabled={isLoading}
-                                />
-                                <span className="text-xs text-neutral-500 w-12 text-right">
-                                    {Math.round(cropState.scale * 100)}%
-                                </span>
-                            </div>
-
-                            {/* Hint text */}
-                            {cropState.scale > 1 && !isLoading && (
-                                <p className="text-xs text-center text-neutral-400 mt-3">
-                                    Arrastre la imagen para reposicionar
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex gap-3 px-6 py-4 border-t border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
-                            <button
-                                onClick={resetTransform}
-                                disabled={isLoading}
-                                className="px-4 py-2.5 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors disabled:opacity-50"
-                            >
-                                Resetear
-                            </button>
-                            <div className="flex-1" />
-                            <button
-                                onClick={handleCancel}
-                                className="px-5 py-2.5 text-sm font-bold text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 rounded-xl transition-colors"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                disabled={isLoading}
-                                className="px-5 py-2.5 text-sm font-bold text-white bg-brand-500 hover:bg-brand-600 rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {isLoading ? (
-                                    <Loader2
-                                        size={16}
-                                        className="animate-spin"
-                                    />
-                                ) : (
-                                    <Check size={16} />
+                                        )}
+                                    </div>
                                 )}
-                                Guardar
-                            </button>
+                            </div>
+
+                            {/* Controls */}
+                            <div className="px-6 pb-4">
+                                <div className="flex items-center justify-center gap-2 flex-wrap">
+                                    <ToolButton
+                                        icon={RotateCcw}
+                                        onClick={rotateLeft}
+                                        tooltip="Rotar izquierda"
+                                        disabled={isLoading}
+                                    />
+                                    <ToolButton
+                                        icon={RotateCw}
+                                        onClick={rotateRight}
+                                        tooltip="Rotar derecha"
+                                        disabled={isLoading}
+                                    />
+                                    <div className="w-px h-6 bg-neutral-200 dark:bg-neutral-700 mx-1" />
+                                    <ToolButton
+                                        icon={FlipHorizontal}
+                                        onClick={flipHorizontal}
+                                        tooltip="Voltear horizontal"
+                                        active={cropState.flipH}
+                                        disabled={isLoading}
+                                    />
+                                    <ToolButton
+                                        icon={FlipVertical}
+                                        onClick={flipVertical}
+                                        tooltip="Voltear vertical"
+                                        active={cropState.flipV}
+                                        disabled={isLoading}
+                                    />
+                                    <div className="w-px h-6 bg-neutral-200 dark:bg-neutral-700 mx-1" />
+                                    <ToolButton
+                                        icon={ZoomOut}
+                                        onClick={zoomOut}
+                                        tooltip="Alejar"
+                                        disabled={
+                                            isLoading || cropState.scale <= 1
+                                        }
+                                    />
+                                    <ToolButton
+                                        icon={ZoomIn}
+                                        onClick={zoomIn}
+                                        tooltip="Acercar"
+                                        disabled={
+                                            isLoading || cropState.scale >= 3
+                                        }
+                                    />
+                                </div>
+
+                                {/* Zoom slider */}
+                                <div className="mt-4 flex items-center gap-3">
+                                    <span className="text-xs text-neutral-500 w-12">
+                                        Zoom
+                                    </span>
+                                    <input
+                                        type="range"
+                                        min="1"
+                                        max="3"
+                                        step="0.1"
+                                        value={cropState.scale}
+                                        onChange={(e) =>
+                                            setCropState((s) => ({
+                                                ...s,
+                                                scale: parseFloat(
+                                                    e.target.value
+                                                ),
+                                            }))
+                                        }
+                                        className="flex-1 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-brand-500"
+                                        disabled={isLoading}
+                                    />
+                                    <span className="text-xs text-neutral-500 w-12 text-right">
+                                        {Math.round(cropState.scale * 100)}%
+                                    </span>
+                                </div>
+
+                                {/* Hint text */}
+                                {cropState.scale > 1 && !isLoading && (
+                                    <p className="text-xs text-center text-neutral-400 mt-3">
+                                        Arrastre la imagen para reposicionar
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex gap-3 px-6 py-4 border-t border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
+                                <button
+                                    onClick={resetTransform}
+                                    disabled={isLoading}
+                                    className="px-4 py-2.5 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors disabled:opacity-50"
+                                >
+                                    Resetear
+                                </button>
+                                <div className="flex-1" />
+                                <button
+                                    onClick={handleCancel}
+                                    className="px-5 py-2.5 text-sm font-bold text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 rounded-xl transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    disabled={isLoading}
+                                    className="px-5 py-2.5 text-sm font-bold text-white bg-brand-500 hover:bg-brand-600 rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isLoading ? (
+                                        <Loader2
+                                            size={16}
+                                            className="animate-spin"
+                                        />
+                                    ) : (
+                                        <Check size={16} />
+                                    )}
+                                    Guardar
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            )}
+                    </div>,
+                    document.body
+                )}
 
             {/* Hidden canvas for processing */}
             <canvas ref={canvasRef} className="hidden" />

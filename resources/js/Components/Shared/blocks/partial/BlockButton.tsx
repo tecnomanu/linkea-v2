@@ -71,7 +71,7 @@ export const BlockButton: React.FC<BlockButtonProps> = ({
         ) : null;
 
     const TextBox = ({ centered = true }: { centered?: boolean }) => (
-        <div className={`min-w-0 flex-1 ${centered ? "text-center" : ""}`}>
+        <div className={`text-center min-w-0 ${centered ? "flex-1" : ""}`}>
             <h3 className="text-base font-bold truncate">{title}</h3>
             {subtitle && (
                 <p className="text-xs truncate opacity-70">{subtitle}</p>
@@ -94,9 +94,9 @@ export const BlockButton: React.FC<BlockButtonProps> = ({
             }}
         >
             <div className="flex items-center gap-2 px-3 py-2">
-                {/* Inline: everything centered together */}
+                {/* Inline: icon and text centered together */}
                 {iconAlignment === "inline" && (
-                    <div className="flex-1 flex items-center justify-center gap-2">
+                    <div className="flex-1 flex items-center justify-center gap-2 min-w-0">
                         <IconBox />
                         <TextBox centered={false} />
                     </div>

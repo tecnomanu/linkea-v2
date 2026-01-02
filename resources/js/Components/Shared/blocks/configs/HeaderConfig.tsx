@@ -1,5 +1,5 @@
 import { SegmentedSelect } from "@/Components/ui/SegmentedSelect";
-import { HeaderSize, LinkBlock } from "@/types";
+import { HeaderSize, LinkBlock } from "@/types/index";
 import React from "react";
 
 interface HeaderConfigProps {

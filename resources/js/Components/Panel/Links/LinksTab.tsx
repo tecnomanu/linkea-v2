@@ -7,7 +7,7 @@
 import { Dialog, DialogBody, DialogContent } from "@/Components/ui/Dialog";
 import { createBlockDefaults } from "@/Components/Shared/blocks/blockConfig";
 import { Icon } from "@/constants/icons";
-import { BlockType, LinkBlock } from "@/types";
+import { BlockType, LinkBlock } from "@/types/index";
 import {
     closestCenter,
     DndContext,

@@ -5,13 +5,13 @@
  * Supports 3 sizes: small, medium (default), large.
  */
 
-import { LinkBlock, UserProfile } from "@/types";
+import { LinkBlock, LandingProfile } from "@/types/index";
 import { calculateContrastColors, isLightColor } from "@/utils/colorUtils";
 import React, { useMemo } from "react";
 
 interface HeaderBlockProps {
     link: LinkBlock;
-    design: UserProfile["customDesign"];
+    design: LandingProfile["customDesign"];
     theme: string;
     isPreview?: boolean;
     animationDelay?: number;

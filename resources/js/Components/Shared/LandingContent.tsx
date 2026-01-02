@@ -8,7 +8,7 @@
 import { Icon } from "@/constants/icons";
 import { renderLegacyIcon } from "@/hooks/useBlockIcon";
 import { isLinkComplete } from "@/hooks/useLinkValidation";
-import { LinkBlock, UserProfile } from "@/types";
+import { LandingProfile, LinkBlock } from "@/types/index";
 import { calculateContrastColors, isLightColor } from "@/utils/colorUtils";
 import { Globe, Share2 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
@@ -38,7 +38,8 @@ export interface SocialLink {
 }
 
 interface LandingContentProps {
-    user: UserProfile;
+    /** Landing profile (public landing configuration, NOT authenticated user) */
+    landing: LandingProfile;
     links: LinkBlock[];
     socialLinks?: SocialLink[];
     device?: DeviceMode;
@@ -97,7 +98,7 @@ const getFontClass = (fontPair: string) => {
 // --- Main Component ---
 
 export const LandingContent: React.FC<LandingContentProps> = ({
-    user,
+    landing,
     links,
     socialLinks = [],
     device = "mobile",
@@ -122,10 +123,10 @@ export const LandingContent: React.FC<LandingContentProps> = ({
     const activeSocialLinks = socialLinks.filter((s) => s.active);
     // Filter links that are enabled AND have complete/valid data
     const activeLinks = links.filter((l) => l.isEnabled && isLinkComplete(l));
-    const design = user.customDesign;
+    const design = landing.customDesign;
     // Only consider actual Tailwind preset themes, NOT custom SVG backgrounds like "large_triangles"
-    const isThemePreset = isPresetTheme(user.theme);
-    const isDarkTheme = user.theme === "midnight";
+    const isThemePreset = isPresetTheme(landing.theme);
+    const isDarkTheme = landing.theme === "midnight";
 
     // Calculate text color based on background for custom themes
     // For preset themes, use the theme's built-in colors
@@ -272,7 +273,7 @@ export const LandingContent: React.FC<LandingContentProps> = ({
           }
         : {};
     const containerClasses = isThemePreset
-        ? getThemeBackground(user.theme)
+        ? getThemeBackground(landing.theme)
         : "";
     const fontClasses = getFontClass(design.fontPair);
 
@@ -392,8 +393,8 @@ export const LandingContent: React.FC<LandingContentProps> = ({
             <div className="flex flex-col items-center px-6 mb-6 md:mb-8 text-center pt-2 md:pt-6 animate-in slide-in-from-bottom-4 duration-700 fade-in">
                 <div className="relative mb-4 group cursor-pointer">
                     <img
-                        src={user.avatar}
-                        alt={user.title || user.handle}
+                        src={landing.avatar}
+                        alt={landing.title || landing.handle}
                         className={`relative w-28 h-28 object-cover transition-all duration-300 ${
                             design.roundedAvatar !== false
                                 ? "rounded-full"
@@ -411,8 +412,8 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                         className="text-sm font-medium px-3 py-1 rounded-full backdrop-blur-md border"
                         style={badgeStyle}
                     >
-                        @{user.handle}
-                        {(user.isVerified || user.isLegacy) && (
+                        @{landing.handle}
+                        {(landing.isVerified || landing.isLegacy) && (
                             <img
                                 src="/assets/images/icons/official.svg"
                                 alt="Verified"
@@ -448,7 +449,7 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                     </button>
                 </div>
                 {/* Title - displayed after handle badge (only if enabled and has content) */}
-                {user.showTitle !== false && user.title && (
+                {landing.showTitle !== false && landing.title && (
                     <h2
                         className={`text-2xl font-bold mb-1 tracking-tight ${
                             isThemePreset ? baseTextColor : ""
@@ -459,11 +460,11 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                                 : {}
                         }
                     >
-                        {user.title}
+                        {landing.title}
                     </h2>
                 )}
                 {/* Subtitle - displayed after title (only if enabled and has content) */}
-                {user.showSubtitle !== false && user.subtitle && (
+                {landing.showSubtitle !== false && landing.subtitle && (
                     <p
                         className={`text-sm max-w-[280px] leading-relaxed ${
                             isThemePreset ? subTextColor : ""
@@ -474,7 +475,7 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                                 : {}
                         }
                     >
-                        {user.subtitle}
+                        {landing.subtitle}
                     </p>
                 )}
 
@@ -529,7 +530,7 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                                 key={link.id}
                                 link={link}
                                 design={design}
-                                theme={user.theme}
+                                theme={landing.theme}
                                 isPreview={isPreview}
                                 animationDelay={delay}
                             />
@@ -778,11 +779,11 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                 <ShareModal
                     isOpen={isShareModalOpen}
                     onClose={() => setIsShareModalOpen(false)}
-                    user={user}
+                    landing={landing}
                     shareUrl={
                         typeof window !== "undefined"
                             ? window.location.href
-                            : `https://linkea.ar/${user.handle}`
+                            : `https://linkea.ar/${landing.handle}`
                     }
                 />
             )}

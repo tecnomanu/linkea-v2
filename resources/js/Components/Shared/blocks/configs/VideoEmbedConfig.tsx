@@ -12,7 +12,7 @@
  */
 
 import { Toggle } from "@/Components/ui/Toggle";
-import { LinkBlock, MediaDisplayMode } from "@/types";
+import { LinkBlock, MediaDisplayMode } from "@/types/index";
 import { ExternalLink, Layout, LayoutList, Video } from "lucide-react";
 import React from "react";
 

@@ -10,7 +10,7 @@
  */
 
 import { SegmentedSelect } from "@/Components/ui/SegmentedSelect";
-import { CalendarDisplayMode, CalendarProvider, LinkBlock } from "@/types";
+import { CalendarDisplayMode, CalendarProvider, LinkBlock } from "@/types/index";
 import { Calendar, ExternalLink, Layout } from "lucide-react";
 import React, { useEffect } from "react";
 

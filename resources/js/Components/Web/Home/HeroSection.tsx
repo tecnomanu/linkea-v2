@@ -1,12 +1,12 @@
 import { Link } from "@inertiajs/react";
 import { ArrowRight, Rocket, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
-import { LinkBlock, UserProfile } from "../../../types";
+import { LandingProfile, LinkBlock } from "../../../types";
 import { PhonePreview } from "../../Shared/PhonePreview";
 
 export interface FeaturedLanding {
     id: string;
-    user: UserProfile;
+    landing: LandingProfile;
     links: LinkBlock[];
 }
 
@@ -239,7 +239,7 @@ export default function HeroSection({
                                                 }}
                                             >
                                                 <a
-                                                    href={`/${landing.user.handle.replace(
+                                                    href={`/${landing.landing.handle.replace(
                                                         "@",
                                                         ""
                                                     )}`}
@@ -277,7 +277,9 @@ export default function HeroSection({
                                                     {/* PhonePreview - non-interactive, entire phone is the link */}
                                                     <div className="pointer-events-none overflow-hidden rounded-[56px]">
                                                         <PhonePreview
-                                                            user={landing.user}
+                                                            landing={
+                                                                landing.landing
+                                                            }
                                                             links={
                                                                 landing.links
                                                             }

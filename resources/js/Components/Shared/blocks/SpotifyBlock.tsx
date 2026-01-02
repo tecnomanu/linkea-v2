@@ -9,14 +9,14 @@
 
 import { renderBlockIcon } from "@/hooks/useBlockIcon";
 import { createBlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
-import { LinkBlock, MediaDisplayMode, UserProfile } from "@/types";
+import { LinkBlock, MediaDisplayMode, LandingProfile } from "@/types/index";
 import { Music } from "lucide-react";
 import React from "react";
 import { BlockButton, BlockContainer, BlockPreview } from "./partial";
 
 interface SpotifyBlockProps {
     link: LinkBlock;
-    design: UserProfile["customDesign"];
+    design: LandingProfile["customDesign"];
     buttonClassName: string;
     buttonStyle: React.CSSProperties;
     isPreview?: boolean;

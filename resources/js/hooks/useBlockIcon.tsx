@@ -6,7 +6,7 @@
  */
 
 import { IconType } from "@/constants/icons";
-import { BlockType } from "@/types";
+import { BlockType } from "@/types/index";
 import {
     AtSign,
     Calendar,

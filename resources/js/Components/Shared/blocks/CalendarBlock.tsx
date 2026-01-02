@@ -10,14 +10,14 @@
 
 import { renderBlockIcon } from "@/hooks/useBlockIcon";
 import { createBlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
-import { LinkBlock, UserProfile } from "@/types";
+import { LinkBlock, LandingProfile } from "@/types/index";
 import { Calendar } from "lucide-react";
 import React from "react";
 import { BlockButton, BlockContainer, BlockPreview } from "./partial";
 
 interface CalendarBlockProps {
     link: LinkBlock;
-    design: UserProfile["customDesign"];
+    design: LandingProfile["customDesign"];
     buttonClassName: string; // Legacy prop - not used
     buttonStyle: React.CSSProperties; // Legacy prop - not used
     isPreview?: boolean;

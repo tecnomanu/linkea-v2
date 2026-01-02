@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('newsletters', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('subject')->nullable();
-            $table->text('message')->nullable();
+            $table->longText('message')->nullable();
             $table->string('status')->default('draft');
             $table->boolean('sent')->default(false);
             $table->timestamps();

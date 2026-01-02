@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('links', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('landing_id')->constrained('landings')->cascadeOnDelete();
-            $table->string('text')->nullable();
+            $table->text('text')->nullable();
             $table->text('link')->nullable();
             $table->boolean('state')->default(true);
             $table->string('slug')->nullable();

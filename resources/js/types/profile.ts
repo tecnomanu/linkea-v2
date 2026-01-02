@@ -1,18 +1,24 @@
 /**
- * User profile types for landing page ownership and display.
+ * Landing profile types - Represents the public landing page configuration.
+ *
+ * IMPORTANT: This is NOT the authenticated user (auth.user).
+ * LandingProfile represents the public-facing landing page data.
  */
 
 import type { CustomDesignConfig, SavedCustomTheme } from "./design";
 
 // =============================================================================
-// User Profile
+// Landing Profile
 // =============================================================================
 
 /**
- * Complete user profile for panel/editor context.
+ * Complete landing configuration for panel/editor context.
  * Contains identity, design settings, SEO, and analytics configuration.
+ *
+ * This represents the PUBLIC landing page, not the authenticated user.
+ * For authenticated user data, use AuthUser from @/types/inertia
  */
-export interface UserProfile {
+export interface LandingProfile {
     // Identity
     name: string;
     handle: string;
@@ -45,6 +51,7 @@ export interface UserProfile {
     isLegacy?: boolean;
 }
 
+
 // =============================================================================
 // Navigation
 // =============================================================================
@@ -54,4 +61,3 @@ export interface NavItem {
     label: string;
     icon: string;
 }
-

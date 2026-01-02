@@ -18,10 +18,11 @@ export interface PendingChanges {
 }
 
 // UI State store - persists while navigating within panel
+// IMPORTANT: landing represents the PUBLIC landing profile, not the authenticated user
 export interface UiState {
     links?: any[];
     socialLinks?: any[];
-    user?: any;
+    landing?: any; // LandingProfile data
 }
 
 interface AutoSaveContextType {

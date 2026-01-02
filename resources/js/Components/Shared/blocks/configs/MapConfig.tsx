@@ -10,7 +10,7 @@
 
 import { SegmentedSelect } from "@/Components/ui/SegmentedSelect";
 import { Toggle } from "@/Components/ui/Toggle";
-import { LinkBlock } from "@/types";
+import { LinkBlock } from "@/types/index";
 import { ExternalLink, Layout, MapPin } from "lucide-react";
 import React from "react";
 

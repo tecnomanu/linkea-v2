@@ -58,8 +58,6 @@ class PanelLandingResource extends BaseLandingResource
                 ],
                 // Privacy
                 'is_private' => (bool) ($options['is_private'] ?? false),
-                // Legacy bio (for reference)
-                'bio' => $options['bio'] ?? '',
             ],
         ];
     }

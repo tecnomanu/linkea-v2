@@ -14,7 +14,7 @@
 import { CookieConsent } from "@/Components/Shared/CookieConsent";
 import { LandingContent, SocialLink } from "@/Components/Shared/LandingContent";
 import { landingFullJsonLd } from "@/Components/Shared/SEOHead";
-import { BlockType, LinkBlock, UserProfile } from "@/types";
+import { BlockType, LandingProfile, LinkBlock } from "@/types/index";
 import { Head, usePage } from "@inertiajs/react";
 import { useEffect, useMemo } from "react";
 
@@ -187,7 +187,7 @@ export default function LandingView({ landing }: LandingViewProps) {
 
     // Build user profile
     // Title and subtitle come from template_config (as in legacy)
-    const user: UserProfile = {
+    const landingProfile: LandingProfile = {
         name: landing.name, // Internal name (not displayed)
         handle: landing.domain_name || landing.slug || "linkea",
         avatar: landing.logo?.image || "/images/logos/logo-icon.webp",
@@ -207,13 +207,13 @@ export default function LandingView({ landing }: LandingViewProps) {
                 | "fixed",
             backgroundRepeat: bgConfig.backgroundRepeat,
             buttonStyle:
-                (buttons.style as UserProfile["customDesign"]["buttonStyle"]) ||
+                (buttons.style as LandingProfile["customDesign"]["buttonStyle"]) ||
                 "solid",
             buttonShape:
-                (buttons.shape as UserProfile["customDesign"]["buttonShape"]) ||
+                (buttons.shape as LandingProfile["customDesign"]["buttonShape"]) ||
                 "rounded",
             buttonSize:
-                (buttons.size as UserProfile["customDesign"]["buttonSize"]) ||
+                (buttons.size as LandingProfile["customDesign"]["buttonSize"]) ||
                 "compact",
             buttonColor: buttons.backgroundColor,
             buttonTextColor: buttons.textColor,
@@ -225,7 +225,7 @@ export default function LandingView({ landing }: LandingViewProps) {
                 | "inline"
                 | "right",
             fontPair:
-                templateConfig.fontPair as UserProfile["customDesign"]["fontPair"],
+                templateConfig.fontPair as LandingProfile["customDesign"]["fontPair"],
             textColor: templateConfig.textColor || undefined,
             roundedAvatar: templateConfig.header?.roundedAvatar ?? true,
             avatarFloating: templateConfig.header?.avatarFloating ?? true,
@@ -238,17 +238,17 @@ export default function LandingView({ landing }: LandingViewProps) {
     const seoTitle = `${landing.seoTitle} | Linkea`;
     const seoDescription = landing.seoDescription as string;
     // seoImage comes from backend: custom image or logo fallback
-    const rawSeoImage = landing.seoImage || user.avatar;
+    const rawSeoImage = landing.seoImage || landingProfile.avatar;
     const seoImage = rawSeoImage?.startsWith("http")
         ? rawSeoImage
         : `${appUrl}${rawSeoImage}`;
-    const canonicalUrl = `${appUrl}/${user.handle}`;
+    const canonicalUrl = `${appUrl}/${landingProfile.handle}`;
 
     // JSON-LD structured data
     const profileJsonLd = landingFullJsonLd(
-        user.title,
-        user.handle,
-        user.subtitle,
+        landingProfile.title,
+        landingProfile.handle,
+        landingProfile.subtitle,
         seoImage,
         appUrl
     );
@@ -356,7 +356,7 @@ export default function LandingView({ landing }: LandingViewProps) {
                 {/* 
                   Favicon - Currently uses Linkea's default favicon.
                   TODO: Future feature - allow users to customize landing favicon 
-                  (e.g. use landing logo: user.avatar)
+                  (e.g. use landing logo: landingProfile.avatar)
                 */}
                 <link
                     rel="icon"
@@ -396,7 +396,7 @@ export default function LandingView({ landing }: LandingViewProps) {
 
             {/* Main Content - LandingContent handles its own background */}
             <LandingContent
-                user={user}
+                landing={landingProfile}
                 links={links}
                 socialLinks={socialLinks}
                 device="mobile"
@@ -407,7 +407,7 @@ export default function LandingView({ landing }: LandingViewProps) {
             {/* Cookie Consent - Only on public pages, mini-banner hidden (trigger is in footer) */}
             <CookieConsent
                 googleAnalyticsIds={["G-FH87DE17XF"]}
-                accentColor={user.customDesign.buttonColor}
+                accentColor={landingProfile.customDesign.buttonColor}
                 hideMiniBanner={true}
             />
         </>

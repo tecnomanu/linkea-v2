@@ -11,7 +11,7 @@
  * - blocks/SoundCloudBlock.tsx: Renderer for LandingContent
  */
 
-import { LinkBlock, MediaDisplayMode } from "@/types";
+import { LinkBlock, MediaDisplayMode } from "@/types/index";
 import { ExternalLink, Headphones, Layout, LayoutList } from "lucide-react";
 import React from "react";
 

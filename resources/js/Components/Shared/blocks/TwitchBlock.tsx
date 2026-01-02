@@ -16,14 +16,14 @@
 
 import { renderBlockIcon } from "@/hooks/useBlockIcon";
 import { createBlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
-import { LinkBlock, MediaDisplayMode, UserProfile } from "@/types";
+import { LinkBlock, MediaDisplayMode, LandingProfile } from "@/types/index";
 import { Video } from "lucide-react";
 import React from "react";
 import { BlockButton, BlockContainer, BlockPreview } from "./partial";
 
 interface TwitchBlockProps {
     link: LinkBlock;
-    design: UserProfile["customDesign"];
+    design: LandingProfile["customDesign"];
     buttonClassName: string; // Legacy prop - not used with new components
     buttonStyle: React.CSSProperties; // Legacy prop - not used
     isPreview?: boolean;

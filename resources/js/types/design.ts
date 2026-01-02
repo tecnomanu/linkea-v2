@@ -60,7 +60,7 @@ export interface BackgroundControls {
 
 /**
  * Complete custom design configuration for a landing page.
- * Used by UserProfile.customDesign and SavedCustomTheme.
+ * Used by LandingProfile.customDesign and SavedCustomTheme.
  */
 export interface CustomDesignConfig {
     // Background

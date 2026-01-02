@@ -78,7 +78,7 @@ export interface LinkBlock {
 
     // Media specific (YouTube/Spotify/Vimeo/Twitch/SoundCloud/TikTok)
     mediaDisplayMode?: MediaDisplayMode;
-    showInlinePlayer?: boolean; // @deprecated - use mediaDisplayMode instead
+    showInlinePlayer?: boolean; // Show embedded player vs link preview
     autoPlay?: boolean;
     startMuted?: boolean;
     playerSize?: PlayerSize;

@@ -3,14 +3,14 @@ import {
     renderBlockTypeIcon,
 } from "@/Components/Shared/blocks/blockConfig";
 import { PhonePreview } from "@/Components/Shared/PhonePreview";
-import { BlockType, LinkBlock, UserProfile } from "@/types";
+import { BlockType, LandingProfile, LinkBlock } from "@/types/index";
 import { useEffect, useState } from "react";
 
 // Demo profiles for the phone preview
 interface DemoProfile {
     id: string;
     label: string;
-    user: UserProfile;
+    landing: LandingProfile;
     links: LinkBlock[];
 }
 
@@ -19,7 +19,7 @@ const DEMO_PROFILES: DemoProfile[] = [
     {
         id: "musician",
         label: "Musico",
-        user: {
+        landing: {
             name: "Lucas Beats",
             handle: "lucasbeats",
             avatar: "https://ui-avatars.com/api/?name=Lucas+B&background=7c3aed&color=fff&size=200",
@@ -92,7 +92,7 @@ const DEMO_PROFILES: DemoProfile[] = [
     {
         id: "fitness",
         label: "Fitness",
-        user: {
+        landing: {
             name: "Sofia Martinez",
             handle: "sofimart",
             avatar: "https://ui-avatars.com/api/?name=Sofia+M&background=ec4899&color=fff&size=200",
@@ -166,7 +166,7 @@ const DEMO_PROFILES: DemoProfile[] = [
     {
         id: "streamer",
         label: "Streamer",
-        user: {
+        landing: {
             name: "NightWolf Gaming",
             handle: "nightwolfgg",
             avatar: "https://ui-avatars.com/api/?name=NW&background=6366f1&color=fff&size=200",
@@ -377,7 +377,7 @@ export default function FeaturesSection() {
                     {/* Phone Preview (Sticky) - sticky applied directly to grid cell */}
                     <div className="sticky top-24 self-start flex flex-col items-center justify-self-end">
                         <PhonePreview
-                            user={activeProfile.user}
+                            landing={activeProfile.landing}
                             links={activeProfile.links}
                             device="mobile"
                             scale={0.7}

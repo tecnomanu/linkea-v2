@@ -10,7 +10,6 @@ import {
 } from "@/Components/Shared/AutoSaveSettings";
 import { DeviceMode, PhonePreview } from "@/Components/Shared/PhonePreview";
 import { useWhatsNewModal } from "@/Components/Shared/WhatsNewModal";
-import { INITIAL_LINKS } from "@/constants";
 import { useAutoSaveContext } from "@/contexts/AutoSaveContext";
 import PanelLayout from "@/Layouts/PanelLayout";
 import {
@@ -24,8 +23,8 @@ import {
     ButtonStyle,
     FontPair,
     LinkBlock,
-    UserProfile,
-} from "@/types";
+    LandingProfile,
+} from "@/types/index";
 import { Head } from "@inertiajs/react";
 import { Eye, Maximize2 } from "lucide-react";
 import {
@@ -169,7 +168,7 @@ function TabLoadingFallback() {
 }
 
 export default function Dashboard({
-    landing,
+    landing: landingData,
     auth,
     activeTab: serverActiveTab = "dashboard",
     dashboardStats = null,
@@ -178,25 +177,25 @@ export default function Dashboard({
     const activeTab = serverActiveTab;
 
     // Links come pre-transformed from PanelLandingResource
-    const initialLinks: LinkBlock[] = landing?.links || INITIAL_LINKS;
+    const initialLinks: LinkBlock[] = landingData?.links || [];
 
-    // Build UserProfile from pre-transformed landing data
-    const tc = landing?.template_config;
+    // Build LandingProfile from pre-transformed landing data
+    const tc = landingData?.template_config;
     const bg = tc?.background;
     const buttons = tc?.buttons;
     const header = tc?.header;
-    const opts = landing?.options;
+    const opts = landingData?.options;
 
-    const initialUser: UserProfile = {
-        name: landing?.name || "",
-        handle: landing?.slug || landing?.domain_name || "",
+    const initialLandingProfile: LandingProfile = {
+        name: landingData?.name || "",
+        handle: landingData?.slug || landingData?.domain_name || "",
         avatar:
-            landing?.logo?.image ||
+            landingData?.logo?.image ||
             auth.user.avatar ||
             "/images/logos/logo-icon.webp",
         avatarThumb:
-            landing?.logo?.thumb || auth.user.avatar_thumb || undefined,
-        title: tc?.title || landing?.slug || "",
+            landingData?.logo?.thumb || auth.user.avatar_thumb || undefined,
+        title: tc?.title || landingData?.slug || "",
         subtitle: tc?.subtitle || "",
         showTitle: tc?.showTitle ?? true,
         showSubtitle: tc?.showSubtitle ?? true,
@@ -237,12 +236,12 @@ export default function Dashboard({
         googleAnalyticsId: opts?.analytics?.google_code || "",
         facebookPixelId: opts?.analytics?.facebook_pixel || "",
         isPrivate: opts?.is_private || false,
-        isVerified: landing?.verify || false,
-        isLegacy: !!landing?.mongo_id,
+        isVerified: landingData?.verify || false,
+        isLegacy: !!landingData?.mongo_id,
     };
 
     // Social links come pre-transformed from PanelLandingResource
-    const initialSocialLinks: SocialLink[] = (landing?.socialLinks || []).map(
+    const initialSocialLinks: SocialLink[] = (landingData?.socialLinks || []).map(
         (link) => ({
             id: link.id,
             url: link.url || "",
@@ -270,25 +269,24 @@ export default function Dashboard({
         setPendingChanges,
         saveAllChanges,
         autoSaveEnabled,
-        setOnLandingUpdated,
     } = useAutoSaveContext();
 
     // Check if we should use context state (same landing, has data)
-    const isSameLanding = contextLandingId === landing?.id;
+    const isSameLanding = contextLandingId === landingData?.id;
 
     // Initialize state from context (if same landing) or from server
     const [links, setLinksInternal] = useState<LinkBlock[]>(() => {
         if (isSameLanding && uiState.links) {
             return uiState.links;
         }
-        return initialLinks.length > 0 ? initialLinks : INITIAL_LINKS;
+        return initialLinks; // Empty array if no backend data
     });
 
-    const [user, setUserInternal] = useState<UserProfile>(() => {
-        if (isSameLanding && uiState.user) {
-            return uiState.user;
+    const [landing, setLandingInternal] = useState<LandingProfile>(() => {
+        if (isSameLanding && uiState.landing) {
+            return uiState.landing;
         }
-        return initialUser;
+        return initialLandingProfile;
     });
 
     const [socialLinks, setSocialLinksInternal] = useState<SocialLink[]>(() => {
@@ -298,95 +296,50 @@ export default function Dashboard({
         return initialSocialLinks;
     });
 
-    // Wrapper functions that update both local state and context UI state
+    // Wrapper functions that update local state only
     const setLinks = useCallback(
         (newLinks: LinkBlock[] | ((prev: LinkBlock[]) => LinkBlock[])) => {
-            setLinksInternal((prev) => {
-                const updated =
-                    typeof newLinks === "function" ? newLinks(prev) : newLinks;
-                setUiState("links", updated);
-                return updated;
-            });
+            setLinksInternal((prev) =>
+                typeof newLinks === "function" ? newLinks(prev) : newLinks
+            );
         },
-        [setUiState]
+        []
     );
 
-    const setUser = useCallback(
-        (newUser: UserProfile | ((prev: UserProfile) => UserProfile)) => {
-            setUserInternal((prev) => {
-                const updated =
-                    typeof newUser === "function" ? newUser(prev) : newUser;
-                setUiState("user", updated);
-                return updated;
-            });
+    const setLanding = useCallback(
+        (newLanding: LandingProfile | ((prev: LandingProfile) => LandingProfile)) => {
+            setLandingInternal((prev) =>
+                typeof newLanding === "function" ? newLanding(prev) : newLanding
+            );
         },
-        [setUiState]
+        []
     );
 
     const setSocialLinks = useCallback(
         (newLinks: SocialLink[] | ((prev: SocialLink[]) => SocialLink[])) => {
-            setSocialLinksInternal((prev) => {
-                const updated =
-                    typeof newLinks === "function" ? newLinks(prev) : newLinks;
-                setUiState("socialLinks", updated);
-                return updated;
-            });
+            setSocialLinksInternal((prev) =>
+                typeof newLinks === "function" ? newLinks(prev) : newLinks
+            );
         },
-        [setUiState]
+        []
     );
+
+    // Sync local state to context UI state (separate from setters to avoid setState during render)
+    useEffect(() => {
+        setUiState("links", links);
+    }, [links, setUiState]);
+
+    useEffect(() => {
+        setUiState("landing", landing);
+    }, [landing, setUiState]);
+
+    useEffect(() => {
+        setUiState("socialLinks", socialLinks);
+    }, [socialLinks, setUiState]);
 
     const [currentLinkType, setCurrentLinkType] = useState<"blocks" | "social">(
         "blocks"
     );
-
-    // Register callback to update user state when server returns processed data (e.g., S3 URLs)
-    useEffect(() => {
-        const callback = (updatedLandingData: any) => {
-            setUser((prev) => {
-                const updates: Partial<UserProfile> = {};
-
-                // Update avatar if server returned new logo
-                if (updatedLandingData.logo?.image) {
-                    updates.avatar = updatedLandingData.logo.image;
-                }
-                if (updatedLandingData.logo?.thumb) {
-                    updates.avatarThumb = updatedLandingData.logo.thumb;
-                }
-
-                // Update background image if server returned new URL
-                if (
-                    updatedLandingData.template_config?.background
-                        ?.backgroundImage
-                ) {
-                    updates.customDesign = {
-                        ...prev.customDesign,
-                        backgroundImage:
-                            updatedLandingData.template_config.background
-                                .backgroundImage,
-                    };
-                }
-
-                // Update other fields as needed
-                if (updatedLandingData.name) {
-                    updates.name = updatedLandingData.name;
-                }
-                if (updatedLandingData.options?.title) {
-                    updates.title = updatedLandingData.options.title;
-                }
-                if (updatedLandingData.options?.subtitle) {
-                    updates.subtitle = updatedLandingData.options.subtitle;
-                }
-
-                return { ...prev, ...updates };
-            });
-        };
-
-        setOnLandingUpdated(() => callback);
-
-        return () => {
-            setOnLandingUpdated(null);
-        };
-    }, [setOnLandingUpdated, setUser]);
 
     // What's New modal for first-time visitors
     const whatsNewModal = useWhatsNewModal();
@@ -396,11 +349,11 @@ export default function Dashboard({
     // =================================================================
 
     useEffect(() => {
-        if (landing?.id) {
+        if (landingData?.id) {
             // setLandingId internally resets all state when landing changes
-            setLandingId(landing.id);
+            setLandingId(landingData.id);
         }
-    }, [landing?.id, setLandingId]);
+    }, [landingData?.id, setLandingId]);
 
     // Transform links to API format for saving
     // IMPORTANT: All block-specific config fields must be included here
@@ -463,50 +416,50 @@ export default function Dashboard({
     // Transform design/user data to API format
     const designPayload = useMemo(
         () => ({
-            title: user.title,
-            subtitle: user.subtitle,
-            showTitle: user.showTitle,
-            showSubtitle: user.showSubtitle,
-            avatar: user.avatar,
-            theme: user.theme,
+            title: landing.title,
+            subtitle: landing.subtitle,
+            showTitle: landing.showTitle,
+            showSubtitle: landing.showSubtitle,
+            avatar: landing.avatar,
+            theme: landing.theme,
             customDesign: {
-                ...user.customDesign,
-                roundedAvatar: user.customDesign.roundedAvatar ?? true,
-                avatarFloating: user.customDesign.avatarFloating ?? true,
+                ...landing.customDesign,
+                roundedAvatar: landing.customDesign.roundedAvatar ?? true,
+                avatarFloating: landing.customDesign.avatarFloating ?? true,
             },
-            savedCustomThemes: user.savedCustomThemes,
-            lastCustomDesign: user.lastCustomDesign,
+            savedCustomThemes: landing.savedCustomThemes,
+            lastCustomDesign: landing.lastCustomDesign,
         }),
         [
-            user.title,
-            user.subtitle,
-            user.showTitle,
-            user.showSubtitle,
-            user.avatar,
-            user.theme,
-            user.customDesign,
-            user.savedCustomThemes,
-            user.lastCustomDesign,
+            landing.title,
+            landing.subtitle,
+            landing.showTitle,
+            landing.showSubtitle,
+            landing.avatar,
+            landing.theme,
+            landing.customDesign,
+            landing.savedCustomThemes,
+            landing.lastCustomDesign,
         ]
     );
 
     // Transform settings data to API format
     const settingsPayload = useMemo(
         () => ({
-            handle: user.handle,
-            seoTitle: user.seoTitle,
-            seoDescription: user.seoDescription,
-            googleAnalyticsId: user.googleAnalyticsId,
-            facebookPixelId: user.facebookPixelId,
-            isPrivate: user.isPrivate,
+            handle: landing.handle,
+            seoTitle: landing.seoTitle,
+            seoDescription: landing.seoDescription,
+            googleAnalyticsId: landing.googleAnalyticsId,
+            facebookPixelId: landing.facebookPixelId,
+            isPrivate: landing.isPrivate,
         }),
         [
-            user.handle,
-            user.seoTitle,
-            user.seoDescription,
-            user.googleAnalyticsId,
-            user.facebookPixelId,
-            user.isPrivate,
+            landing.handle,
+            landing.seoTitle,
+            landing.seoDescription,
+            landing.googleAnalyticsId,
+            landing.facebookPixelId,
+            landing.isPrivate,
         ]
     );
 
@@ -572,8 +525,21 @@ export default function Dashboard({
     const [initialPreviewDevice, setInitialPreviewDevice] =
         useState<DeviceMode>("mobile");
 
-    const handleUpdateUser = (updates: Partial<UserProfile>) => {
-        setUser((prev) => ({ ...prev, ...updates }));
+    const handleUpdateLanding = (updates: Partial<LandingProfile>) => {
+        setLanding((prev) => {
+            // Deep merge customDesign if present in updates
+            if (updates.customDesign) {
+                return {
+                    ...prev,
+                    ...updates,
+                    customDesign: {
+                        ...prev.customDesign,
+                        ...updates.customDesign,
+                    },
+                };
+            }
+            return { ...prev, ...updates };
+        });
     };
 
     const openPreview = (device: DeviceMode = "mobile") => {
@@ -601,7 +567,7 @@ export default function Dashboard({
             <div className="flex-1 w-full mx-auto p-4 md:p-8 lg:p-12 pt-32 md:pt-8 overflow-y-auto h-screen overlay-scrollbar relative">
                 <div className=" max-w-5xl  mx-auto">
                     {/* Header - Hidden on Mobile to save space (MobileNav has context) */}
-                    <header className="hidden md:flex justify-between items-end mb-8 sticky top-0 z-40 bg-slate-50/90 dark:bg-neutral-950/90 backdrop-blur-xl py-4 -mx-4 px-4 lg:-mx-12 lg:px-12 transition-all">
+                    <header className="hidden md:flex justify-between items-end mb-8 sticky top-0 z-40 bg-slate-50/90 dark:bg-neutral-950/90 backdrop-blur-xl py-4 -mx-8 px-8 lg:-mx-12 lg:px-12 transition-all">
                         <div className="flex items-center gap-6">
                             <div>
                                 <div className="flex items-center gap-2 text-sm font-bold text-neutral-400 mb-1 uppercase tracking-wider">
@@ -726,7 +692,7 @@ export default function Dashboard({
                     {/* Note: Links tab has its own sticky container that includes LinkBar */}
                     {activeTab !== "profile" && activeTab !== "links" && (
                         <div className="sticky top-0 md:top-20 z-30 bg-slate-50/95 dark:bg-neutral-950/95 backdrop-blur-xl -mx-4 px-4 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12 py-4">
-                            <LinkBar landing={landing} user={auth.user} />
+                            <LinkBar landing={landingData} user={auth.user} />
                         </div>
                     )}
 
@@ -751,8 +717,8 @@ export default function Dashboard({
                     {activeTab === "appearance" && (
                         <Suspense fallback={<TabLoadingFallback />}>
                             <DesignTab
-                                user={user}
-                                onUpdateUser={handleUpdateUser}
+                                landing={landing}
+                                onUpdateLanding={handleUpdateLanding}
                             />
                         </Suspense>
                     )}
@@ -760,8 +726,8 @@ export default function Dashboard({
                     {activeTab === "settings" && (
                         <Suspense fallback={<TabLoadingFallback />}>
                             <SettingsTab
-                                user={user}
-                                onUpdateUser={handleUpdateUser}
+                                landing={landing}
+                                onUpdateLanding={handleUpdateLanding}
                             />
                         </Suspense>
                     )}
@@ -788,7 +754,7 @@ export default function Dashboard({
                 {/* Phone Component Container - Scales based on available height */}
                 <div className="flex-1 flex items-center justify-center min-h-0 w-full">
                     <PhonePreview
-                        user={user}
+                        landing={landing}
                         links={links}
                         socialLinks={socialLinks}
                         device="mobile"
@@ -812,7 +778,7 @@ export default function Dashboard({
                     <DevicePreviewModal
                         isOpen={isPreviewOpen}
                         onClose={() => setIsPreviewOpen(false)}
-                        user={user}
+                        landing={landing}
                         links={links}
                         socialLinks={socialLinks}
                         initialDevice={initialPreviewDevice}

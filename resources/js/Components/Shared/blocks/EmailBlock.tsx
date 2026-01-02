@@ -7,14 +7,14 @@
 
 import { renderBlockIcon } from "@/hooks/useBlockIcon";
 import { createBlockDesign } from "@/hooks/useBlockStyles";
-import { LinkBlock, UserProfile } from "@/types";
+import { LinkBlock, LandingProfile } from "@/types/index";
 import { Mail } from "lucide-react";
 import React from "react";
 import { BlockButton } from "./partial";
 
 interface EmailBlockProps {
     link: LinkBlock;
-    design: UserProfile["customDesign"];
+    design: LandingProfile["customDesign"];
     buttonClassName: string; // Legacy prop - not used
     buttonStyle: React.CSSProperties; // Legacy prop - not used
     isPreview?: boolean;

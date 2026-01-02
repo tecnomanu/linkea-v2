@@ -2,9 +2,6 @@ import { Link, router } from "@inertiajs/react";
 import {
     ArrowLeft,
     ArrowRight,
-    ChevronLeft,
-    ChevronRight,
-    ExternalLink,
     Rocket,
     Search,
     Sparkles,
@@ -12,9 +9,9 @@ import {
     X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { LandingCard, Pagination } from "../../Components/Web/Gallery";
 import { FeaturedLanding } from "../../Components/Web/Home/HeroSection";
 import WebLayout from "../../Layouts/WebLayout";
-import { LinkBlock, UserProfile } from "../../types";
 
 interface GalleryProps {
     landings: FeaturedLanding[];
@@ -27,253 +24,6 @@ interface GalleryProps {
     filters: {
         search: string | null;
     };
-}
-
-// Mini phone preview card for gallery grid
-function LandingCard({ landing }: { landing: FeaturedLanding }) {
-    const { user, links } = landing;
-    const handle = user.handle;
-    const visibleLinks = links.slice(0, 3);
-
-    // Get background style
-    const getBackgroundStyle = () => {
-        const design = user.customDesign;
-        const bgColor = design?.backgroundColor || "#f8fafc";
-
-        // Check for background image
-        if (design?.backgroundEnabled && design?.backgroundImage) {
-            return {
-                backgroundImage: design.backgroundImage,
-                backgroundSize: design?.backgroundSize || "cover",
-                backgroundPosition: design?.backgroundPosition || "center",
-            };
-        }
-
-        return { backgroundColor: bgColor };
-    };
-
-    // Get button style based on design
-    const getButtonClasses = () => {
-        const design = user.customDesign;
-        const shape = design?.buttonShape || "rounded";
-
-        const shapeClasses = {
-            sharp: "rounded-none",
-            rounded: "rounded-lg",
-            pill: "rounded-full",
-        };
-
-        return shapeClasses[shape] || "rounded-lg";
-    };
-
-    const getButtonStyle = () => {
-        const design = user.customDesign;
-        return {
-            backgroundColor: design?.buttonColor || "#3b82f6",
-            color: design?.buttonTextColor || "#ffffff",
-        };
-    };
-
-    return (
-        <Link
-            href={`/${handle}`}
-            className="group relative block"
-            prefetch={false}
-        >
-            {/* Card container */}
-            <div className="relative bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-brand-200 hover:-translate-y-2">
-                {/* Mini phone mockup */}
-                <div className="relative aspect-[9/16] max-h-[380px] overflow-hidden">
-                    {/* Phone frame */}
-                    <div
-                        className="absolute inset-3 rounded-2xl overflow-hidden"
-                        style={getBackgroundStyle()}
-                    >
-                        {/* Content */}
-                        <div className="flex flex-col items-center pt-6 px-3">
-                            {/* Avatar */}
-                            <div
-                                className={`w-16 h-16 bg-white shadow-md overflow-hidden ${
-                                    user.customDesign?.roundedAvatar !== false
-                                        ? "rounded-full"
-                                        : "rounded-xl"
-                                }`}
-                            >
-                                {user.avatar ? (
-                                    <img
-                                        src={user.avatar}
-                                        alt={user.name}
-                                        className="w-full h-full object-cover"
-                                        loading="lazy"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white text-2xl font-bold">
-                                        {user.name.charAt(0).toUpperCase()}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Name */}
-                            <h3 className="mt-3 text-sm font-bold text-center truncate w-full px-2">
-                                {user.name}
-                            </h3>
-
-                            {/* Handle */}
-                            <p className="text-xs text-gray-500 truncate">
-                                @{handle}
-                            </p>
-
-                            {/* Bio snippet */}
-                            {user.bio && (
-                                <p className="mt-1 text-[10px] text-gray-600 text-center line-clamp-2 px-2">
-                                    {user.bio}
-                                </p>
-                            )}
-
-                            {/* Mini links preview */}
-                            <div className="mt-4 w-full space-y-2 px-1">
-                                {visibleLinks.map((link: LinkBlock) => (
-                                    <div
-                                        key={link.id}
-                                        className={`w-full py-2 px-3 text-[10px] font-medium text-center truncate ${getButtonClasses()}`}
-                                        style={getButtonStyle()}
-                                    >
-                                        {link.title}
-                                    </div>
-                                ))}
-                                {links.length > 3 && (
-                                    <div className="text-[9px] text-gray-400 text-center pt-1">
-                                        +{links.length - 3} mas
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Card footer */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent pt-8 pb-4 px-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-gray-700 truncate max-w-[120px]">
-                                {user.name}
-                            </span>
-                            {user.isVerified && (
-                                <span className="flex-shrink-0 w-4 h-4 bg-brand-500 rounded-full flex items-center justify-center">
-                                    <svg
-                                        className="w-2.5 h-2.5 text-white"
-                                        fill="currentColor"
-                                        viewBox="0 0 20 20"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                </span>
-                            )}
-                        </div>
-                        <span className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-xs text-brand-500 font-medium">
-                            Ver
-                            <ExternalLink size={12} />
-                        </span>
-                    </div>
-                </div>
-
-                {/* Hover overlay */}
-                <div className="absolute inset-0 bg-brand-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-3xl" />
-            </div>
-        </Link>
-    );
-}
-
-// Pagination component
-function Pagination({
-    currentPage,
-    lastPage,
-    onPageChange,
-}: {
-    currentPage: number;
-    lastPage: number;
-    onPageChange: (page: number) => void;
-}) {
-    if (lastPage <= 1) return null;
-
-    // Generate visible page numbers
-    const getVisiblePages = () => {
-        const pages: (number | string)[] = [];
-        const delta = 2;
-
-        for (let i = 1; i <= lastPage; i++) {
-            if (
-                i === 1 ||
-                i === lastPage ||
-                (i >= currentPage - delta && i <= currentPage + delta)
-            ) {
-                pages.push(i);
-            } else if (pages[pages.length - 1] !== "...") {
-                pages.push("...");
-            }
-        }
-
-        return pages;
-    };
-
-    return (
-        <div className="flex items-center justify-center gap-2 mt-12">
-            {/* Previous */}
-            <button
-                onClick={() => onPageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="flex items-center gap-1 px-4 py-2 rounded-xl bg-white border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-                <ChevronLeft size={16} />
-                Anterior
-            </button>
-
-            {/* Page numbers */}
-            <div className="hidden sm:flex items-center gap-1">
-                {getVisiblePages().map((page, idx) =>
-                    page === "..." ? (
-                        <span
-                            key={`ellipsis-${idx}`}
-                            className="px-3 py-2 text-gray-400"
-                        >
-                            ...
-                        </span>
-                    ) : (
-                        <button
-                            key={page}
-                            onClick={() => onPageChange(page as number)}
-                            className={`min-w-[40px] h-10 rounded-xl text-sm font-medium transition-all ${
-                                currentPage === page
-                                    ? "bg-brand-500 text-white shadow-lg shadow-brand-500/30"
-                                    : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
-                            }`}
-                        >
-                            {page}
-                        </button>
-                    )
-                )}
-            </div>
-
-            {/* Mobile page indicator */}
-            <span className="sm:hidden text-sm text-gray-500">
-                Pagina {currentPage} de {lastPage}
-            </span>
-
-            {/* Next */}
-            <button
-                onClick={() => onPageChange(currentPage + 1)}
-                disabled={currentPage === lastPage}
-                className="flex items-center gap-1 px-4 py-2 rounded-xl bg-white border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-                Siguiente
-                <ChevronRight size={16} />
-            </button>
-        </div>
-    );
 }
 
 export default function Gallery({ landings, meta, filters }: GalleryProps) {
@@ -430,10 +180,7 @@ export default function Gallery({ landings, meta, filters }: GalleryProps) {
                                 <Users size={16} />
                                 {meta.total.toLocaleString("es-AR")} perfiles
                                 {filters.search && (
-                                    <span>
-                                        {" "}
-                                        para "{filters.search}"
-                                    </span>
+                                    <span> para "{filters.search}"</span>
                                 )}
                             </span>
                         </div>
@@ -447,7 +194,7 @@ export default function Gallery({ landings, meta, filters }: GalleryProps) {
                     {landings.length > 0 ? (
                         <>
                             {/* Grid */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-6">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
                                 {landings.map((landing) => (
                                     <LandingCard
                                         key={landing.id}
@@ -498,7 +245,8 @@ export default function Gallery({ landings, meta, filters }: GalleryProps) {
                         Queres aparecer en la galeria?
                     </h2>
                     <p className="text-brand-100 mb-8 max-w-xl mx-auto">
-                        Crea tu Linkea gratis y uni tu perfil a nuestra comunidad. Es rapido, facil y 100% gratuito.
+                        Crea tu Linkea gratis y uni tu perfil a nuestra
+                        comunidad. Es rapido, facil y 100% gratuito.
                     </p>
                     <Link
                         href="/auth/register"
@@ -521,4 +269,3 @@ export default function Gallery({ landings, meta, filters }: GalleryProps) {
         </WebLayout>
     );
 }
-

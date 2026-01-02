@@ -39,9 +39,24 @@ class PanelController extends Controller
         return $this->renderView('settings');
     }
 
+    /**
+     * Profile page - Handles authenticated user profile (NOT landing)
+     * Separated from main Dashboard as it doesn't need landing data or preview.
+     */
     public function profile(): Response|RedirectResponse
     {
-        return $this->renderView('profile');
+        $user = auth()->user();
+
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        // Eager load roles to ensure role_name accessor works
+        $user->load('roles');
+
+        return Inertia::render('Panel/Profile', [
+            'auth' => ['user' => $user],
+        ]);
     }
 
     protected function renderView(string $activeTab): Response|RedirectResponse

@@ -6,7 +6,7 @@ import { Label } from "@/Components/ui/Label";
 import { Textarea } from "@/Components/ui/Textarea";
 import { Toggle } from "@/Components/ui/Toggle";
 import { useHandleValidation } from "@/hooks/useHandleValidation";
-import { UserProfile } from "@/types";
+import { LandingProfile } from "@/types/index";
 import {
     AtSign,
     BarChart3,
@@ -18,18 +18,19 @@ import {
 import React, { useCallback, useState } from "react";
 
 interface SettingsTabProps {
-    user: UserProfile;
-    onUpdateUser: (updates: Partial<UserProfile>) => void;
+    /** Landing profile (public landing configuration, NOT authenticated user) */
+    landing: LandingProfile;
+    onUpdateLanding: (updates: Partial<LandingProfile>) => void;
 }
 
 export const SettingsTab: React.FC<SettingsTabProps> = ({
-    user,
-    onUpdateUser,
+    landing,
+    onUpdateLanding,
 }) => {
     // Extract handle without @ prefix
-    const initialHandle = user.handle.startsWith("@")
-        ? user.handle.substring(1)
-        : user.handle;
+    const initialHandle = landing.handle.startsWith("@")
+        ? landing.handle.substring(1)
+        : landing.handle;
 
     const [isSavingHandle, setIsSavingHandle] = useState(false);
 
@@ -44,7 +45,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
     const handleHandleChange = useCallback(
         (value: string) => {
             handleValidation.onChange(value);
-            // Don't call onUpdateUser here - wait for confirmation
+            // Don't call onUpdateLanding here - wait for confirmation
         },
         [handleValidation]
     );
@@ -56,13 +57,13 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
         setIsSavingHandle(true);
         try {
             // Save the new handle
-            onUpdateUser({ handle: `@${handleValidation.value}` });
+            onUpdateLanding({ handle: `@${handleValidation.value}` });
             // Mark as confirmed (updates original value in hook)
             handleValidation.confirm();
         } finally {
             setIsSavingHandle(false);
         }
-    }, [handleValidation, onUpdateUser]);
+    }, [handleValidation, onUpdateLanding]);
 
     // Reset to original value
     const handleResetHandle = useCallback(() => {
@@ -143,9 +144,9 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                             <input
                                 id="seo-title"
                                 type="text"
-                                value={user.seoTitle || ""}
+                                value={landing.seoTitle || ""}
                                 onChange={(e) =>
-                                    onUpdateUser({ seoTitle: e.target.value })
+                                    onUpdateLanding({ seoTitle: e.target.value })
                                 }
                                 className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl pl-11 pr-4 py-3 font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all placeholder:text-neutral-400"
                                 placeholder="Ej: Mis enlaces oficiales"
@@ -159,9 +160,9 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                     <Textarea
                         id="seo-description"
                         label="Meta descripcion"
-                        value={user.seoDescription || ""}
+                        value={landing.seoDescription || ""}
                         onChange={(e) =>
-                            onUpdateUser({ seoDescription: e.target.value })
+                            onUpdateLanding({ seoDescription: e.target.value })
                         }
                         rows={2}
                         placeholder="Una breve descripcion de tu pagina para buscadores..."
@@ -185,9 +186,9 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                             id="ga-id"
                             type="text"
                             label="Google Analytics ID"
-                            value={user.googleAnalyticsId || ""}
+                            value={landing.googleAnalyticsId || ""}
                             onChange={(e) =>
-                                onUpdateUser({
+                                onUpdateLanding({
                                     googleAnalyticsId: e.target.value,
                                 })
                             }
@@ -198,9 +199,9 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                             id="fb-pixel"
                             type="text"
                             label="Facebook Pixel ID"
-                            value={user.facebookPixelId || ""}
+                            value={landing.facebookPixelId || ""}
                             onChange={(e) =>
-                                onUpdateUser({
+                                onUpdateLanding({
                                     facebookPixelId: e.target.value,
                                 })
                             }
@@ -231,9 +232,9 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                             </p>
                         </div>
                         <Toggle
-                            checked={user.isPrivate || false}
+                            checked={landing.isPrivate || false}
                             onChange={(checked) =>
-                                onUpdateUser({ isPrivate: checked })
+                                onUpdateLanding({ isPrivate: checked })
                             }
                             size="md"
                         />

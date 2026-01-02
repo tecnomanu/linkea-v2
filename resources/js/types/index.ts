@@ -2,7 +2,7 @@
  * Central export point for all TypeScript types.
  *
  * Usage:
- *   import { LinkBlock, UserProfile, ButtonStyle } from "@/types";
+ *   import { LinkBlock, LandingProfile, ButtonStyle } from "@/types/index";
  *
  * Or import from specific modules:
  *   import type { CustomDesignConfig } from "@/types/design";
@@ -36,8 +36,8 @@ export type {
     PlayerSize,
 } from "./blocks";
 
-// Profile types
-export type { NavItem, UserProfile } from "./profile";
+// Landing Profile types (public landing page configuration)
+export type { LandingProfile, NavItem } from "./profile";
 
 // Inertia shared props
 export type {
@@ -47,4 +47,3 @@ export type {
     SeoDefaults,
     SharedProps,
 } from "./inertia";
-

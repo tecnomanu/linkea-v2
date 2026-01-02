@@ -16,7 +16,7 @@ import {
     DialogContent,
     DialogHeader,
 } from "@/Components/ui/Dialog";
-import { BlockType } from "@/types";
+import { BlockType } from "@/types/index";
 import { Search } from "lucide-react";
 import React, { useMemo, useState } from "react";
 

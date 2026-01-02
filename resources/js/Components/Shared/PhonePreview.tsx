@@ -7,7 +7,7 @@
  * Scaling uses GPU-accelerated transform with translateZ(0) for crisp rendering.
  */
 
-import { LinkBlock, UserProfile } from "@/types";
+import { LandingProfile, LinkBlock } from "@/types/index";
 import { usePage } from "@inertiajs/react";
 import { Battery, Globe, Signal, Wifi } from "lucide-react";
 import React from "react";
@@ -17,7 +17,8 @@ import { DeviceMode, LandingContent, SocialLink } from "./LandingContent";
 export type { DeviceMode, SocialLink };
 
 interface PhonePreviewProps {
-    user: UserProfile;
+    /** Landing profile (public landing configuration, NOT authenticated user) */
+    landing: LandingProfile;
     links: LinkBlock[];
     socialLinks?: SocialLink[];
     device?: DeviceMode;
@@ -25,6 +26,8 @@ interface PhonePreviewProps {
     scale?: number;
     /** If false, links are clickable and tracking occurs. Default: true */
     isPreview?: boolean;
+    /** If false, hides the phone frame (just content). Default: true */
+    showFrame?: boolean;
 }
 
 // --- Main Export ---
@@ -34,20 +37,54 @@ const MOBILE_WIDTH = 380;
 const MOBILE_HEIGHT = 780;
 
 export const PhonePreview: React.FC<PhonePreviewProps> = ({
-    user,
+    landing,
     links,
     socialLinks = [],
     device = "mobile",
     className = "",
     scale = 1,
     isPreview = true,
+    showFrame = true,
 }) => {
     const { appUrl } = usePage<{ appUrl: string }>().props;
     const displayDomain = appUrl.replace(/^https?:\/\//, "");
-    const cleanHandle = user.handle.replace("@", "");
+    const cleanHandle = landing.handle.replace("@", "");
     const publicUrl = `${displayDomain}/${cleanHandle}`;
 
     if (device === "mobile") {
+        // Frameless mode: just the content, no phone chrome
+        if (!showFrame) {
+            return (
+                <div
+                    className={`relative overflow-hidden rounded-3xl ${className}`}
+                    style={{
+                        width: MOBILE_WIDTH * scale,
+                        height: MOBILE_HEIGHT * scale,
+                    }}
+                >
+                    <div
+                        className="relative w-full h-full"
+                        style={{
+                            width: MOBILE_WIDTH,
+                            height: MOBILE_HEIGHT,
+                            transform: `scale(${scale}) translateZ(0)`,
+                            transformOrigin: "top left",
+                            willChange: "transform",
+                            backfaceVisibility: "hidden",
+                        }}
+                    >
+                        <LandingContent
+                            landing={landing}
+                            links={links}
+                            socialLinks={socialLinks}
+                            device="mobile"
+                            isPreview={isPreview}
+                        />
+                    </div>
+                </div>
+            );
+        }
+
         // GPU-accelerated transform with translateZ(0) for crisp rendering
         // Wrapper needed because transform doesn't affect layout
         return (
@@ -99,7 +136,7 @@ export const PhonePreview: React.FC<PhonePreviewProps> = ({
 
                         {/* Content - Uses shared LandingContent */}
                         <LandingContent
-                            user={user}
+                            landing={landing}
                             links={links}
                             socialLinks={socialLinks}
                             device="mobile"
@@ -142,7 +179,7 @@ export const PhonePreview: React.FC<PhonePreviewProps> = ({
             {/* Content Area - Uses shared LandingContent */}
             <div className="flex-1 overflow-hidden relative bg-white">
                 <LandingContent
-                    user={user}
+                    landing={landing}
                     links={links}
                     socialLinks={socialLinks}
                     device={device}

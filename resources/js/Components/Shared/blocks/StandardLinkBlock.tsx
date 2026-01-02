@@ -10,14 +10,14 @@
 
 import { renderBlockIcon } from "@/hooks/useBlockIcon";
 import { createBlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
-import { LinkBlock, UserProfile } from "@/types";
+import { LinkBlock, LandingProfile } from "@/types/index";
 import { Ghost, Globe, MessageCircle, X as XIcon } from "lucide-react";
 import React from "react";
 import { BlockButton } from "./partial";
 
 interface StandardLinkBlockProps {
     link: LinkBlock;
-    design: UserProfile["customDesign"];
+    design: LandingProfile["customDesign"];
     buttonClassName: string;
     buttonStyle: React.CSSProperties;
     isPreview?: boolean;

@@ -9,7 +9,7 @@
  * which will switch the theme to 'custom'.
  */
 
-import { ButtonShape, ButtonStyle, FontPair } from "@/types";
+import { ButtonShape, ButtonStyle, FontPair } from "@/types/index";
 
 export interface ThemePreset {
     id: string;

@@ -55,8 +55,6 @@ interface CookieConsentProps {
     language?: string;
     /** Google Analytics IDs - can be single string or array */
     googleAnalyticsIds?: string | string[];
-    /** @deprecated Use googleAnalyticsIds instead */
-    googleAnalyticsId?: string;
     facebookPixelId?: string;
     /** Primary color for accept button (defaults to theme button color) */
     accentColor?: string;

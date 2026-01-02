@@ -1,16 +1,24 @@
 import { usePage } from "@inertiajs/react";
 import { Check, Copy, ExternalLink, Globe, Share2 } from "lucide-react";
 import React, { useState } from "react";
+import { PanelShareModal } from "./PanelShareModal";
 
 interface LinkBarProps {
     landing: any;
     user: any;
 }
 
-export const LinkBar: React.FC<LinkBarProps> = ({ landing, user }) => {
+export const LinkBar: React.FC<LinkBarProps> = ({ landing }) => {
     const { appUrl } = usePage<{ appUrl: string }>().props;
     const [copied, setCopied] = useState(false);
-    const domain = landing?.domain_name || landing?.slug || "your-link";
+    const [showShareModal, setShowShareModal] = useState(false);
+    
+    // landing can be either PanelLandingData (with slug/domain_name) or LandingProfile (with handle)
+    const domain =
+        landing?.domain_name ||
+        landing?.slug ||
+        landing?.handle?.replace("@", "") ||
+        "your-link";
     const publicUrl = `${appUrl}/${domain}`;
 
     const handleCopy = async () => {
@@ -23,21 +31,8 @@ export const LinkBar: React.FC<LinkBarProps> = ({ landing, user }) => {
         }
     };
 
-    const handleShare = async () => {
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: landing?.options?.title || `${user?.name} on Linkea`,
-                    text: landing?.name || "Check out my Linkea",
-                    url: publicUrl,
-                });
-            } catch (err) {
-                console.log("Share canceled");
-            }
-        } else {
-            // Fallback: Copy to clipboard if Web Share API not supported
-            handleCopy();
-        }
+    const handleShare = () => {
+        setShowShareModal(true);
     };
 
     return (
@@ -85,6 +80,14 @@ export const LinkBar: React.FC<LinkBarProps> = ({ landing, user }) => {
                     <span>Compartir</span>
                 </button>
             </div>
+
+            {/* Share Modal */}
+            <PanelShareModal
+                isOpen={showShareModal}
+                onClose={() => setShowShareModal(false)}
+                shareUrl={publicUrl}
+                title={`Hey! Te comparto mi Linkea`}
+            />
         </div>
     );
 };

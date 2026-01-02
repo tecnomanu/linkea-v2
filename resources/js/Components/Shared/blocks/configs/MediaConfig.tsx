@@ -1,6 +1,6 @@
 import { SegmentedSelect } from "@/Components/ui/SegmentedSelect";
 import { Toggle } from "@/Components/ui/Toggle";
-import { LinkBlock, MediaDisplayMode, PlayerSize } from "@/types";
+import { LinkBlock, MediaDisplayMode, PlayerSize } from "@/types/index";
 import { ExternalLink, Layout, LayoutList, Music, Video } from "lucide-react";
 import React from "react";
 

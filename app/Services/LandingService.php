@@ -163,23 +163,6 @@ class LandingService
             }
         }
 
-        // Handle background image update (large images with compression)
-        if (array_key_exists('background_image', $designData) && $designData['background_image'] !== null) {
-            if (is_array($designData['background_image']) && isset($designData['background_image']['base64_image'])) {
-                $savedBg = $this->imageService->saveBackground($designData['background_image'], $landing->id);
-                if ($savedBg) {
-                    // Store the URL in template_config.background.backgroundImage
-                    if (!isset($updateData['template_config'])) {
-                        $updateData['template_config'] = [];
-                    }
-                    if (!isset($updateData['template_config']['background'])) {
-                        $updateData['template_config']['background'] = [];
-                    }
-                    $updateData['template_config']['background']['backgroundImage'] = $savedBg['image'];
-                }
-            }
-        }
-
         if (isset($designData['options'])) {
             $currentOptions = $landing->options ?? [];
             $updateData['options'] = array_merge($currentOptions, ArrayHelper::filterNull($designData['options']));
@@ -188,6 +171,25 @@ class LandingService
         if (isset($designData['template_config'])) {
             $currentConfig = $landing->template_config ?? [];
             $updateData['template_config'] = ArrayHelper::mergeDeep($currentConfig, $designData['template_config']);
+        }
+
+        // Handle background image update (large images with compression)
+        // Moved AFTER template_config processing to ensure we override the image URL correctly
+        if (array_key_exists('background_image', $designData) && $designData['background_image'] !== null) {
+            if (is_array($designData['background_image']) && isset($designData['background_image']['base64_image'])) {
+                $savedBg = $this->imageService->saveBackground($designData['background_image'], $landing->id);
+                if ($savedBg) {
+                    // Initialize template_config if not present (e.g. only updating image)
+                    if (!isset($updateData['template_config'])) {
+                        $updateData['template_config'] = $landing->template_config ?? [];
+                    }
+                    // Ensure background array exists
+                    if (!isset($updateData['template_config']['background'])) {
+                        $updateData['template_config']['background'] = [];
+                    }
+                    $updateData['template_config']['background']['backgroundImage'] = $savedBg['image'];
+                }
+            }
         }
 
         if (!empty($updateData)) {

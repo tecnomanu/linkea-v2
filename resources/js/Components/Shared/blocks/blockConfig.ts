@@ -13,7 +13,7 @@
 
 import { IconType } from "@/constants/icons";
 import { renderBlockTypeIcon as renderBlockTypeIconFromHook } from "@/hooks/useBlockIcon";
-import { BlockType, LinkBlock } from "@/types";
+import { BlockType, LinkBlock } from "@/types/index";
 import React from "react";
 import {
     AtSign,

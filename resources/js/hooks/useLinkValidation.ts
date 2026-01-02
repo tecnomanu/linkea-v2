@@ -1,4 +1,4 @@
-import { LinkBlock } from "@/types";
+import { LinkBlock } from "@/types/index";
 
 /**
  * URL validation patterns

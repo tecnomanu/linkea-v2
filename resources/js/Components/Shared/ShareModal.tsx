@@ -9,7 +9,7 @@ import {
     DialogCloseButton,
     DialogContent,
 } from "@/Components/ui/Dialog";
-import { UserProfile } from "@/types";
+import { LandingProfile } from "@/types/index";
 import { usePage } from "@inertiajs/react";
 import { Check, Copy, Facebook, Linkedin, QrCode } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
@@ -65,7 +65,7 @@ const TelegramIcon: React.FC<{ size?: number; className?: string }> = ({
 interface ShareModalProps {
     isOpen: boolean;
     onClose: () => void;
-    user: UserProfile;
+    landing: LandingProfile;
     /** The full URL to share */
     shareUrl: string;
 }
@@ -155,7 +155,7 @@ const shareOptions: ShareOption[] = [
 export const ShareModal: React.FC<ShareModalProps> = ({
     isOpen,
     onClose,
-    user,
+    landing,
     shareUrl,
 }) => {
     const [copied, setCopied] = useState(false);
@@ -163,10 +163,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
     // Display domain without protocol for cleaner look
     const displayDomain = appUrl?.replace(/^https?:\/\//, "") || "linkea.ar";
-    const cleanHandle = user.handle?.replace("@", "") || "";
+    const cleanHandle = landing.handle?.replace("@", "") || "";
 
     // Use SEO title if available, otherwise fallback to name, then handle
-    const displayName = user.seoTitle || user.name || `@${cleanHandle}`;
+    const displayName = landing.seoTitle || landing.name || `@${cleanHandle}`;
 
     const handleCopy = useCallback(async () => {
         try {
@@ -219,7 +219,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                         className="rounded-2xl p-5 mb-4 text-center"
                         style={{
                             backgroundColor:
-                                user.customDesign?.backgroundColor || "#1a1a1a",
+                                landing.customDesign?.backgroundColor ||
+                                "#1a1a1a",
                         }}
                     >
                         {/* QR Code - Black bg, white code */}
@@ -237,7 +238,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                             className="font-bold text-lg mb-1"
                             style={{
                                 color:
-                                    user.customDesign?.textColor || "#ffffff",
+                                    landing.customDesign?.textColor ||
+                                    "#ffffff",
                             }}
                         >
                             @{cleanHandle}
@@ -246,7 +248,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                             className="text-sm opacity-70 flex items-center justify-center gap-1.5"
                             style={{
                                 color:
-                                    user.customDesign?.textColor || "#ffffff",
+                                    landing.customDesign?.textColor ||
+                                    "#ffffff",
                             }}
                         >
                             <QrCode size={14} className="opacity-50" />

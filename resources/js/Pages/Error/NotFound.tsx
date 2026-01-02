@@ -26,7 +26,7 @@ import {
 const fallbackLandings: FeaturedLanding[] = [
     {
         id: "fallback-1",
-        user: {
+        landing: {
             name: "Linkea Demo",
             handle: "demo",
             avatar: "/images/logos/logo-icon.webp",
@@ -97,11 +97,11 @@ function MiniLandingPreview({
     compact?: boolean;
 }) {
     // Guard clause: skip render if landing data is incomplete
-    if (!landing?.user?.handle) {
+    if (!landing?.landing?.handle) {
         return null;
     }
 
-    const handle = landing.user.handle.replace("@", "");
+    const handle = landing.landing.handle.replace("@", "");
 
     // Two-stage scaling for better quality:
     // 1. Render PhonePreview at 50% (190x390) - good quality intermediate size
@@ -149,7 +149,7 @@ function MiniLandingPreview({
                         }}
                     >
                         <PhonePreview
-                            user={landing.user}
+                            landing={landing.landing}
                             links={landing.links}
                             device="mobile"
                             scale={1}
@@ -167,7 +167,7 @@ function MiniLandingPreview({
                         compact ? "text-xs" : "text-sm"
                     }`}
                 >
-                    {landing.user.name}
+                    {landing.landing.name}
                 </p>
                 <p
                     className={`text-gray-400 dark:text-neutral-500 truncate ${

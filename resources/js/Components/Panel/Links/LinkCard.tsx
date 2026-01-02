@@ -15,7 +15,7 @@ import { Icon } from "@/constants/icons";
 import { getLucideIcon, isLegacyIcon } from "@/hooks/useBlockIcon";
 import { useDebounceWithPending } from "@/hooks/useDebounce";
 import { useLinkValidation } from "@/hooks/useLinkValidation";
-import { LinkBlock } from "@/types";
+import { LinkBlock } from "@/types/index";
 import { Check, Loader2, Settings, Trash2, XCircle } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { IconSelector } from "./IconSelector";

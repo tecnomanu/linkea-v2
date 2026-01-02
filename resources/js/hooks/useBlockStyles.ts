@@ -5,7 +5,7 @@
  * across all block types. Eliminates prop drilling from LandingContent.
  */
 
-import { ButtonShape, ButtonSize, ButtonStyle, UserProfile } from "@/types";
+import { ButtonShape, ButtonSize, ButtonStyle, LandingProfile } from "@/types/index";
 
 export interface BlockDesign {
     buttonColor: string;
@@ -229,21 +229,21 @@ export const getIconContainerStyles = (
 };
 
 /**
- * Create BlockDesign from UserProfile customDesign
+ * Create BlockDesign from LandingProfile customDesign
  *
  * All block components should use this helper to ensure they receive
  * the same properties. BlockDesign is a subset of CustomDesignConfig,
  * so we can directly use the design object.
  */
 export const createBlockDesign = (
-    design: UserProfile["customDesign"]
+    design: LandingProfile["customDesign"]
 ): BlockDesign => design;
 
 /**
  * Hook that provides all block styling utilities
  */
 export const useBlockStyles = (
-    design: UserProfile["customDesign"],
+    design: LandingProfile["customDesign"],
     isDarkTheme = false
 ) => {
     const blockDesign = createBlockDesign(design);

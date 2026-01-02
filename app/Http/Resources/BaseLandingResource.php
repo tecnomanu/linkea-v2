@@ -150,7 +150,7 @@ abstract class BaseLandingResource extends JsonResource
             'showTitle' => $config['showTitle'] ?? true,
             'showSubtitle' => $config['showSubtitle'] ?? true,
             'background' => [
-                'bgName' => $bgConfig['bgName'] ?? ThemeDefaults::THEME_NAME,
+                'bgName' => $bgConfig['bgName'] ?? 'custom',
                 'backgroundColor' => $bgConfig['backgroundColor'] ?? ThemeDefaults::BACKGROUND_COLOR,
                 'backgroundImage' => $this->resolveBackgroundImage($bgConfig['backgroundImage'] ?? null),
                 'backgroundEnabled' => $bgConfig['backgroundEnabled'] ?? true,

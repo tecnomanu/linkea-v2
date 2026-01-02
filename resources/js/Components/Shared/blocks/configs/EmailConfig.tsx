@@ -8,7 +8,7 @@
  * - LandingContent.tsx: Renders as mailto link
  */
 
-import { LinkBlock } from "@/types";
+import { LinkBlock } from "@/types/index";
 import { Mail } from "lucide-react";
 import React from "react";
 
