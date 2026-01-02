@@ -65,6 +65,11 @@ class SystemRouterController extends Controller
         $path = $slug ?? $request->path();
         if ($path === '/') $path = '';
 
+        // Empty path should not query - return 404 to avoid expensive DB scan
+        if ($path === '') {
+            return abort(404, 'Landing not found');
+        }
+
         $landing = $this->landingService->findBySlugOrDomainWithLinks($path);
 
         if ($landing) {
