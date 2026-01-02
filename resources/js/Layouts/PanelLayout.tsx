@@ -85,6 +85,7 @@ export default function PanelLayout({
                         toggleTheme={toggleTheme}
                         isDarkMode={isDarkMode}
                         userAvatar={user?.avatar}
+                        userAvatarThumb={user?.avatar_thumb}
                         userName={user?.name}
                         userEmail={user?.email}
                         userRole={user?.role_name}

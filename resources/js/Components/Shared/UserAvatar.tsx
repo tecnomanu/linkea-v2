@@ -2,6 +2,7 @@ import React from "react";
 
 interface UserAvatarProps {
     avatar?: string;
+    avatarThumb?: string; // Thumbnail version (128x128) for better performance
     name?: string;
     size?: "sm" | "md" | "lg";
     variant?: "panel" | "admin";
@@ -29,6 +30,7 @@ const variantClasses = {
 
 export const UserAvatar: React.FC<UserAvatarProps> = ({
     avatar,
+    avatarThumb,
     name,
     size = "sm",
     variant = "panel",
@@ -37,13 +39,16 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     const sizeClass = sizeClasses[size];
     const variantClass = variantClasses[variant];
 
+    // Use thumbnail if available, otherwise fall back to full avatar
+    const imageSrc = avatarThumb || avatar;
+
     return (
         <div
             className={`rounded-full overflow-hidden border-2 ${variantClass.border} flex-shrink-0 ${sizeClass} ${className}`}
         >
-            {avatar ? (
+            {imageSrc ? (
                 <img
-                    src={avatar}
+                    src={imageSrc}
                     alt={name || "User"}
                     className="w-full h-full object-cover"
                 />

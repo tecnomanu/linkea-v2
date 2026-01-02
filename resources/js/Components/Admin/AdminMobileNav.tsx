@@ -27,6 +27,7 @@ interface AdminMobileNavProps {
     isDarkMode: boolean;
     toggleTheme: () => void;
     userAvatar?: string;
+    userAvatarThumb?: string;
     userName?: string;
     userEmail?: string;
 }
@@ -36,6 +37,7 @@ export const AdminMobileNav: React.FC<AdminMobileNavProps> = ({
     isDarkMode,
     toggleTheme,
     userAvatar,
+    userAvatarThumb,
     userName,
     userEmail,
 }) => {
@@ -106,6 +108,7 @@ export const AdminMobileNav: React.FC<AdminMobileNavProps> = ({
                         <MenuButton className="flex items-center gap-2 p-1 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
                             <UserAvatar
                                 avatar={userAvatar}
+                                avatarThumb={userAvatarThumb}
                                 name={userName}
                                 size="sm"
                                 variant="admin"
@@ -122,6 +125,7 @@ export const AdminMobileNav: React.FC<AdminMobileNavProps> = ({
                                 <div className="flex items-center gap-3">
                                     <UserAvatar
                                         avatar={userAvatar}
+                                        avatarThumb={userAvatarThumb}
                                         name={userName}
                                         size="md"
                                         variant="admin"

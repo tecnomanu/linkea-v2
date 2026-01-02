@@ -75,11 +75,22 @@ class SaveDesignRequest extends FormRequest
             'backgroundColor' => $customDesign['backgroundColor'] ?? '#ffffff',
         ];
 
-        // Include backgroundImage if provided (SVG patterns, gradients, etc.)
-        // Image is always stored, backgroundEnabled controls visibility
-        if (isset($customDesign['backgroundImage']) && $customDesign['backgroundImage']) {
-            $backgroundConfig['backgroundImage'] = $customDesign['backgroundImage'];
+        // Check if backgroundImage is base64 (needs upload) or URL (already uploaded)
+        $backgroundImage = $customDesign['backgroundImage'] ?? null;
+        $isBase64Background = $backgroundImage && str_starts_with($backgroundImage, 'data:image/');
+
+        // Include backgroundImage if provided AND it's not base64
+        // Base64 images will be processed later and uploaded to S3
+        if ($backgroundImage && !$isBase64Background) {
+            // It's a URL or already processed, store it directly
+            $backgroundConfig['backgroundImage'] = $backgroundImage;
             // Use provided values or defaults
+            $backgroundConfig['backgroundSize'] = $customDesign['backgroundSize'] ?? 'cover';
+            $backgroundConfig['backgroundPosition'] = $customDesign['backgroundPosition'] ?? 'center';
+            $backgroundConfig['backgroundRepeat'] = $customDesign['backgroundRepeat'] ?? 'no-repeat';
+            $backgroundConfig['backgroundAttachment'] = $customDesign['backgroundAttachment'] ?? 'scroll';
+        } elseif ($isBase64Background) {
+            // Keep the properties but not the image (will be added after S3 upload)
             $backgroundConfig['backgroundSize'] = $customDesign['backgroundSize'] ?? 'cover';
             $backgroundConfig['backgroundPosition'] = $customDesign['backgroundPosition'] ?? 'center';
             $backgroundConfig['backgroundRepeat'] = $customDesign['backgroundRepeat'] ?? 'no-repeat';
@@ -186,6 +197,19 @@ class SaveDesignRequest extends FormRequest
                 // It's already a URL, keep as is
                 $result['logo'] = ['image' => $avatar, 'thumb' => $avatar];
             }
+        }
+
+        // Handle backgroundImage - process base64 images for upload to S3
+        if ($isBase64Background) {
+            // Extract mime type from data URI
+            preg_match('/data:image\/([a-zA-Z]+);/', $backgroundImage, $matches);
+            $type = 'image/' . ($matches[1] ?? 'jpeg');
+            $result['background_image'] = [
+                'base64_image' => $backgroundImage,
+                'type' => $type,
+            ];
+            // Note: backgroundImage is NOT added to template_config when it's base64
+            // It will be added after S3 upload by LandingService
         }
 
         return $result;

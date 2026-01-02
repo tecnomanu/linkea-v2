@@ -2,39 +2,37 @@ import { ImageUploader } from "@/Components/Shared/ImageUploader";
 import { Button } from "@/Components/ui/Button";
 import { Input } from "@/Components/ui/Input";
 import { router, useForm } from "@inertiajs/react";
-import { Check, Lock, Save, User } from "lucide-react";
-import React, { useState } from "react";
+import { Lock, Save, User } from "lucide-react";
+import React, { useCallback, useState } from "react";
 
 interface ProfileTabProps {
     user: any; // The auth user object
 }
 
 export const ProfileTab: React.FC<ProfileTabProps> = ({ user }) => {
-    const { data, setData, post, processing, errors } =
-        useForm({
-            first_name: user.first_name || "",
-            last_name: user.last_name || "",
-            email: user.email || "",
-            current_password: "",
-            password: "",
-            password_confirmation: "",
-        });
+    const { data, setData, post, processing, errors } = useForm({
+        first_name: user.first_name || "",
+        last_name: user.last_name || "",
+        email: user.email || "",
+        current_password: "",
+        password: "",
+        password_confirmation: "",
+    });
 
     const [avatarPreview, setAvatarPreview] = useState(
-        user.avatar || "/images/logos/logo-icon.webp"
+        user.avatar_thumb || user.avatar || "/images/logos/logo-icon.webp"
     );
-    const [avatarSuccess, setAvatarSuccess] = useState(false);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route("profile.update"), {
+        post(route("profile.update").toString(), {
             preserveScroll: true,
         });
     };
 
     const handlePasswordSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route("password.update"), {
+        post(route("password.update").toString(), {
             preserveScroll: true,
             onSuccess: () => {
                 setData("current_password", "");
@@ -44,54 +42,52 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ user }) => {
         });
     };
 
-    const handleAvatarChange = (imageData: { base64: string; type: string } | null) => {
-        if (imageData) {
+    const handleAvatarChange = useCallback(
+        (imageData: { base64: string; type: string } | null) => {
+            if (!imageData) {
+                setAvatarPreview("/images/logos/logo-icon.webp");
+                return;
+            }
+
             // Update preview immediately
             setAvatarPreview(imageData.base64);
-            
+
             // Save avatar via API (base64)
-            router.post(route("profile.avatar"), { 
-                avatar: imageData.base64,
-                type: imageData.type 
-            }, {
-                preserveScroll: true,
-                onSuccess: () => {
-                    setAvatarSuccess(true);
-                    setTimeout(() => setAvatarSuccess(false), 2000);
-                    // Reload auth data to update sidebar/navbar avatar
-                    router.reload({ only: ['auth'] });
+            router.post(
+                route("profile.avatar").toString(),
+                {
+                    avatar: imageData.base64,
+                    type: imageData.type,
                 },
-            });
-        } else {
-            setAvatarPreview("/images/logos/logo-icon.webp");
-        }
-    };
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        // Reload auth data to update sidebar/navbar avatar
+                        router.reload({ only: ["auth"] });
+                    },
+                }
+            );
+        },
+        []
+    );
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
             {/* Profile Header / Avatar */}
             <div className="bg-white dark:bg-neutral-800 rounded-[32px] overflow-hidden border border-neutral-100 dark:border-neutral-700 shadow-soft-xl">
                 <div className="p-8 flex flex-col items-center text-center">
-                    <div className="relative mb-4">
-                        <ImageUploader
-                            value={avatarPreview}
-                            onChange={handleAvatarChange}
-                            rounded={true}
-                            size={96}
-                            aspectRatio={1}
-                            label="Cambiar foto"
-                            outputFormat="png"
-                            resizeWidth={400}
-                            maxSizeKB={4000}
-                            canDelete={false}
-                        />
-                        {/* Success indicator */}
-                        {avatarSuccess && (
-                            <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg animate-in zoom-in duration-200">
-                                <Check size={16} className="text-white" />
-                            </div>
-                        )}
-                    </div>
+                    <ImageUploader
+                        value={avatarPreview}
+                        onChange={handleAvatarChange}
+                        rounded={true}
+                        size={96}
+                        aspectRatio={1}
+                        label="Cambiar foto"
+                        outputFormat="png"
+                        resizeWidth={400}
+                        maxSizeKB={4000}
+                        canDelete={false}
+                    />
                     <h2 className="text-xl font-bold text-neutral-900 dark:text-white">
                         {user.first_name} {user.last_name}
                     </h2>
@@ -153,8 +149,9 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ user }) => {
                         />
                         {user.is_oauth_user && (
                             <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-                                Tu cuenta esta vinculada a {user.google_id ? "Google" : "Apple"}. 
-                                El email no puede modificarse.
+                                Tu cuenta esta vinculada a{" "}
+                                {user.google_id ? "Google" : "Apple"}. El email
+                                no puede modificarse.
                             </p>
                         )}
                     </div>
@@ -191,7 +188,10 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ user }) => {
                         </div>
                     </div>
 
-                    <form onSubmit={handlePasswordSubmit} className="p-8 space-y-6">
+                    <form
+                        onSubmit={handlePasswordSubmit}
+                        className="p-8 space-y-6"
+                    >
                         <Input
                             id="current_password"
                             type="password"
@@ -219,7 +219,10 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ user }) => {
                                 label="Confirmar contraseña"
                                 value={data.password_confirmation}
                                 onChange={(e) =>
-                                    setData("password_confirmation", e.target.value)
+                                    setData(
+                                        "password_confirmation",
+                                        e.target.value
+                                    )
                                 }
                                 error={errors.password_confirmation}
                             />

@@ -7,10 +7,12 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Support\Helpers\StorageHelper;
 
 /**
  * Image processing and storage helper functions.
  * Uses the configured FILESYSTEM_DISK (s3 in production, public in local).
+ * Generates thumbnails (128x128) and supports WebP conversion.
  */
 final class ImageHelper
 {
@@ -21,6 +23,8 @@ final class ImageHelper
         'image/webp' => '.webp',
         'image/svg+xml' => '.svg',
     ];
+
+    private const THUMB_SIZE = 128;
 
     /**
      * Get the storage disk to use (s3 or public based on config).
@@ -38,10 +42,19 @@ final class ImageHelper
      * @param array $image Image data with base64_image and optional type
      * @param string $directory Target directory
      * @param string $name Base name for the file
+     * @param int|null $resizeTo Optional width to resize main image (maintains aspect ratio)
+     * @param bool $convertToWebp Convert to WebP format for better compression
+     * @param int $quality Quality for compression (0-100, default 90. Use 80 for backgrounds)
      * @return array{image: string, thumb: string}|false
      */
-    public static function saveFromBase64(array $image, string $directory, string $name): array|false
-    {
+    public static function saveFromBase64(
+        array $image,
+        string $directory,
+        string $name,
+        ?int $resizeTo = null,
+        bool $convertToWebp = false,
+        int $quality = 90
+    ): array|false {
         if (!isset($image['base64_image'])) {
             return false;
         }
@@ -53,7 +66,8 @@ final class ImageHelper
         }
 
         $name = Str::snake(Str::ascii($name));
-        $extension = self::getExtension($image['type'] ?? 'image/jpeg');
+        $originalExtension = self::getExtension($image['type'] ?? 'image/jpeg');
+        $extension = $convertToWebp ? '.webp' : $originalExtension;
         $fileName = $name . '_' . Carbon::now()->timestamp . $extension;
 
         $pathFile = $directory . '/' . $fileName;
@@ -65,10 +79,29 @@ final class ImageHelper
             return false;
         }
 
+        // Process main image
+        $gdImage = @imagecreatefromstring($content);
+        if ($gdImage === false) {
+            return false;
+        }
+
+        // Resize main image if requested
+        if ($resizeTo) {
+            $gdImage = self::resizeImage($gdImage, $resizeTo, null, true);
+        }
+
+        // Create thumbnail (128x128 with aspect ratio)
+        $gdThumb = self::createThumbnail($gdImage, self::THUMB_SIZE);
+
+        // Save images
         $disk = self::getDisk();
-        // Visibility is configured at disk level (public for s3)
-        Storage::disk($disk)->put($pathFile, $content);
-        Storage::disk($disk)->put($pathThumbFile, $content);
+        $mainContent = self::gdToString($gdImage, $convertToWebp ? 'webp' : null, $quality);
+        $thumbContent = self::gdToString($gdThumb, $convertToWebp ? 'webp' : null, 85); // Slightly lower quality for thumbs
+
+        Storage::disk($disk)->put($pathFile, $mainContent);
+        Storage::disk($disk)->put($pathThumbFile, $thumbContent);
+
+        // GdImage objects are automatically freed in PHP 8+
 
         return [
             'image' => $pathFile,
@@ -98,7 +131,7 @@ final class ImageHelper
      */
     public static function getUrl(string $path): string
     {
-        return Storage::disk(self::getDisk())->url($path);
+        return StorageHelper::url($path);
     }
 
     /**
@@ -115,17 +148,27 @@ final class ImageHelper
      * @param UploadedFile $file The uploaded file
      * @param string $directory Target directory
      * @param string $name Base name for the file
+     * @param int|null $resizeTo Optional width to resize main image
+     * @param bool $convertToWebp Convert to WebP format
+     * @param int $quality Quality for compression (0-100, default 90)
      * @return array{image: string, thumb: string}|false
      */
-    public static function saveFromFile(UploadedFile $file, string $directory, string $name): array|false
-    {
+    public static function saveFromFile(
+        UploadedFile $file,
+        string $directory,
+        string $name,
+        ?int $resizeTo = null,
+        bool $convertToWebp = false,
+        int $quality = 90
+    ): array|false {
         $mimeType = $file->getMimeType();
         if (!isset(self::ALLOWED_EXTENSIONS[$mimeType])) {
             return false;
         }
 
         $name = Str::snake(Str::ascii($name));
-        $extension = self::getExtension($mimeType);
+        $originalExtension = self::getExtension($mimeType);
+        $extension = $convertToWebp ? '.webp' : $originalExtension;
         $fileName = $name . '_' . Carbon::now()->timestamp . $extension;
 
         $pathFile = $directory . '/' . $fileName;
@@ -137,10 +180,29 @@ final class ImageHelper
             return false;
         }
 
+        // Process image
+        $gdImage = @imagecreatefromstring($content);
+        if ($gdImage === false) {
+            return false;
+        }
+
+        // Resize main image if requested
+        if ($resizeTo) {
+            $gdImage = self::resizeImage($gdImage, $resizeTo, null, true);
+        }
+
+        // Create thumbnail
+        $gdThumb = self::createThumbnail($gdImage, self::THUMB_SIZE);
+
+        // Save images
         $disk = self::getDisk();
-        // Visibility is configured at disk level (public for s3)
-        Storage::disk($disk)->put($pathFile, $content);
-        Storage::disk($disk)->put($pathThumbFile, $content);
+        $mainContent = self::gdToString($gdImage, $convertToWebp ? 'webp' : null, $quality);
+        $thumbContent = self::gdToString($gdThumb, $convertToWebp ? 'webp' : null, 85); // Slightly lower quality for thumbs
+
+        Storage::disk($disk)->put($pathFile, $mainContent);
+        Storage::disk($disk)->put($pathThumbFile, $thumbContent);
+
+        // GdImage objects are automatically freed in PHP 8+
 
         return [
             'image' => $pathFile,
@@ -167,5 +229,101 @@ final class ImageHelper
         }
 
         return false;
+    }
+
+    /**
+     * Resize GD image maintaining aspect ratio.
+     *
+     * @param \GdImage $image Source image
+     * @param int|null $width Target width (null to use original)
+     * @param int|null $height Target height (null to use original)
+     * @param bool $aspectRatio Maintain aspect ratio
+     * @return \GdImage Resized image
+     */
+    private static function resizeImage(
+        \GdImage $image,
+        ?int $width,
+        ?int $height = null,
+        bool $aspectRatio = true
+    ): \GdImage {
+        $srcWidth = imagesx($image);
+        $srcHeight = imagesy($image);
+
+        if ($aspectRatio && $width && !$height) {
+            $ratio = $width / $srcWidth;
+            $height = (int) ($srcHeight * $ratio);
+        } elseif ($aspectRatio && $height && !$width) {
+            $ratio = $height / $srcHeight;
+            $width = (int) ($srcWidth * $ratio);
+        }
+
+        $width = $width ?? $srcWidth;
+        $height = $height ?? $srcHeight;
+
+        $dst = imagecreatetruecolor($width, $height);
+
+        // Preserve transparency for PNG/WebP
+        imagealphablending($dst, false);
+        imagesavealpha($dst, true);
+        $transparent = imagecolorallocatealpha($dst, 0, 0, 0, 127);
+        imagefill($dst, 0, 0, $transparent);
+
+        imagecopyresampled($dst, $image, 0, 0, 0, 0, $width, $height, $srcWidth, $srcHeight);
+
+        return $dst;
+    }
+
+    /**
+     * Create thumbnail with fixed size (maintains aspect ratio).
+     *
+     * @param \GdImage $image Source image
+     * @param int $size Thumbnail size (square)
+     * @return \GdImage Thumbnail image
+     */
+    private static function createThumbnail(\GdImage $image, int $size): \GdImage
+    {
+        $srcWidth = imagesx($image);
+        $srcHeight = imagesy($image);
+
+        // Calculate dimensions to maintain aspect ratio
+        $ratio = $srcWidth / $srcHeight;
+        if ($ratio > 1) {
+            $thumbWidth = $size;
+            $thumbHeight = (int) ($size / $ratio);
+        } else {
+            $thumbHeight = $size;
+            $thumbWidth = (int) ($size * $ratio);
+        }
+
+        return self::resizeImage($image, $thumbWidth, $thumbHeight, false);
+    }
+
+    /**
+     * Convert GD image to string.
+     *
+     * @param \GdImage $image Source image
+     * @param string|null $format Output format (jpeg, png, webp, or null for auto)
+     * @param int $quality Quality (0-100) for jpeg/webp
+     * @return string Image binary data
+     */
+    private static function gdToString(\GdImage $image, ?string $format = null, int $quality = 90): string
+    {
+        ob_start();
+
+        switch ($format) {
+            case 'webp':
+                imagewebp($image, null, $quality);
+                break;
+            case 'png':
+                imagepng($image, null, (int) (9 - ($quality / 10)));
+                break;
+            case 'jpeg':
+            case 'jpg':
+            default:
+                imagejpeg($image, null, $quality);
+                break;
+        }
+
+        return ob_get_clean();
     }
 }

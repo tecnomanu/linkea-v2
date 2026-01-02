@@ -194,6 +194,8 @@ export default function Dashboard({
             landing?.logo?.image ||
             auth.user.avatar ||
             "/images/logos/logo-icon.webp",
+        avatarThumb:
+            landing?.logo?.thumb || auth.user.avatar_thumb || undefined,
         title: tc?.title || landing?.slug || "",
         subtitle: tc?.subtitle || "",
         showTitle: tc?.showTitle ?? true,

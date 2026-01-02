@@ -22,6 +22,7 @@ interface MobileNavProps {
     isDarkMode: boolean;
     toggleTheme: () => void;
     userAvatar?: string;
+    userAvatarThumb?: string;
     userName?: string;
     userEmail?: string;
     userRole?: string;
@@ -32,6 +33,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
     isDarkMode,
     toggleTheme,
     userAvatar,
+    userAvatarThumb,
     userName,
     userEmail,
     userRole,
@@ -82,6 +84,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                     <MenuButton className="flex items-center gap-2 p-1 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
                         <UserAvatar
                             avatar={userAvatar}
+                            avatarThumb={userAvatarThumb}
                             name={userName}
                             size="sm"
                             variant="panel"
@@ -98,6 +101,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                             <div className="flex items-center gap-3">
                                 <UserAvatar
                                     avatar={userAvatar}
+                                    avatarThumb={userAvatarThumb}
                                     name={userName}
                                     size="md"
                                     variant="panel"

@@ -17,6 +17,7 @@ export interface UserProfile {
     name: string;
     handle: string;
     avatar: string;
+    avatarThumb?: string; // Thumbnail version (128x128) for better performance
 
     // Title & Subtitle (displayed on page)
     title: string;

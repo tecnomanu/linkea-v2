@@ -22,6 +22,8 @@ export interface ImageUploaderProps {
     value?: string;
     /** Callback when image changes - receives base64 string */
     onChange: (imageData: { base64: string; type: string } | null) => void;
+    /** Optional callback after successful upload/crop */
+    onSuccess?: () => void;
     /** Placeholder image when no image is set */
     placeholder?: string;
     /** Whether the image preview should be rounded */
@@ -48,6 +50,8 @@ export interface ImageUploaderProps {
     canDelete?: boolean;
     /** Label text below the image */
     label?: string;
+    /** Show success indicator after upload */
+    showSuccessIndicator?: boolean;
 }
 
 interface CropState {
@@ -65,6 +69,7 @@ interface CropState {
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
     value,
     onChange,
+    onSuccess,
     placeholder = "/images/logos/logo-icon.webp",
     rounded = true,
     size = 112,
@@ -78,6 +83,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     className = "",
     canDelete = true,
     label,
+    showSuccessIndicator = true,
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -87,10 +93,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     const [originalImage, setOriginalImage] = useState<string | null>(null);
     const [isLoadingFile, setIsLoadingFile] = useState(false);
     const [isLoadingImage, setIsLoadingImage] = useState(false);
-    const [imageDimensions, setImageDimensions] = useState({
-        width: 0,
-        height: 0,
-    });
+    const [uploadSuccess, setUploadSuccess] = useState(false);
 
     const [cropState, setCropState] = useState<CropState>({
         scale: 1,
@@ -106,13 +109,12 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 
     const displayImage = value || placeholder;
 
-    // Load image dimensions when originalImage changes
+    // Load image when originalImage changes
     useEffect(() => {
         if (originalImage) {
             setIsLoadingImage(true);
             const img = new Image();
             img.onload = () => {
-                setImageDimensions({ width: img.width, height: img.height });
                 setIsLoadingImage(false);
             };
             img.onerror = () => {
@@ -365,6 +367,17 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 
             setIsModalOpen(false);
             setOriginalImage(null);
+
+            // Show success indicator
+            if (showSuccessIndicator) {
+                setUploadSuccess(true);
+                setTimeout(() => setUploadSuccess(false), 2000);
+            }
+
+            // Call success callback if provided
+            if (onSuccess) {
+                onSuccess();
+            }
         };
         img.src = originalImage;
     }, [
@@ -375,6 +388,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         outputQuality,
         resizeWidth,
         onChange,
+        onSuccess,
+        showSuccessIndicator,
     ]);
 
     // Close modal
@@ -451,6 +466,13 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                         >
                             <X size={14} />
                         </button>
+                    )}
+
+                    {/* Success indicator */}
+                    {uploadSuccess && showSuccessIndicator && (
+                        <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg animate-in zoom-in duration-200 z-10 border-2 border-white">
+                            <Check size={16} className="text-white" />
+                        </div>
                     )}
                 </div>
 

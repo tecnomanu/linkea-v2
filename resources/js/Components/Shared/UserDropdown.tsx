@@ -26,6 +26,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({ user }) => {
             <MenuButton className="flex items-center justify-center w-10 h-10 rounded-full hover:ring-2 hover:ring-brand-500/50 transition-all">
                 <UserAvatar
                     avatar={user?.avatar}
+                    avatarThumb={user?.avatar_thumb}
                     name={user?.name}
                     size="sm"
                     variant="panel"

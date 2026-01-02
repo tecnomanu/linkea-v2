@@ -50,6 +50,7 @@ class HandleInertiaRequests extends Middleware
                     'last_name' => $request->user()->last_name,
                     'email' => $request->user()->email,
                     'avatar' => $request->user()->avatar,
+                    'avatar_thumb' => $request->user()->avatar_thumb,
                     'role_name' => $request->user()->role_name,
                     'is_oauth_user' => $request->user()->is_oauth_user,
                     'google_id' => $request->user()->google_id,

@@ -79,6 +79,7 @@ export default function AdminLayout({
                     toggleTheme={toggleTheme}
                     isDarkMode={isDarkMode}
                     userAvatar={user?.avatar}
+                    userAvatarThumb={user?.avatar_thumb}
                     userName={user?.name}
                     userEmail={user?.email}
                 />

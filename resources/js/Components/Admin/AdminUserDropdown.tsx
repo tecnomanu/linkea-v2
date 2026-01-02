@@ -32,6 +32,7 @@ export const AdminUserDropdown: React.FC<AdminUserDropdownProps> = ({
             <MenuButton className="w-full flex items-center gap-3 px-3 py-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer">
                 <UserAvatar
                     avatar={user?.avatar}
+                    avatarThumb={user?.avatar_thumb}
                     name={user?.name}
                     size="sm"
                     variant="admin"

@@ -12,7 +12,8 @@ use Illuminate\Support\Facades\Storage;
 class ImageService
 {
     /**
-     * Save logo image from base64 data.
+     * Save logo image from base64 data (for landing pages).
+     * Uses WebP format for better compression (smaller files for web).
      *
      * @return array{image: string, thumb: string}|null
      */
@@ -22,11 +23,13 @@ class ImageService
             return null;
         }
 
-        return ImageHelper::saveFromBase64($imageData, 'logos', $entityId);
+        // Resize to 400px width, convert to WebP for landing logos
+        return ImageHelper::saveFromBase64($imageData, 'logos', $entityId, 400, true);
     }
 
     /**
-     * Save avatar image from base64 data.
+     * Save avatar image from base64 data (for user profiles).
+     * Uses original format (PNG/JPG) to preserve transparency for emails.
      *
      * @return array{image: string, thumb: string}|null
      */
@@ -36,7 +39,8 @@ class ImageService
             return null;
         }
 
-        return ImageHelper::saveFromBase64($imageData, 'avatars', $userId);
+        // Resize to 400px width, keep original format for transparency
+        return ImageHelper::saveFromBase64($imageData, 'avatars', $userId, 400, false);
     }
 
     /**
@@ -46,9 +50,26 @@ class ImageService
      */
     public function saveAvatarFile(UploadedFile $file, string $userId): ?array
     {
-        $result = ImageHelper::saveFromFile($file, 'avatars', $userId);
+        // Resize to 400px, keep original format
+        $result = ImageHelper::saveFromFile($file, 'avatars', $userId, 400, false);
 
         return $result ?: null;
+    }
+
+    /**
+     * Save background image from base64 data (for landing pages).
+     * Uses WebP format with high compression for large images.
+     *
+     * @return array{image: string, thumb: string}|null
+     */
+    public function saveBackground(array $imageData, string $entityId): ?array
+    {
+        if (!isset($imageData['base64_image'])) {
+            return null;
+        }
+
+        // Resize to 1920px width, convert to WebP, quality 80 for backgrounds (reduces size significantly)
+        return ImageHelper::saveFromBase64($imageData, 'backgrounds', $entityId, 1920, true, 80);
     }
 
     /**
@@ -70,8 +91,7 @@ class ImageService
      */
     public function getUrl(string $path): string
     {
-        $disk = config('filesystems.default') === 's3' ? 's3' : 'public';
-        return Storage::disk($disk)->url($path);
+        return ImageHelper::getUrl($path);
     }
 
     /**

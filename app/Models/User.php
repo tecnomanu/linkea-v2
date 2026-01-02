@@ -50,7 +50,7 @@ class User extends Authenticatable
         'capability' => 'array',
     ];
 
-    protected $appends = ['text', 'role_name', 'status', 'is_oauth_user'];
+    protected $appends = ['text', 'role_name', 'status', 'is_oauth_user', 'avatar_thumb'];
 
     // Accessors
 
@@ -63,6 +63,32 @@ class User extends Authenticatable
             get: fn($value) => StorageHelper::url($value),
             set: fn($value) => $value,
         );
+    }
+
+    /**
+     * Get thumbnail URL for avatar (128x128).
+     * If no thumb exists, falls back to main avatar.
+     */
+    public function getAvatarThumbAttribute(): ?string
+    {
+        $avatar = $this->attributes['avatar'] ?? null;
+
+        if (!$avatar) {
+            return null;
+        }
+
+        // Try to get thumb version
+        $parts = explode('/', $avatar);
+        $filename = array_pop($parts);
+        $thumbPath = implode('/', $parts) . '/thumb_' . $filename;
+
+        // Check if thumb exists, otherwise use main avatar
+        $disk = config('filesystems.default') === 's3' ? 's3' : 'public';
+        if (\Storage::disk($disk)->exists($thumbPath)) {
+            return StorageHelper::url($thumbPath);
+        }
+
+        return $this->avatar;
     }
 
     public function getTextAttribute()
