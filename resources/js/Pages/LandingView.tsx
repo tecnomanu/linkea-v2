@@ -32,6 +32,8 @@ interface LandingViewProps {
         domain_name: string | null;
         verify: boolean;
         isPrivate?: boolean; // Hide from search engines
+        googleAnalyticsId?: string | null; // User's GA ID (if configured)
+        facebookPixelId?: string | null; // User's FB Pixel ID (if configured)
         logo: { image: string | null; thumb: string | null } | null;
         template_config: {
             title: string; // Displayed on page
@@ -406,7 +408,11 @@ export default function LandingView({ landing }: LandingViewProps) {
 
             {/* Cookie Consent - Only on public pages, mini-banner hidden (trigger is in footer) */}
             <CookieConsent
-                googleAnalyticsIds={["G-FH87DE17XF"]}
+                googleAnalyticsIds={[
+                    "G-PVN62HZNPH", // Linkea's own analytics (always included)
+                    ...(landing.googleAnalyticsId ? [landing.googleAnalyticsId] : []),
+                ]}
+                facebookPixelId={landing.facebookPixelId || undefined}
                 accentColor={landingProfile.customDesign.buttonColor}
                 hideMiniBanner={true}
             />

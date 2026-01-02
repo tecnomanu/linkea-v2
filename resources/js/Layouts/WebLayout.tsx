@@ -1,46 +1,29 @@
-import { SharedProps } from "@/types/inertia";
-import { usePage } from "@inertiajs/react";
+import { CookieConsent } from "@/Components/Shared/CookieConsent";
 import React from "react";
-import SEOHead, { websiteJsonLd } from "../Components/Shared/SEOHead";
 import Footer from "../Components/Web/Home/Footer";
 import Header from "../Components/Web/Home/Header";
 
 interface WebLayoutProps {
     children: React.ReactNode;
-    title?: string;
-    description?: string;
-    image?: string;
-    canonical?: string;
-    jsonLd?: object;
 }
 
-export default function WebLayout({
-    children,
-    title,
-    description,
-    image,
-    canonical,
-    jsonLd,
-}: WebLayoutProps) {
-    const { appUrl, seoDefaults } = usePage<SharedProps>().props;
-    const finalTitle = title || seoDefaults.defaultTitle;
-    const finalJsonLd = jsonLd || websiteJsonLd(appUrl, seoDefaults.siteName);
-
+export default function WebLayout({ children }: WebLayoutProps) {
+    // SEO is handled server-side in app.blade.php via controllers' withViewData()
+    // No need to duplicate in React - bots read the server-rendered HTML
     return (
         <div className="min-h-screen bg-white font-sans antialiased text-gray-900 selection:bg-primary-500 selection:text-white">
-            <SEOHead
-                title={finalTitle}
-                description={description}
-                image={image}
-                canonical={canonical}
-                jsonLd={finalJsonLd}
-            />
-
             <Header />
 
             <main className="w-full">{children}</main>
 
             <Footer />
+
+            {/* Cookie Consent with Linkea's Google Analytics */}
+            <CookieConsent
+                googleAnalyticsIds={["G-PVN62HZNPH"]}
+                accentColor="#ea580c"
+                hideMiniBanner={true}
+            />
         </div>
     );
 }

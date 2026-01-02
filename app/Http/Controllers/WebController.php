@@ -30,8 +30,8 @@ class WebController extends Controller
             'stats' => $stats,
         ])->withViewData([
             'seo' => SeoDefaults::forPage(
-                SeoDefaults::HOME_TITLE,
-                SeoDefaults::HOME_DESCRIPTION,
+                SeoDefaults::DEFAULT_TITLE,
+                SeoDefaults::DEFAULT_DESCRIPTION,
                 '/'
             ),
         ]);
@@ -55,8 +55,8 @@ class WebController extends Controller
             ],
         ])->withViewData([
             'seo' => SeoDefaults::forPage(
-                SeoDefaults::GALLERY_TITLE,
-                SeoDefaults::GALLERY_DESCRIPTION,
+                'Galeria de Linkeas - Descubre perfiles inspiradores',
+                'Explora la galeria de Linkea y descubre perfiles creativos de la comunidad. Inspira tu propio diseno viendo los mejores ejemplos de link in bio.',
                 '/gallery'
             ),
         ]);

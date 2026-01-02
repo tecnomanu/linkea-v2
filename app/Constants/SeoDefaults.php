@@ -19,8 +19,8 @@ class SeoDefaults
     public const LOCALE = 'es_AR';
 
     // Default meta values
-    public const DEFAULT_TITLE = 'Linkea - Todos tus enlaces en un solo lugar';
-    public const DEFAULT_DESCRIPTION = 'Crea tu pagina de links personalizada gratis. Comparte todos tus enlaces en un solo lugar con Linkea, la mejor alternativa argentina a Linktree.';
+    public const DEFAULT_TITLE = 'Linkea - Todos tus enlaces en un solo lugar | Link in Bio Argentina';
+    public const DEFAULT_DESCRIPTION = 'Crea tu Linkea gratis en minutos: links, botones y diseño personalizable. Sin tarjeta, fácil de actualizar.';
 
     // Images (relative to public/)
     public const DEFAULT_OG_IMAGE = '/images/meta_tag_image.webp';
@@ -34,16 +34,6 @@ class SeoDefaults
     // Theme colors
     public const THEME_COLOR = '#f97316';
     public const MS_TILE_COLOR = '#f97316';
-
-    // Page-specific titles and descriptions
-    public const HOME_TITLE = 'Linkea - Todos tus enlaces en un solo lugar | Link in Bio Argentina';
-    public const HOME_DESCRIPTION = 'Crea tu pagina de links personalizada gratis. Comparte todos tus enlaces en un solo lugar con Linkea, la mejor alternativa argentina a Linktree. 100% gratis, sin limites.';
-
-    public const GALLERY_TITLE = 'Galeria de Linkeas - Descubre perfiles inspiradores';
-    public const GALLERY_DESCRIPTION = 'Explora la galeria de Linkea y descubre perfiles creativos de la comunidad. Inspira tu propio diseno viendo los mejores ejemplos de link in bio.';
-
-    public const PRIVACY_TITLE = 'Politica de Privacidad - Linkea';
-    public const PRIVACY_DESCRIPTION = 'Conoce nuestra politica de privacidad y como protegemos tus datos en Linkea.';
 
     /**
      * Build full image URL from relative path.

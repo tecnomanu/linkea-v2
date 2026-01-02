@@ -22,11 +22,7 @@ interface HomeProps {
 
 export default function Home({ featuredLandings, stats }: HomeProps) {
     return (
-        <WebLayout
-            title="Linkea - Todos tus enlaces en un solo lugar | Link in Bio Argentina"
-            description="Crea tu pagina de links personalizada gratis. Comparte todos tus enlaces en un solo lugar con Linkea, la mejor alternativa argentina a Linktree. 100% gratis, sin limites."
-            canonical="/"
-        >
+        <WebLayout>
             {/* Hero + Stats */}
             <HeroSection landings={featuredLandings} />
             <StatsSection stats={stats} />

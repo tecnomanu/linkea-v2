@@ -161,12 +161,26 @@ export default function Footer() {
                                 </Link>
                             </li>
                             <li>
-                                <Link
-                                    href="/sitemap"
+                                <a
+                                    href="/sitemap.xml"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="text-gray-400 hover:text-brand-500 transition-colors text-sm"
                                 >
                                     Sitemap
-                                </Link>
+                                </a>
+                            </li>
+                            <li>
+                                <button
+                                    onClick={() =>
+                                        window.dispatchEvent(
+                                            new Event("linkea:openCookieModal")
+                                        )
+                                    }
+                                    className="text-gray-400 hover:text-brand-500 transition-colors text-sm text-left"
+                                >
+                                    Gestionar cookies
+                                </button>
                             </li>
                         </ul>
                     </div>

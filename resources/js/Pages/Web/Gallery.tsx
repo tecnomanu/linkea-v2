@@ -30,7 +30,7 @@ export default function Gallery({ landings, meta, filters }: GalleryProps) {
     const [searchQuery, setSearchQuery] = useState(filters.search || "");
     const [isSearching, setIsSearching] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
-    const searchTimeoutRef = useRef<NodeJS.Timeout>();
+    const searchTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
     // Debounced search
     const performSearch = useCallback((query: string) => {
@@ -88,11 +88,7 @@ export default function Gallery({ landings, meta, filters }: GalleryProps) {
     }, []);
 
     return (
-        <WebLayout
-            title="Galeria de Linkeas - Descubre perfiles inspiradores"
-            description="Explora la galeria de Linkea y descubre perfiles creativos de la comunidad. Inspira tu propio diseño viendo los mejores ejemplos de link in bio."
-            canonical="/gallery"
-        >
+        <WebLayout>
             {/* Hero section */}
             <section className="relative pt-24 pb-12 overflow-hidden">
                 {/* Background */}

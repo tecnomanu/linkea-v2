@@ -42,8 +42,8 @@ class SystemRouterController extends Controller
     {
         return Inertia::render('Privacy')->withViewData([
             'seo' => SeoDefaults::forPage(
-                SeoDefaults::PRIVACY_TITLE,
-                SeoDefaults::PRIVACY_DESCRIPTION,
+                'Politica de Privacidad - Linkea',
+                'Conoce nuestra politica de privacidad y como protegemos tus datos en Linkea.',
                 '/privacy'
             ),
         ]);
