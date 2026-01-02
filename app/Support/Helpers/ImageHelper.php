@@ -66,9 +66,9 @@ final class ImageHelper
         }
 
         $disk = self::getDisk();
-        // Upload with public visibility so files are accessible via URL
-        Storage::disk($disk)->put($pathFile, $content, 'public');
-        Storage::disk($disk)->put($pathThumbFile, $content, 'public');
+        // Visibility is configured at disk level (public for s3)
+        Storage::disk($disk)->put($pathFile, $content);
+        Storage::disk($disk)->put($pathThumbFile, $content);
 
         return [
             'image' => $pathFile,
@@ -138,9 +138,9 @@ final class ImageHelper
         }
 
         $disk = self::getDisk();
-        // Upload with public visibility so files are accessible via URL
-        Storage::disk($disk)->put($pathFile, $content, 'public');
-        Storage::disk($disk)->put($pathThumbFile, $content, 'public');
+        // Visibility is configured at disk level (public for s3)
+        Storage::disk($disk)->put($pathFile, $content);
+        Storage::disk($disk)->put($pathThumbFile, $content);
 
         return [
             'image' => $pathFile,
