@@ -88,4 +88,9 @@ class Landing extends Model
     {
         return $this->hasMany(Link::class);
     }
+
+    public function statistics(): HasMany
+    {
+        return $this->hasMany(LandingStatistic::class);
+    }
 }

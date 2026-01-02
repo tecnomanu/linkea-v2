@@ -43,4 +43,9 @@ class Link extends Model
     {
         return $this->belongsTo(Landing::class);
     }
+
+    public function statistics()
+    {
+        return $this->hasMany(LinkStatistic::class);
+    }
 }

@@ -21,4 +21,11 @@ Schedule::command('auth:clear-resets')->daily();
 // Prune stale Sanctum tokens (daily)
 // Schedule::command('sanctum:prune-expired --hours=24')->daily();
 
-// Future: Statistics aggregation, email notifications, etc.
+// Weekly stats report - Every Monday at 9:00 AM (Argentina timezone)
+Schedule::command('stats:send-weekly-reports')
+    ->weeklyOn(1, '9:00') // 1 = Monday
+    ->timezone('America/Argentina/Buenos_Aires')
+    ->withoutOverlapping()
+    ->runInBackground();
+
+// Future: Statistics aggregation, etc.

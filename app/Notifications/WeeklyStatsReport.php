@@ -55,10 +55,14 @@ class WeeklyStatsReport extends Notification implements ShouldQueue
         $appName = config('app.name');
 
         // Get stats or use defaults
+        $userName = $this->stats['user_name'] ?? $notifiable->first_name ?? 'Usuario';
+        $landingName = $this->stats['landing_name'] ?? '';
         $totalViews = $this->stats['total_views'] ?? 0;
         $totalClicks = $this->stats['total_clicks'] ?? 0;
         $viewsChange = $this->stats['views_change'] ?? 0;
         $clicksChange = $this->stats['clicks_change'] ?? 0;
+        $viewsSparkline = $this->stats['views_sparkline'] ?? [];
+        $clicksSparkline = $this->stats['clicks_sparkline'] ?? [];
         $topLinks = $this->stats['top_links'] ?? [];
         $weekStart = $this->stats['week_start'] ?? Carbon::now()->subWeek()->format('d/m');
         $weekEnd = $this->stats['week_end'] ?? Carbon::now()->format('d/m');
@@ -66,10 +70,14 @@ class WeeklyStatsReport extends Notification implements ShouldQueue
         return (new MailMessage)
             ->subject('Tu resumen semanal - ' . $appName)
             ->view('emails.weekly-stats', [
+                'userName' => $userName,
+                'landingName' => $landingName,
                 'totalViews' => $totalViews,
                 'totalClicks' => $totalClicks,
                 'viewsChange' => $viewsChange,
                 'clicksChange' => $clicksChange,
+                'viewsSparkline' => $viewsSparkline,
+                'clicksSparkline' => $clicksSparkline,
                 'topLinks' => $topLinks,
                 'weekStart' => $weekStart,
                 'weekEnd' => $weekEnd,
@@ -152,49 +160,186 @@ HTML;
         $landing = $user->landings()->first();
 
         if (!$landing) {
-            return [
-                'total_views' => 0,
-                'total_clicks' => 0,
-                'views_change' => 0,
-                'clicks_change' => 0,
-                'top_links' => [],
-                'week_start' => Carbon::now()->subWeek()->format('d/m'),
-                'week_end' => Carbon::now()->format('d/m'),
-            ];
+            return self::getEmptyStats();
         }
 
-        // Get current week stats
-        $weekAgo = Carbon::now()->subWeek();
-        $twoWeeksAgo = Carbon::now()->subWeeks(2);
+        $now = Carbon::now();
+        $weekAgo = $now->copy()->subWeek();
+        $twoWeeksAgo = $now->copy()->subWeeks(2);
 
-        // Total clicks from links
-        $totalClicks = $landing->links()->sum('visited');
+        // Get stats from landing_statistics (current week) - only views
+        $currentWeekStats = $landing->statistics()
+            ->where('date', '>=', $weekAgo)
+            ->where('date', '<=', $now)
+            ->get();
 
-        // Get top links by clicks
+        // Get stats from landing_statistics (previous week)
+        $previousWeekStats = $landing->statistics()
+            ->where('date', '>=', $twoWeeksAgo)
+            ->where('date', '<', $weekAgo)
+            ->get();
+
+        // Calculate totals - landing_statistics only has views
+        $totalViews = $currentWeekStats->sum('views');
+        $previousViews = $previousWeekStats->sum('views');
+
+        // Calculate clicks from link_statistics
+        $totalClicks = $landing->links()
+            ->whereHas('statistics', function ($query) use ($weekAgo, $now) {
+                $query->where('date', '>=', $weekAgo)
+                    ->where('date', '<=', $now);
+            })
+            ->with(['statistics' => function ($query) use ($weekAgo, $now) {
+                $query->where('date', '>=', $weekAgo)->where('date', '<=', $now);
+            }])
+            ->get()
+            ->sum(function ($link) {
+                return $link->statistics->sum('visits'); // Field is 'visits' not 'clicks'
+            });
+
+        $previousClicks = $landing->links()
+            ->whereHas('statistics', function ($query) use ($twoWeeksAgo, $weekAgo) {
+                $query->where('date', '>=', $twoWeeksAgo)
+                    ->where('date', '<', $weekAgo);
+            })
+            ->with(['statistics' => function ($query) use ($twoWeeksAgo, $weekAgo) {
+                $query->where('date', '>=', $twoWeeksAgo)->where('date', '<', $weekAgo);
+            }])
+            ->get()
+            ->sum(function ($link) {
+                return $link->statistics->sum('visits');
+            });
+
+        // If no statistics data, fallback to link visited counts
+        if ($totalViews === 0 && $totalClicks === 0) {
+            $totalClicks = $landing->links()->sum('visited');
+            $totalViews = (int)($totalClicks * 2.5); // Estimate
+        }
+
+        // Calculate percentage changes
+        $viewsChange = $previousViews > 0
+            ? round((($totalViews - $previousViews) / $previousViews) * 100, 1)
+            : ($totalViews > 0 ? 100 : 0);
+
+        $clicksChange = $previousClicks > 0
+            ? round((($totalClicks - $previousClicks) / $previousClicks) * 100, 1)
+            : ($totalClicks > 0 ? 100 : 0);
+
+        // Get top links by visits (from link_statistics for current week)
         $topLinks = $landing->links()
             ->where('state', true)
-            ->orderByDesc('visited')
-            ->limit(5)
+            ->whereHas('statistics', function ($query) use ($weekAgo, $now) {
+                $query->where('date', '>=', $weekAgo)
+                    ->where('date', '<=', $now);
+            })
+            ->with(['statistics' => function ($query) use ($weekAgo, $now) {
+                $query->where('date', '>=', $weekAgo)
+                    ->where('date', '<=', $now)
+                    ->orderBy('date', 'asc');
+            }])
             ->get()
-            ->map(fn($link) => [
-                'title' => $link->text,
-                'clicks' => $link->visited,
-            ])
+            ->map(function ($link) {
+                $weeklyClicks = $link->statistics->sum('visits'); // Field is 'visits' not 'clicks'
+                return [
+                    'title' => $link->text ?: 'Sin título',
+                    'clicks' => $weeklyClicks,
+                    'sparkline' => self::generateSparklineData($link->statistics),
+                ];
+            })
+            ->sortByDesc('clicks')
+            ->take(5)
+            ->values()
             ->toArray();
 
-        // Landing views (from statistics if available, otherwise estimate)
-        $totalViews = $landing->statistics()
-            ->where('date', '>=', $weekAgo)
-            ->sum('views') ?? (int)($totalClicks * 2.5);
+        // If no link statistics, use total visited count
+        if (empty($topLinks)) {
+            $topLinks = $landing->links()
+                ->where('state', true)
+                ->where('visited', '>', 0)
+                ->orderByDesc('visited')
+                ->limit(5)
+                ->get()
+                ->map(fn($link) => [
+                    'title' => $link->text ?: 'Sin título',
+                    'clicks' => $link->visited,
+                    'sparkline' => [], // No historical data
+                ])
+                ->toArray();
+        }
+
+        // Generate 7-day sparkline data for views and clicks
+        $viewsSparkline = self::generateWeekSparklineData($currentWeekStats, 'views', $weekAgo, $now);
+        $clicksSparkline = self::generateWeekSparklineData($currentWeekStats, 'clicks', $weekAgo, $now);
 
         return [
+            'user_name' => $user->first_name ?: 'Usuario',
+            'landing_name' => $landing->name,
+            'landing_url' => config('app.url') . '/' . ($landing->domain_name ?: $landing->slug),
             'total_views' => $totalViews,
             'total_clicks' => $totalClicks,
-            'views_change' => rand(-20, 50), // TODO: Calculate real change when stats are implemented
-            'clicks_change' => rand(-15, 40),
+            'views_change' => $viewsChange,
+            'clicks_change' => $clicksChange,
+            'views_sparkline' => $viewsSparkline,
+            'clicks_sparkline' => $clicksSparkline,
             'top_links' => $topLinks,
             'week_start' => $weekAgo->format('d/m'),
-            'week_end' => Carbon::now()->format('d/m'),
+            'week_end' => $now->format('d/m'),
         ];
+    }
+
+    /**
+     * Get empty stats structure.
+     */
+    protected static function getEmptyStats(): array
+    {
+        $now = Carbon::now();
+        $weekAgo = $now->copy()->subWeek();
+
+        return [
+            'user_name' => 'Usuario',
+            'landing_name' => '',
+            'landing_url' => '',
+            'total_views' => 0,
+            'total_clicks' => 0,
+            'views_change' => 0,
+            'clicks_change' => 0,
+            'views_sparkline' => array_fill(0, 7, 0),
+            'clicks_sparkline' => array_fill(0, 7, 0),
+            'top_links' => [],
+            'week_start' => $weekAgo->format('d/m'),
+            'week_end' => $now->format('d/m'),
+        ];
+    }
+
+    /**
+     * Generate sparkline data for a link (array of daily values).
+     */
+    protected static function generateSparklineData($statistics): array
+    {
+        return $statistics
+            ->pluck('visits') // Field is 'visits' not 'clicks'
+            ->map(fn($value) => (int)$value)
+            ->toArray();
+    }
+
+    /**
+     * Generate 7-day sparkline data from statistics.
+     * Fills missing days with 0.
+     */
+    protected static function generateWeekSparklineData($statistics, string $field, Carbon $start, Carbon $end): array
+    {
+        $data = [];
+
+        // Create map of date => value
+        $statsMap = $statistics->keyBy(fn($stat) => Carbon::parse($stat->date)->format('Y-m-d'));
+
+        // Fill 7 days
+        for ($i = 0; $i < 7; $i++) {
+            $date = $start->copy()->addDays($i);
+            $dateKey = $date->format('Y-m-d');
+            $data[] = isset($statsMap[$dateKey]) ? (int)$statsMap[$dateKey]->{$field} : 0;
+        }
+
+        return $data;
     }
 }
