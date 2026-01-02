@@ -5,8 +5,9 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use App\Models\Landing;
+use App\Services\LandingService;
 use App\Services\UserService;
+use App\Support\Helpers\StringHelper;
 use App\Traits\HasApiResponse;
 use App\Traits\RESTActions;
 use Illuminate\Http\JsonResponse;
@@ -21,7 +22,8 @@ class UsersController extends Controller
     const MODEL = User::class;
 
     public function __construct(
-        protected UserService $userService
+        protected UserService $userService,
+        protected LandingService $landingService
     ) {}
 
     /**
@@ -58,7 +60,8 @@ class UsersController extends Controller
     }
 
     /**
-     * Create a new user.
+     * Create a new user with default landing.
+     * Admin-created users are verified by default.
      */
     public function store(Request $request): JsonResponse
     {
@@ -67,7 +70,7 @@ class UsersController extends Controller
             'password' => 'required|string|min:8',
             'first_name' => 'required|string|max:255',
             'last_name' => 'nullable|string|max:255',
-            'username' => 'required|string', // Used for landing creation
+            'username' => 'required|string|min:3|max:30',
         ]);
 
         $user = User::create([
@@ -75,23 +78,16 @@ class UsersController extends Controller
             'password' => Hash::make($validated['password']),
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'] ?? '',
-            'name' => trim(($validated['first_name'] ?? '') . ' ' . ($validated['last_name'] ?? '')),
-            'verified_at' => now(), // Admin creates verified users by default
+            'name' => trim($validated['first_name'] . ' ' . ($validated['last_name'] ?? '')),
+            'verified_at' => now(),
         ]);
 
-        // Create default landing using 'username' as slug
-        // Note: We use the AuthService login in tests, but here we do manual creation as Admin
-        // Creating a simple landing for the user
-        if (!empty($validated['username'])) {
-            // Basic landing creation similar to LandingService but simplified
-            $landing = Landing::create([
-                'user_id' => $user->id,
-                'name' => $user->name,
-                'slug' => \App\Support\Helpers\StringHelper::normalizeHandle($validated['username']),
-                'domain_name' => \App\Support\Helpers\StringHelper::normalizeHandle($validated['username']),
-                'verify' => true,
-            ]);
-        }
+        // Create landing using service (uses ThemeDefaults, consistent with normal registration)
+        $username = StringHelper::normalizeHandle($validated['username']);
+        $landing = $this->landingService->createDefault($user, $username);
+
+        // Admin-created landings are pre-verified
+        $landing->update(['verify' => true]);
 
         return $this->created(new UserResource($user));
     }

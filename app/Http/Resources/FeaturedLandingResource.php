@@ -31,7 +31,7 @@ class FeaturedLandingResource extends BaseLandingResource
                 'avatar' => $logo['image'] ?? '',
                 'bio' => $options['bio'] ?? '',
                 'theme' => $theme,
-                'title' => $config['title'] ?? $this->domain_name,
+                'title' => $config['title'] ?? $this->slug,
                 'subtitle' => $config['subtitle'] ?? '',
                 'showTitle' => $config['showTitle'] ?? true,
                 'showSubtitle' => $config['showSubtitle'] ?? true,

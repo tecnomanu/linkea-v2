@@ -16,12 +16,12 @@ class LandingResource extends JsonResource
             // Internal name (not displayed publicly)
             'name' => $this->name,
             'slug' => $this->slug,
-            'handle' => '@' . ($this->domain_name ?? $this->slug),
+            'handle' => '@' . ($this->slug ?? $this->domain_name),
             'logo' => $this->logo,
             'avatar' => $this->logo['image'] ?? null,
 
             // Title & Subtitle from template_config (displayed on page)
-            'title' => $templateConfig['title'] ?? $this->domain_name,
+            'title' => $templateConfig['title'] ?? $this->slug,
             'subtitle' => $templateConfig['subtitle'] ?? '',
             'showTitle' => $templateConfig['showTitle'] ?? true,
             'showSubtitle' => $templateConfig['showSubtitle'] ?? true,

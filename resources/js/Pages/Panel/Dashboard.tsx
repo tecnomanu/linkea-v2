@@ -1,4 +1,7 @@
-import { DashboardTab } from "@/Components/Panel/Dashboard/DashboardTab";
+import {
+    DashboardStats,
+    DashboardTab,
+} from "@/Components/Panel/Dashboard/DashboardTab";
 import { LinkBar } from "@/Components/Panel/Links/LinkBar";
 import { LinksTab, SocialLink } from "@/Components/Panel/Links/LinksTab";
 import {
@@ -10,7 +13,19 @@ import { useWhatsNewModal } from "@/Components/Shared/WhatsNewModal";
 import { INITIAL_LINKS } from "@/constants";
 import { useAutoSaveContext } from "@/contexts/AutoSaveContext";
 import PanelLayout from "@/Layouts/PanelLayout";
-import { LinkBlock, UserProfile } from "@/types";
+import {
+    BackgroundAttachment,
+    BackgroundPosition,
+    BackgroundRepeat,
+    BackgroundSize,
+    ButtonIconAlignment,
+    ButtonShape,
+    ButtonSize,
+    ButtonStyle,
+    FontPair,
+    LinkBlock,
+    UserProfile,
+} from "@/types";
 import { Head } from "@inertiajs/react";
 import { Eye, Maximize2 } from "lucide-react";
 import {
@@ -50,30 +65,6 @@ const WhatsNewModal = lazy(() =>
     }))
 );
 
-interface DashboardStats {
-    totalClicks: number;
-    totalLinks: number;
-    activeLinks: number;
-    clicksToday: number;
-    clicksThisWeek: number;
-    clicksThisMonth: number;
-    weeklyChange: number;
-    dailyAverage: number;
-    chartData: { date: string; fullDate: string; clicks: number }[];
-    topLinks: {
-        id: string;
-        title: string;
-        type: string;
-        clicks: number;
-        sparklineData: { value: number }[];
-    }[];
-    linksByType: {
-        type: string;
-        count: number;
-        clicks: number;
-    }[];
-}
-
 /**
  * Landing data from PanelLandingResource.
  * Already transformed to frontend format.
@@ -82,7 +73,7 @@ interface PanelLandingData {
     id: string;
     name: string;
     slug: string;
-    domain_name: string;
+    domain_name: string | null;
     verify: boolean;
     mongo_id?: string;
     logo: { image: string | null; thumb: string | null };
@@ -96,25 +87,37 @@ interface PanelLandingData {
             backgroundColor: string;
             backgroundImage: string | null;
             backgroundEnabled: boolean;
-            backgroundSize: string;
-            backgroundPosition: string;
-            backgroundAttachment: string;
-            backgroundRepeat: string;
-            props?: any;
-            controls?: any;
+            backgroundSize: BackgroundSize;
+            backgroundPosition: BackgroundPosition;
+            backgroundAttachment: BackgroundAttachment;
+            backgroundRepeat: BackgroundRepeat;
+            props?: Record<string, string | number>;
+            controls?: {
+                hideBgColor?: boolean;
+                colors?: string[];
+                scale?: {
+                    min: number;
+                    max: number;
+                    default: number;
+                    aspectRatio?: boolean;
+                };
+                opacity?: { default: number };
+                rotationBg?: { min: number; max: number; default: number };
+            };
         };
         buttons: {
-            style: string;
-            shape: string;
-            size: string;
+            style: ButtonStyle;
+            shape: ButtonShape;
+            size: ButtonSize;
             backgroundColor: string;
             textColor: string;
             borderColor: string | null;
+            borderEnabled?: boolean;
             showIcons: boolean;
-            iconAlignment: string;
+            iconAlignment: ButtonIconAlignment;
         };
         textColor: string | null;
-        fontPair: string;
+        fontPair: FontPair;
         header: {
             roundedAvatar: boolean;
             avatarFloating: boolean;
@@ -186,18 +189,19 @@ export default function Dashboard({
 
     const initialUser: UserProfile = {
         name: landing?.name || "",
-        handle: landing?.domain_name || landing?.slug || "",
+        handle: landing?.slug || landing?.domain_name || "",
         avatar:
             landing?.logo?.image ||
             auth.user.avatar ||
             "/images/logos/logo-icon.webp",
-        title: tc?.title || landing?.domain_name || "",
+        title: tc?.title || landing?.slug || "",
         subtitle: tc?.subtitle || "",
         showTitle: tc?.showTitle ?? true,
         showSubtitle: tc?.showSubtitle ?? true,
-        theme: (bg?.bgName as any) || "custom",
+        theme: bg?.bgName || "custom",
         customDesign: {
-            backgroundColor: bg?.backgroundColor || "#ffffff",
+            // Background
+            backgroundColor: bg?.backgroundColor || "#fed7aa",
             backgroundImage: bg?.backgroundImage || undefined,
             backgroundEnabled: bg?.backgroundEnabled ?? true,
             backgroundSize: bg?.backgroundSize || "cover",
@@ -206,17 +210,21 @@ export default function Dashboard({
             backgroundAttachment: bg?.backgroundAttachment || "scroll",
             backgroundProps: bg?.props || undefined,
             backgroundControls: bg?.controls || undefined,
-            buttonStyle: buttons?.style || "solid",
-            buttonShape: buttons?.shape || "rounded",
-            buttonColor: buttons?.backgroundColor || "#000000",
+            // Buttons
+            buttonStyle: buttons?.style || "soft",
+            buttonShape: buttons?.shape || "pill",
+            buttonSize: buttons?.size || "compact",
+            buttonColor: buttons?.backgroundColor || "#ea580c",
             buttonTextColor: buttons?.textColor || "#ffffff",
             buttonBorderColor: buttons?.borderColor || "#000000",
             buttonBorderEnabled: buttons?.borderEnabled ?? false,
             showButtonIcons: buttons?.showIcons ?? true,
             buttonIconAlignment: buttons?.iconAlignment || "left",
-            showLinkSubtext: tc?.showLinkSubtext ?? false,
+            showLinkSubtext: tc?.showLinkSubtext ?? true,
+            // Typography
             fontPair: tc?.fontPair || "modern",
-            textColor: tc?.textColor || undefined,
+            textColor: tc?.textColor || "#1f2937",
+            // Avatar
             roundedAvatar: header?.roundedAvatar ?? true,
             avatarFloating: header?.avatarFloating ?? true,
         },
@@ -236,7 +244,11 @@ export default function Dashboard({
         (link) => ({
             id: link.id,
             url: link.url || "",
-            icon: link.icon || undefined,
+            // Only include icon if it has required fields (name and type)
+            icon:
+                link.icon?.name && link.icon?.type
+                    ? { name: link.icon.name, type: link.icon.type as any }
+                    : undefined,
             active: link.isEnabled ?? true,
             clicks: link.clicks || 0,
             sparklineData:
@@ -589,19 +601,21 @@ export default function Dashboard({
                                 </div>
                             )}
                         </div>
-                        {/* Auto-save status, preview button, and manual save */}
-                        <div className="flex items-center gap-3">
-                            <AutoSaveBadge />
-                            {/* Preview button - visible when Live Preview sidebar is hidden */}
-                            <button
-                                onClick={() => openPreview("mobile")}
-                                className="xl:hidden flex items-center gap-2 px-4 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-semibold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all"
-                            >
-                                <Eye size={16} />
-                                <span>Vista previa</span>
-                            </button>
-                            <ManualSaveButton onClick={handleManualSave} />
-                        </div>
+                        {/* Auto-save status, preview button, and manual save - Hidden on profile tab */}
+                        {activeTab !== "profile" && (
+                            <div className="flex items-center gap-3">
+                                <AutoSaveBadge />
+                                {/* Preview button - visible when Live Preview sidebar is hidden */}
+                                <button
+                                    onClick={() => openPreview("mobile")}
+                                    className="xl:hidden flex items-center gap-2 px-4 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-semibold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all"
+                                >
+                                    <Eye size={16} />
+                                    <span>Vista previa</span>
+                                </button>
+                                <ManualSaveButton onClick={handleManualSave} />
+                            </div>
+                        )}
                     </header>
 
                     {/* Mobile Title */}
@@ -610,19 +624,25 @@ export default function Dashboard({
                             <h1 className="text-2xl font-bold text-neutral-900 dark:text-white capitalize">
                                 {activeTab === "dashboard"
                                     ? "Resumen"
+                                    : activeTab === "profile"
+                                    ? "Perfil"
                                     : activeTab}
                             </h1>
-                            <button
-                                onClick={() => openPreview("mobile")}
-                                className="p-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all"
-                                aria-label="Vista previa"
-                            >
-                                <Eye size={18} />
-                            </button>
+                            {activeTab !== "profile" && (
+                                <button
+                                    onClick={() => openPreview("mobile")}
+                                    className="p-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all"
+                                    aria-label="Vista previa"
+                                >
+                                    <Eye size={18} />
+                                </button>
+                            )}
                         </div>
-                        <div className="mt-2">
-                            <AutoSaveBadge />
-                        </div>
+                        {activeTab !== "profile" && (
+                            <div className="mt-2">
+                                <AutoSaveBadge />
+                            </div>
+                        )}
                         {/* Links Tab Switcher - Mobile */}
                         {activeTab === "links" && (
                             <div className="flex bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl mt-4">
@@ -702,8 +722,12 @@ export default function Dashboard({
                 </div>
             </div>
 
-            {/* Right: Live Preview (Desktop Sticky - Only Mobile Mode) */}
-            <div className="w-[440px] hidden xl:flex flex-col items-center justify-center gap-4 py-6 sticky top-0 h-screen bg-white/50 dark:bg-neutral-900/50 backdrop-blur-xl border-l border-neutral-200/50 dark:border-neutral-800/50">
+            {/* Right: Live Preview (Desktop Sticky - Only Mobile Mode) - Hidden on profile tab */}
+            <div
+                className={`w-[440px] ${
+                    activeTab === "profile" ? "hidden" : "hidden xl:flex"
+                } flex-col items-center justify-center gap-4 py-6 sticky top-0 h-screen bg-white/50 dark:bg-neutral-900/50 backdrop-blur-xl border-l border-neutral-200/50 dark:border-neutral-800/50`}
+            >
                 {/* Live Preview Badge */}
                 <span className="text-[10px] font-bold tracking-[0.2em] text-neutral-400 uppercase bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full shrink-0">
                     Vista previa

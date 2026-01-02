@@ -66,7 +66,7 @@ const formatNumber = (num: number): string => {
     return num.toString();
 };
 
-interface DashboardStats {
+export interface DashboardStats {
     totalViews: number;
     totalClicks: number;
     totalLinks: number;

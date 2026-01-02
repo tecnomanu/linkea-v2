@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Constants\ThemeDefaults;
 use App\Models\Landing;
 use App\Models\User;
 use App\Models\Company;
@@ -16,7 +17,7 @@ class LandingSeeder extends Seeder
     public function run(): void
     {
         // Create Landing for Root User
-        $rootUser = User::where('email', 'root@root.com')->first();
+        $rootUser = User::where('email', 'ideas@linkea.ar')->first();
         $linkeaCompany = Company::where('name', 'Linkea')->first();
 
         if ($rootUser && $linkeaCompany) {
@@ -27,8 +28,7 @@ class LandingSeeder extends Seeder
                     'name' => 'Linkea',
                     'slug' => 'linkea',
                     'logo' => null,
-                    'domain_name' => 'linkea',
-                    'template_config' => [],
+                    'template_config' => ThemeDefaults::templateConfig('linkea'),
                     'options' => [],
                     'company_id' => $linkeaCompany->id,
                     'user_id' => $rootUser->id,
@@ -50,26 +50,11 @@ class LandingSeeder extends Seeder
                 Landing::create([
                     'name' => 'Mi Linkea',
                     'slug' => 'testuser',
-                    'domain_name' => 'testuser',
                     'company_id' => $testCompany->id,
                     'user_id' => $testUser->id,
-                    'verify' => true,
+                    'verify' => true, // Normal users start unverified
                     'logo' => ['image' => '/images/logos/logo-icon.webp'],
-                    'template_config' => [
-                        'background' => [
-                            'bgName' => 'gradient',
-                            'background' => 'linear-gradient(90deg, #FE6A16 0%, #ff528e 100%)',
-                            'backgroundColor' => '#FE6A16'
-                        ],
-                        'textColor' => '#ffffff',
-                        'buttons' => [
-                            'backgroundColor' => '#ffffff',
-                            'textColor' => '#000000',
-                            'backgroundHoverColor' => '#f0f0f0',
-                            'textHoverColor' => '#000000',
-                            'rounded' => '24px'
-                        ]
-                    ],
+                    'template_config' => ThemeDefaults::templateConfig('testuser'),
                     'options' => ['title' => '@testuser']
                 ]);
             }
@@ -86,23 +71,11 @@ class LandingSeeder extends Seeder
                 Landing::create([
                     'name' => 'Test User 2 Links',
                     'slug' => 'testuser2',
-                    'domain_name' => 'testuser2',
                     'company_id' => $testCompany2->id,
                     'user_id' => $testUser2->id,
-                    'verify' => true,
+                    'verify' => false, // Normal users start unverified
                     'logo' => ['image' => '/images/logos/logo-icon.webp'],
-                    'template_config' => [
-                        'background' => [
-                            'bgName' => 'solid',
-                            'backgroundColor' => '#1a1a1a'
-                        ],
-                        'textColor' => '#ffffff',
-                        'buttons' => [
-                            'backgroundColor' => '#FE6A16',
-                            'textColor' => '#ffffff',
-                            'rounded' => '12px'
-                        ]
-                    ],
+                    'template_config' => ThemeDefaults::templateConfig('testuser2'),
                     'options' => ['title' => '@testuser2']
                 ]);
             }

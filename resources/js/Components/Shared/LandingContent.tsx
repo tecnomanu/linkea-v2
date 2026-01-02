@@ -385,11 +385,11 @@ export const LandingContent: React.FC<LandingContentProps> = ({
 
     return (
         <div
-            className={`w-full ${heightClass} overflow-y-auto overlay-scrollbar pt-14 pb-8 transition-all duration-500 ${containerClasses} ${fontClasses}`}
+            className={`w-full ${heightClass} overflow-y-auto overlay-scrollbar pt-10 md:pt-14 pb-8 transition-all duration-500 ${containerClasses} ${fontClasses}`}
             style={containerStyle}
         >
             {/* Profile Header */}
-            <div className="flex flex-col items-center px-6 mb-8 text-center pt-6 animate-in slide-in-from-bottom-4 duration-700 fade-in">
+            <div className="flex flex-col items-center px-6 mb-6 md:mb-8 text-center pt-2 md:pt-6 animate-in slide-in-from-bottom-4 duration-700 fade-in">
                 <div className="relative mb-4 group cursor-pointer">
                     <img
                         src={user.avatar}

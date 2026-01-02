@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Constants\BlockTypes;
 use App\Constants\LinkGroups;
+use App\Constants\ThemeDefaults;
 use App\Models\Landing;
 use App\Models\Link;
 use App\Repositories\Contracts\LandingRepository;
@@ -102,6 +103,9 @@ class LandingService
     /**
      * Create default landing for new user.
      * Moved from Landing model to follow SRP.
+     * 
+     * Note: verify=false by default. Users must verify to appear in sitemap/gallery.
+     * Note: domain_name is for custom domains (future feature), not set on creation.
      */
     public function createDefault($user, string $username): Landing
     {
@@ -114,8 +118,7 @@ class LandingService
                 'image' => "https://api.dicebear.com/9.x/lorelei/svg?seed={$username}",
                 'thumb' => "https://api.dicebear.com/9.x/lorelei/svg?seed={$username}",
             ],
-            'verify' => true,
-            'domain_name' => $username,
+            'verify' => false, // Must verify to appear public (sitemap, gallery)
             'template_config' => $this->getDefaultTemplateConfig($username),
             'options' => $this->getDefaultOptions($username),
         ]);
@@ -124,7 +127,7 @@ class LandingService
         Link::create([
             'landing_id' => $landing->id,
             'text' => 'Mi primer Link',
-            'link' => 'https://' . config('app.url', 'linkea.ar') . '/' . $username,
+            'link' => url('/' . $username),
             'state' => true,
             'slug' => 'mi_primer_link',
             'order' => 1,
@@ -180,6 +183,10 @@ class LandingService
     /**
      * Update general settings.
      * Moved from PanelDataService.
+     * 
+     * Note: slug and domain_name are separate fields.
+     * - slug: the handle at linkea.ar/{slug}
+     * - domain_name: for custom domains (future feature, updated separately)
      */
     public function updateSettings(Landing $landing, array $settingsData): Landing
     {
@@ -187,7 +194,6 @@ class LandingService
 
         if (isset($settingsData['slug']) && $settingsData['slug']) {
             $updateData['slug'] = $settingsData['slug'];
-            $updateData['domain_name'] = $settingsData['slug'];
         }
 
         if (isset($settingsData['options'])) {
@@ -218,44 +224,11 @@ class LandingService
 
     /**
      * Get default template config for new landing.
+     * Uses ThemeDefaults constant (Atardecer/Sunset theme).
      */
     protected function getDefaultTemplateConfig(string $username): array
     {
-        return [
-            'image_rounded' => true,
-            'image_floating' => true, // Default: floating avatar with shadow/border
-            'title' => '@' . $username,
-            'subtitle' => '',
-            'background' => [
-                'backDropState' => false,
-                'backDropColor' => 'rgba(255,255,255,0)',
-                'backgroundColor' => '#FE6A16',
-                'background' => 'linear-gradient(90deg, #FE6A16 0%, #ff528e 100%)',
-                'bgName' => 'gradient',
-            ],
-            'textColor' => '#fff',
-            'buttons' => [
-                'style' => 'solid',
-                'shape' => 'rounded',
-                'size' => 'compact', // Default: compact size
-                'backgroundColor' => '#607d8b',
-                'backgroundHoverColor' => '#fe9c53',
-                'textColor' => '#fff',
-                'textHoverColor' => '#fff',
-                'showIcons' => true,
-                'iconAlignment' => 'left',
-            ],
-            'showLinkSubtext' => true, // Default: show URLs for new landings
-            'icons' => [
-                'show' => true,
-                'position' => 'left',
-                'size' => 10,
-            ],
-            'socials' => [
-                'show' => true,
-                'position' => 'top',
-            ],
-        ];
+        return ThemeDefaults::templateConfig($username);
     }
 
     /**

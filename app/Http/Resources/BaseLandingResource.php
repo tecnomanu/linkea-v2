@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Constants\ThemeDefaults;
 use App\Support\Helpers\StorageHelper;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -77,7 +78,7 @@ abstract class BaseLandingResource extends JsonResource
     protected function getDisplayTitle(): string
     {
         $config = $this->getTemplateConfig();
-        return $config['title'] ?? $this->domain_name ?? 'Linkea';
+        return $config['title'] ?? $this->slug ?? $this->domain_name ?? 'Linkea';
     }
 
     /**
@@ -91,7 +92,7 @@ abstract class BaseLandingResource extends JsonResource
 
     /**
      * Get SEO title with fallback chain.
-     * Priority: meta.title → options.title → template_config.title → domain_name
+     * Priority: meta.title → options.title → template_config.title → slug
      */
     protected function getSeoTitle(): string
     {
@@ -133,6 +134,7 @@ abstract class BaseLandingResource extends JsonResource
 
     /**
      * Build the full template_config structure for frontend.
+     * Defaults come from ThemeDefaults constant.
      */
     protected function buildTemplateConfig(): array
     {
@@ -143,13 +145,13 @@ abstract class BaseLandingResource extends JsonResource
         $header = $this->getHeaderConfig();
 
         return [
-            'title' => $config['title'] ?? $this->domain_name,
+            'title' => $config['title'] ?? $this->slug,
             'subtitle' => $config['subtitle'] ?? '',
             'showTitle' => $config['showTitle'] ?? true,
             'showSubtitle' => $config['showSubtitle'] ?? true,
             'background' => [
-                'bgName' => $bgConfig['bgName'] ?? 'custom',
-                'backgroundColor' => $bgConfig['backgroundColor'] ?? '#ffffff',
+                'bgName' => $bgConfig['bgName'] ?? ThemeDefaults::THEME_NAME,
+                'backgroundColor' => $bgConfig['backgroundColor'] ?? ThemeDefaults::BACKGROUND_COLOR,
                 'backgroundImage' => $this->resolveBackgroundImage($bgConfig['backgroundImage'] ?? null),
                 'backgroundEnabled' => $bgConfig['backgroundEnabled'] ?? true,
                 'backgroundSize' => $bgConfig['backgroundSize'] ?? ($bgProps['size'] ?? 'cover'),
@@ -160,29 +162,30 @@ abstract class BaseLandingResource extends JsonResource
                 'controls' => $bgConfig['controls'] ?? null,
             ],
             'buttons' => [
-                'style' => $buttons['style'] ?? 'solid',
-                'shape' => $buttons['shape'] ?? 'rounded',
-                'size' => $buttons['size'] ?? 'compact',
-                'backgroundColor' => $buttons['backgroundColor'] ?? ($buttons['color'] ?? '#000000'),
-                'textColor' => $buttons['textColor'] ?? '#ffffff',
+                'style' => $buttons['style'] ?? ThemeDefaults::BUTTON_STYLE,
+                'shape' => $buttons['shape'] ?? ThemeDefaults::BUTTON_SHAPE,
+                'size' => $buttons['size'] ?? ThemeDefaults::BUTTON_SIZE,
+                'backgroundColor' => $buttons['backgroundColor'] ?? ($buttons['color'] ?? ThemeDefaults::BUTTON_COLOR),
+                'textColor' => $buttons['textColor'] ?? ThemeDefaults::BUTTON_TEXT_COLOR,
                 'borderColor' => $buttons['borderColor'] ?? '#000000',
                 'borderEnabled' => (bool) ($buttons['borderEnabled'] ?? false),
-                'showIcons' => $buttons['showIcons'] ?? true,
-                'iconAlignment' => $buttons['iconAlignment'] ?? 'left',
+                'showIcons' => $buttons['showIcons'] ?? ThemeDefaults::SHOW_BUTTON_ICONS,
+                'iconAlignment' => $buttons['iconAlignment'] ?? ThemeDefaults::BUTTON_ICON_ALIGNMENT,
             ],
-            'textColor' => $config['textColor'] ?? null,
-            'fontPair' => $config['fontPair'] ?? 'modern',
+            'textColor' => $config['textColor'] ?? ThemeDefaults::TEXT_COLOR,
+            'fontPair' => $config['fontPair'] ?? ThemeDefaults::FONT_PAIR,
             'header' => [
-                'roundedAvatar' => $header['roundedAvatar'] ?? ($config['image_rounded'] ?? true),
-                'avatarFloating' => $header['avatarFloating'] ?? ($config['image_floating'] ?? true),
+                'roundedAvatar' => $header['roundedAvatar'] ?? ($config['image_rounded'] ?? ThemeDefaults::AVATAR_ROUNDED),
+                'avatarFloating' => $header['avatarFloating'] ?? ($config['image_floating'] ?? ThemeDefaults::AVATAR_FLOATING),
             ],
-            'showLinkSubtext' => $config['showLinkSubtext'] ?? false,
+            'showLinkSubtext' => $config['showLinkSubtext'] ?? ThemeDefaults::SHOW_LINK_SUBTEXT,
         ];
     }
 
     /**
      * Build customDesign object for UserProfile format.
      * Used by PhonePreview and LandingContent components.
+     * Defaults come from ThemeDefaults constant.
      */
     protected function buildCustomDesign(): array
     {
@@ -196,7 +199,7 @@ abstract class BaseLandingResource extends JsonResource
         $backgroundEnabled = $bgConfig['backgroundEnabled'] ?? ($backgroundImage !== null);
 
         return [
-            'backgroundColor' => $bgConfig['backgroundColor'] ?? '#ffffff',
+            'backgroundColor' => $bgConfig['backgroundColor'] ?? ThemeDefaults::BACKGROUND_COLOR,
             'backgroundImage' => $backgroundImage,
             'backgroundEnabled' => $backgroundEnabled,
             'backgroundSize' => $bgConfig['backgroundSize'] ?? ($bgProps['size'] ?? 'cover'),
@@ -206,21 +209,21 @@ abstract class BaseLandingResource extends JsonResource
             'backgroundProps' => $bgProps ?: null,
             'backgroundControls' => $bgConfig['controls'] ?? null,
 
-            'buttonStyle' => $buttons['style'] ?? 'solid',
-            'buttonShape' => $buttons['shape'] ?? 'rounded',
-            'buttonSize' => $buttons['size'] ?? 'compact',
-            'buttonColor' => $buttons['backgroundColor'] ?? ($buttons['color'] ?? '#000000'),
-            'buttonTextColor' => $buttons['textColor'] ?? '#ffffff',
+            'buttonStyle' => $buttons['style'] ?? ThemeDefaults::BUTTON_STYLE,
+            'buttonShape' => $buttons['shape'] ?? ThemeDefaults::BUTTON_SHAPE,
+            'buttonSize' => $buttons['size'] ?? ThemeDefaults::BUTTON_SIZE,
+            'buttonColor' => $buttons['backgroundColor'] ?? ($buttons['color'] ?? ThemeDefaults::BUTTON_COLOR),
+            'buttonTextColor' => $buttons['textColor'] ?? ThemeDefaults::BUTTON_TEXT_COLOR,
             'buttonBorderColor' => $buttons['borderColor'] ?? '#000000',
             'buttonBorderEnabled' => (bool) ($buttons['borderEnabled'] ?? false),
-            'showButtonIcons' => $buttons['showIcons'] ?? true,
-            'buttonIconAlignment' => $buttons['iconAlignment'] ?? 'left',
-            'showLinkSubtext' => $config['showLinkSubtext'] ?? false,
+            'showButtonIcons' => $buttons['showIcons'] ?? ThemeDefaults::SHOW_BUTTON_ICONS,
+            'buttonIconAlignment' => $buttons['iconAlignment'] ?? ThemeDefaults::BUTTON_ICON_ALIGNMENT,
+            'showLinkSubtext' => $config['showLinkSubtext'] ?? ThemeDefaults::SHOW_LINK_SUBTEXT,
 
-            'fontPair' => $config['fontPair'] ?? 'modern',
-            'textColor' => $config['textColor'] ?? null,
-            'roundedAvatar' => $header['roundedAvatar'] ?? ($config['image_rounded'] ?? true),
-            'avatarFloating' => $header['avatarFloating'] ?? ($config['image_floating'] ?? true),
+            'fontPair' => $config['fontPair'] ?? ThemeDefaults::FONT_PAIR,
+            'textColor' => $config['textColor'] ?? ThemeDefaults::TEXT_COLOR,
+            'roundedAvatar' => $header['roundedAvatar'] ?? ($config['image_rounded'] ?? ThemeDefaults::AVATAR_ROUNDED),
+            'avatarFloating' => $header['avatarFloating'] ?? ($config['image_floating'] ?? ThemeDefaults::AVATAR_FLOATING),
         ];
     }
 

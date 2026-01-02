@@ -20,9 +20,7 @@ class GenerateTestStats extends Command
         $fromDate = Carbon::parse($this->option('from'));
         $toDate = Carbon::parse($this->option('to'));
 
-        $landing = Landing::where('slug', $slug)
-            ->orWhere('domain_name', $slug)
-            ->first();
+        $landing = Landing::where('slug', $slug)->first();
 
         if (!$landing) {
             $this->error("Landing '{$slug}' not found.");
@@ -48,7 +46,7 @@ class GenerateTestStats extends Command
             // Generate views for landing (more traffic on weekdays, less on weekends)
             $isWeekend = $currentDate->isWeekend();
             $baseViews = $isWeekend ? rand(30, 80) : rand(80, 200);
-            
+
             // Add some randomness and trends (growing traffic)
             $dayOfMonth = $currentDate->day;
             $trendMultiplier = 1 + ($dayOfMonth / 50); // Slight upward trend
@@ -72,7 +70,7 @@ class GenerateTestStats extends Command
                 // CTR varies by link position and type (first links get more clicks)
                 $baseCtr = rand(5, 25) / 100; // 5-25% CTR
                 $clicks = (int) ($views * $baseCtr * (rand(60, 140) / 100));
-                
+
                 // Some days might have 0 clicks for some links
                 if (rand(1, 10) <= 2) {
                     $clicks = 0;
@@ -117,4 +115,3 @@ class GenerateTestStats extends Command
         return 0;
     }
 }
-
