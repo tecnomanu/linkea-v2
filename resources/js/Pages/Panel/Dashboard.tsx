@@ -270,6 +270,7 @@ export default function Dashboard({
         setPendingChanges,
         saveAllChanges,
         autoSaveEnabled,
+        setOnLandingUpdated,
     } = useAutoSaveContext();
 
     // Check if we should use context state (same landing, has data)
@@ -337,6 +338,55 @@ export default function Dashboard({
     const [currentLinkType, setCurrentLinkType] = useState<"blocks" | "social">(
         "blocks"
     );
+
+    // Register callback to update user state when server returns processed data (e.g., S3 URLs)
+    useEffect(() => {
+        const callback = (updatedLandingData: any) => {
+            setUser((prev) => {
+                const updates: Partial<UserProfile> = {};
+
+                // Update avatar if server returned new logo
+                if (updatedLandingData.logo?.image) {
+                    updates.avatar = updatedLandingData.logo.image;
+                }
+                if (updatedLandingData.logo?.thumb) {
+                    updates.avatarThumb = updatedLandingData.logo.thumb;
+                }
+
+                // Update background image if server returned new URL
+                if (
+                    updatedLandingData.template_config?.background
+                        ?.backgroundImage
+                ) {
+                    updates.customDesign = {
+                        ...prev.customDesign,
+                        backgroundImage:
+                            updatedLandingData.template_config.background
+                                .backgroundImage,
+                    };
+                }
+
+                // Update other fields as needed
+                if (updatedLandingData.name) {
+                    updates.name = updatedLandingData.name;
+                }
+                if (updatedLandingData.options?.title) {
+                    updates.title = updatedLandingData.options.title;
+                }
+                if (updatedLandingData.options?.subtitle) {
+                    updates.subtitle = updatedLandingData.options.subtitle;
+                }
+
+                return { ...prev, ...updates };
+            });
+        };
+
+        setOnLandingUpdated(() => callback);
+
+        return () => {
+            setOnLandingUpdated(null);
+        };
+    }, [setOnLandingUpdated, setUser]);
 
     // What's New modal for first-time visitors
     const whatsNewModal = useWhatsNewModal();

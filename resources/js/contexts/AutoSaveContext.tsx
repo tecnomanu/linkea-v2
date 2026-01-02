@@ -55,6 +55,9 @@ interface AutoSaveContextType {
     // UI State persistence (for panel navigation)
     uiState: UiState;
     setUiState: (section: keyof UiState, data: any) => void;
+
+    // Callback for when landing data is updated from server
+    setOnLandingUpdated: (callback: ((data: any) => void) | null) => void;
 }
 
 const AutoSaveContext = createContext<AutoSaveContextType | undefined>(
@@ -80,6 +83,13 @@ export function AutoSaveProvider({ children }: { children: ReactNode }) {
     const [pendingChanges, setPendingChangesState] = useState<PendingChanges>(
         {}
     );
+
+    // Callback for landing updates from server (using ref to avoid closure issues)
+    const onLandingUpdatedRef = useRef<((data: any) => void) | null>(null);
+
+    const setOnLandingUpdated = useCallback((callback: ((data: any) => void) | null) => {
+        onLandingUpdatedRef.current = callback;
+    }, []);
 
     // Navigation
     const [showNavigationDialog, setShowNavigationDialog] = useState(false);
@@ -295,6 +305,26 @@ export function AutoSaveProvider({ children }: { children: ReactNode }) {
                 throw new Error(errorData.message || "Error al guardar");
             }
 
+            // Process responses and extract updated landing data
+            const updatedLandingData: any = {};
+            for (let i = 0; i < responses.length; i++) {
+                const response = responses[i];
+                const section = Object.keys(pendingChanges)[i];
+                
+                if (response.ok) {
+                    const responseData = await response.json();
+                    // If response contains updated landing, merge it
+                    if (responseData.data?.landing) {
+                        Object.assign(updatedLandingData, responseData.data.landing);
+                    }
+                }
+            }
+
+            // Trigger callback if landing data was updated (e.g., images uploaded to S3)
+            if (Object.keys(updatedLandingData).length > 0 && onLandingUpdatedRef.current) {
+                onLandingUpdatedRef.current(updatedLandingData);
+            }
+
             // Update baseline to saved state
             for (const [section, data] of Object.entries(pendingChanges)) {
                 if (data !== undefined) {
@@ -434,6 +464,7 @@ export function AutoSaveProvider({ children }: { children: ReactNode }) {
                 saveAllChanges,
                 uiState,
                 setUiState,
+                setOnLandingUpdated,
             }}
         >
             {children}
