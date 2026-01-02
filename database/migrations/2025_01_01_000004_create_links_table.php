@@ -23,8 +23,13 @@ return new class extends Migration
             $table->json('options')->nullable();
             $table->json('config')->nullable();
             $table->integer('visited')->default(0);
+            $table->string('mongo_id', 24)->nullable()->unique();
             $table->timestamps();
             $table->softDeletes();
+
+            // Performance indexes
+            $table->index(['landing_id', 'group', 'order']);
+            $table->index(['landing_id', 'state']);
         });
     }
 

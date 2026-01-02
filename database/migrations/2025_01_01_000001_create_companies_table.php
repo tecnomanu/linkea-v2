@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('companies', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->string('mongo_id', 24)->nullable()->unique();
             $table->string('name');
-            $table->string('slug')->unique()->nullable();
             $table->foreignUuid('owner_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();

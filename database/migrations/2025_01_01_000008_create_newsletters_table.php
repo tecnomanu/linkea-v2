@@ -14,6 +14,7 @@ return new class extends Migration
             $table->longText('message')->nullable();
             $table->string('status')->default('draft');
             $table->boolean('sent')->default(false);
+            $table->string('mongo_id', 24)->nullable()->unique();
             $table->timestamps();
             $table->softDeletes();
         });

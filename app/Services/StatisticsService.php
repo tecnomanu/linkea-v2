@@ -52,7 +52,18 @@ class StatisticsService
      */
     public function getStatsForLinks(array $linkIds, int $days = 7): Collection
     {
-        return $this->statisticsRepository->getSparklineDataBulk($linkIds, $days);
+        if (empty($linkIds)) {
+            return collect();
+        }
+
+        // Cache statistics for 5 minutes to improve performance on high-traffic panels
+        // Sort IDs to ensure consistent cache keys regardless of order
+        sort($linkIds);
+        $cacheKey = 'link_stats_' . md5(implode(',', $linkIds)) . '_' . $days;
+
+        return cache()->remember($cacheKey, 300, function () use ($linkIds, $days) {
+            return $this->statisticsRepository->getSparklineDataBulk($linkIds, $days);
+        });
     }
 
     /**

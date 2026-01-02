@@ -48,47 +48,34 @@ class User extends Authenticatable
         'birthday' => 'date',
         'settings' => 'array',
         'capability' => 'array',
+        'avatar' => 'array', // JSON with 'image' and 'thumb' paths
     ];
 
-    protected $appends = ['text', 'role_name', 'status', 'is_oauth_user', 'avatar_thumb'];
-
+    protected $appends = ['text', 'role_name', 'status', 'is_oauth_user', 'avatar_url', 'avatar_thumb'];
     // Accessors
 
     /**
-     * Transform avatar path to full URL (S3 or local).
+     * Get avatar main image URL.
      */
-    protected function avatar(): Attribute
+    public function getAvatarUrlAttribute(): ?string
     {
-        return Attribute::make(
-            get: fn($value) => StorageHelper::url($value),
-            set: fn($value) => $value,
-        );
+        $avatar = $this->avatar;
+        if (!$avatar) return null;
+
+        $path = is_array($avatar) ? ($avatar['image'] ?? null) : $avatar;
+        return $path ? StorageHelper::url($path) : null;
     }
 
     /**
-     * Get thumbnail URL for avatar (128x128).
-     * If no thumb exists, falls back to main avatar.
+     * Get thumbnail URL for avatar. Falls back to main image if no thumb.
      */
     public function getAvatarThumbAttribute(): ?string
     {
-        $avatar = $this->attributes['avatar'] ?? null;
+        $avatar = $this->avatar;
+        if (!$avatar) return null;
 
-        if (!$avatar) {
-            return null;
-        }
-
-        // Try to get thumb version
-        $parts = explode('/', $avatar);
-        $filename = array_pop($parts);
-        $thumbPath = implode('/', $parts) . '/thumb_' . $filename;
-
-        // Check if thumb exists, otherwise use main avatar
-        $disk = config('filesystems.default') === 's3' ? 's3' : 'public';
-        if (\Storage::disk($disk)->exists($thumbPath)) {
-            return StorageHelper::url($thumbPath);
-        }
-
-        return $this->avatar;
+        $path = is_array($avatar) ? ($avatar['thumb'] ?? $avatar['image'] ?? null) : $avatar;
+        return $path ? StorageHelper::url($path) : null;
     }
 
     public function getTextAttribute()
@@ -112,7 +99,9 @@ class User extends Authenticatable
 
     public function getRoleNameAttribute()
     {
-        $role = $this->roles()->first();
+        // Use collection access ->roles to utilize eager loading
+        // ->roles() would force a new query
+        $role = $this->roles->first();
         return $role ? $role->type : null;
     }
 

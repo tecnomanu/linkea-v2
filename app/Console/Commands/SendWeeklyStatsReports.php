@@ -4,8 +4,10 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use App\Notifications\WeeklyStatsReport;
+use App\Services\SenderNetService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Mail;
 
 /**
@@ -31,7 +33,7 @@ class SendWeeklyStatsReports extends Command
     /**
      * Execute the console command.
      */
-    public function handle(): int
+    public function handle(SenderNetService $senderService): int
     {
         $this->info('🚀 Starting weekly stats report generation...');
         $startTime = microtime(true);
@@ -157,5 +159,67 @@ class SendWeeklyStatsReports extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Send email via SenderNetService API directly.
+     */
+    protected function sendViaSenderNetService(User $user, array $stats, SenderNetService $senderService): void
+    {
+        // Force enable for command execution
+        $senderService->forceEnable();
+
+        // Render the email HTML
+        $html = View::make('emails.weekly-stats', array_merge($stats, [
+            'notifiable' => $user,
+        ]))->render();
+
+        // Wrap in layout
+        $fullHtml = View::make('emails.layouts.default', [
+            'content' => $html,
+        ])->render();
+
+        // Generate plain text
+        $text = $this->generatePlainText($stats);
+
+        // Send via SenderNetService
+        $senderService->sendTransactionalEmail(
+            toEmail: $user->email,
+            toName: $user->first_name ?: 'Usuario',
+            fromEmail: config('mail.from.address'),
+            fromName: config('mail.from.name'),
+            subject: 'Tu resumen semanal - ' . config('app.name'),
+            html: $fullHtml,
+            text: $text
+        );
+    }
+
+    /**
+     * Generate plain text version of the email.
+     */
+    protected function generatePlainText(array $stats): string
+    {
+        $text = "Hola {$stats['user_name']},\n\n";
+        $text .= "Acá está el resumen de cómo le fue a tu Linkea esta semana.\n\n";
+        $text .= "Semana del {$stats['week_start']} al {$stats['week_end']}\n\n";
+        $text .= "ESTADÍSTICAS\n";
+        $text .= "------------\n";
+        $text .= "Visitas: " . number_format($stats['total_views']) . "\n";
+        $text .= "Clics: " . number_format($stats['total_clicks']) . "\n\n";
+
+        if (!empty($stats['top_links'])) {
+            $text .= "TOP ENLACES DE LA SEMANA\n";
+            $text .= "------------------------\n";
+            foreach (array_slice($stats['top_links'], 0, 5) as $index => $link) {
+                $text .= ($index + 1) . ". {$link['title']} - {$link['clicks']} clics\n";
+            }
+            $text .= "\n";
+        }
+
+        $text .= "Ver panel completo: " . config('app.url') . "/panel?tab=dashboard\n\n";
+        $text .= "Saludos,\n";
+        $text .= "Equipo de Linkea";
+
+        return $text;
     }
 }

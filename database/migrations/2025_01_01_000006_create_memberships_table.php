@@ -12,6 +12,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('type');
+            $table->string('mongo_id', 24)->nullable()->unique();
             $table->timestamps();
             $table->softDeletes();
         });

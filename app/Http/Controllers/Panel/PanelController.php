@@ -74,8 +74,13 @@ class PanelController extends Controller
         $landing = $landings->first();
 
         // OPTIMIZATION: Single query for all links, then separate by group in memory
+        // Only load stats for the 'links' tab where sparklines are visible
+        $shouldLoadStats = $activeTab === 'links';
+
         $allLinks = $landing
-            ? $this->linkService->getAllLinksWithStats($landing->id)
+            ? ($shouldLoadStats
+                ? $this->linkService->getAllLinksWithStats($landing->id)
+                : $this->linkService->getForLanding($landing->id))
             : collect();
 
         // Separate links and socials from the same collection (zero additional queries)

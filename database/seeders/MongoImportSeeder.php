@@ -153,10 +153,10 @@ class MongoImportSeeder extends Seeder
             $capability = $item['capability'] ?? null;
             if (!is_array($capability)) $capability = null;
 
+            // Keep avatar as JSON object with image and thumb paths
             $avatar = $item['avatar'] ?? null;
-            if (is_array($avatar)) {
-                $avatar = $avatar['image'] ?? $avatar['thumb'] ?? null;
-            }
+            // If avatar is already an array with image/thumb, keep it as-is
+            // The User model casts it to array and the accessor handles URL resolution
 
             $firstName = $item['first_name'] ?? '';
             $lastName = $item['last_name'] ?? '';

@@ -115,11 +115,11 @@ class ProfileController extends Controller
         ], $user->id);
 
         if ($savedAvatar) {
-            $user->update(['avatar' => $savedAvatar['image']]);
+            // Save complete avatar object with image and thumb paths
+            $user->update(['avatar' => $savedAvatar]);
             return back()->with('success', 'Imagen actualizada correctamente.');
         }
 
         return back()->withErrors(['avatar' => 'Error al guardar la imagen.']);
     }
 }
-
