@@ -875,4 +875,168 @@ class SenderNetService
 
         return ['first' => $first, 'last' => $last];
     }
+
+    // =========================================================================
+    // TRANSACTIONAL EMAIL OPERATIONS
+    // =========================================================================
+
+    /**
+     * Send a transactional email without template.
+     * Uses the Sender.net API directly to send custom HTML emails.
+     * 
+     * @param string $toEmail Recipient email address
+     * @param string $toName Recipient name (optional)
+     * @param string $fromEmail Sender email address
+     * @param string $fromName Sender name
+     * @param string $subject Email subject
+     * @param string $html HTML content of the email
+     * @param string|null $text Plain text version (optional)
+     * @param array $variables Dynamic variables to replace in content
+     * @param array $attachments Array of filename => URL pairs
+     * @return array|null Response with success, message, and emailId
+     * @throws \Exception On API failure
+     */
+    public function sendTransactionalEmail(
+        string $toEmail,
+        string $toName,
+        string $fromEmail,
+        string $fromName,
+        string $subject,
+        string $html,
+        ?string $text = null,
+        array $variables = [],
+        array $attachments = []
+    ): ?array {
+        if (!$this->isEnabled()) {
+            Log::info('SenderNet integration disabled, skipping sendTransactionalEmail');
+            return null;
+        }
+
+        try {
+            $data = [
+                'from' => [
+                    'email' => $fromEmail,
+                    'name' => $fromName,
+                ],
+                'to' => [
+                    'email' => $toEmail,
+                    'name' => $toName,
+                ],
+                'subject' => $subject,
+                'html' => $html,
+            ];
+
+            // Add plain text version if provided
+            if ($text) {
+                $data['text'] = $text;
+            }
+
+            // Add variables if provided
+            if (!empty($variables)) {
+                $data['variables'] = $variables;
+            }
+
+            // Add attachments if provided
+            if (!empty($attachments)) {
+                $data['attachments'] = $attachments;
+            }
+
+            $response = $this->request('POST', '/message/send', $data);
+
+            if (isset($response['success']) && $response['success'] === true) {
+                Log::info('Transactional email sent successfully', [
+                    'to' => $toEmail,
+                    'subject' => $subject,
+                    'email_id' => $response['emailId'] ?? null,
+                ]);
+
+                return $response;
+            }
+
+            Log::warning('SenderNet sendTransactionalEmail: unexpected response', [
+                'response' => $response,
+            ]);
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error('SenderNet sendTransactionalEmail error: ' . $e->getMessage(), [
+                'to' => $toEmail,
+                'subject' => $subject,
+                'exception' => $e,
+            ]);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Send a transactional email using a Sender.net template.
+     * 
+     * @param string $campaignId The transactional campaign/template ID
+     * @param string $toEmail Recipient email address
+     * @param string $toName Recipient name (optional)
+     * @param array $variables Dynamic variables to replace in template
+     * @param array $attachments Array of filename => URL pairs
+     * @return array|null Response with success, message, and emailId
+     * @throws \Exception On API failure
+     */
+    public function sendTransactionalCampaign(
+        string $campaignId,
+        string $toEmail,
+        string $toName = '',
+        array $variables = [],
+        array $attachments = []
+    ): ?array {
+        if (!$this->isEnabled()) {
+            Log::info('SenderNet integration disabled, skipping sendTransactionalCampaign');
+            return null;
+        }
+
+        try {
+            $data = [
+                'email' => $toEmail,
+            ];
+
+            // Add recipient name if provided
+            if ($toName) {
+                $data['name'] = $toName;
+            }
+
+            // Add variables if provided
+            if (!empty($variables)) {
+                $data['variables'] = $variables;
+            }
+
+            // Add attachments if provided
+            if (!empty($attachments)) {
+                $data['attachments'] = $attachments;
+            }
+
+            $response = $this->request('POST', "/transactional_campaigns/{$campaignId}/send", $data);
+
+            if (isset($response['success']) && $response['success'] === true) {
+                Log::info('Transactional campaign sent successfully', [
+                    'campaign_id' => $campaignId,
+                    'to' => $toEmail,
+                    'email_id' => $response['emailId'] ?? null,
+                ]);
+
+                return $response;
+            }
+
+            Log::warning('SenderNet sendTransactionalCampaign: unexpected response', [
+                'response' => $response,
+            ]);
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error('SenderNet sendTransactionalCampaign error: ' . $e->getMessage(), [
+                'campaign_id' => $campaignId,
+                'to' => $toEmail,
+                'exception' => $e,
+            ]);
+
+            throw $e;
+        }
+    }
 }

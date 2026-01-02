@@ -22,7 +22,8 @@ Schedule::command('auth:clear-resets')->daily();
 // Schedule::command('sanctum:prune-expired --hours=24')->daily();
 
 // Weekly stats report - Every Monday at 9:00 AM (Argentina timezone)
-Schedule::command('stats:send-weekly-reports')
+// Uses Sender.net transactional mail transport
+Schedule::command('stats:send-weekly-reports --mailer=sender')
     ->weeklyOn(1, '9:00') // 1 = Monday
     ->timezone('America/Argentina/Buenos_Aires')
     ->withoutOverlapping()

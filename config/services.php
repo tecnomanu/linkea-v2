@@ -44,23 +44,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Sender.net Email Marketing Integration
+    | Sender.net Configuration
     |--------------------------------------------------------------------------
     |
-    | Configuration for Sender.net API integration.
+    | Unified configuration for Sender.net integration.
     | Get your API token from: https://app.sender.net/settings/tokens
     |
-    | Groups are resolved dynamically by name and cached.
-    | Available groups: users, newsletter, anonymous
+    | Uses:
+    | - SenderNetService: For subscriber management (add/update/sync users, groups, tags)
+    | - Laravel Mail Transport: For transactional emails (weekly reports, notifications)
+    |   Configured in config/sender.php - uses the same SENDER_API_KEY
+    |
+    | To send transactional emails: Mail::mailer('sender')->send(...)
+    | To manage subscribers: app(SenderNetService::class)->addSubscriber($user)
     |
     */
     'sendernet' => [
-        'enabled' => env('SENDERNET_ENABLED', true),
-        'api_token' => env('SENDERNET_API_TOKEN'),
+        'enabled' => env('SENDER_ENABLED', true),
+        'api_token' => env('SENDER_API_KEY'),
 
         // Cache duration for group IDs (in seconds)
         // Default: 24 hours
-        'cache_ttl' => env('SENDERNET_CACHE_TTL', 86400),
+        'cache_ttl' => env('SENDER_CACHE_TTL', 86400),
     ],
 
     /*

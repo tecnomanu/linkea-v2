@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Notifications\WeeklyStatsReport;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * Send weekly stats report to all active users.
@@ -18,7 +19,9 @@ class SendWeeklyStatsReports extends Command
      */
     protected $signature = 'stats:send-weekly-reports
                             {--limit= : Limit the number of users to process}
-                            {--dry-run : Display users that would receive email without sending}';
+                            {--dry-run : Display users that would receive email without sending}
+                            {--mailer=sender : Mailer to use (default: sender, options: log, sender)}
+                            {--test-email= : Send only to this email address (for testing)}';
 
     /**
      * The console command description.
@@ -33,10 +36,26 @@ class SendWeeklyStatsReports extends Command
         $this->info('🚀 Starting weekly stats report generation...');
         $startTime = microtime(true);
 
+        $mailer = $this->option('mailer');
+        $testEmail = $this->option('test-email');
+        $isDryRun = $this->option('dry-run');
+
+        // Display sending method
+        $this->info("📧 Using mailer: {$mailer}");
+
+        if ($testEmail) {
+            $this->warn("🧪 TEST MODE: Sending only to {$testEmail}");
+        }
+
         // Get all verified users with at least one landing
         $query = User::whereNotNull('verified_at')
             ->whereHas('landings')
             ->with('landings.links');
+
+        // If test email is specified, find only that user
+        if ($testEmail) {
+            $query->where('email', $testEmail);
+        }
 
         // Apply limit if specified
         if ($limit = $this->option('limit')) {
@@ -64,14 +83,14 @@ class SendWeeklyStatsReports extends Command
                 // Generate stats for this user
                 $stats = WeeklyStatsReport::generateStatsForUser($user);
 
-                // Skip if user has no activity
-                if ($stats['total_views'] === 0 && $stats['total_clicks'] === 0) {
+                // Skip if user has no activity (unless testing)
+                if (!$testEmail && $stats['total_views'] === 0 && $stats['total_clicks'] === 0) {
                     $skipped++;
                     $progressBar->advance();
                     continue;
                 }
 
-                if ($this->option('dry-run')) {
+                if ($isDryRun) {
                     $this->newLine();
                     $this->line("  Would send to: {$user->email}");
                     $this->line("    - Views: {$stats['total_views']}");
@@ -79,22 +98,35 @@ class SendWeeklyStatsReports extends Command
                     $this->line("    - Top Links: " . count($stats['top_links']));
                     $sent++;
                 } else {
-                    // Send notification
-                    $user->notify(new WeeklyStatsReport($stats));
+                    // Send via Laravel Mail using specified mailer
+                    $notification = new WeeklyStatsReport($stats);
+                    $mailMessage = $notification->toMail($user);
+
+                    // Send using the specified mailer
+                    Mail::mailer($mailer)
+                        ->send([], [], function ($message) use ($user, $mailMessage) {
+                            $message->to($user->email, $user->first_name ?: 'Usuario')
+                                ->subject($mailMessage->subject)
+                                ->html($mailMessage->render());
+                        });
+
                     $sent++;
 
                     Log::info('Weekly stats report sent', [
                         'user_id' => $user->id,
                         'email' => $user->email,
+                        'mailer' => $mailer,
                         'stats' => $stats,
                     ]);
                 }
             } catch (\Exception $e) {
                 $failed++;
+                $this->error("\n  Failed to send to {$user->email}: {$e->getMessage()}");
                 Log::error('Failed to send weekly stats report', [
                     'user_id' => $user->id,
                     'email' => $user->email,
                     'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
                 ]);
             }
 
@@ -106,7 +138,7 @@ class SendWeeklyStatsReports extends Command
 
         // Summary
         $duration = round(microtime(true) - $startTime, 2);
-        $mode = $this->option('dry-run') ? '(DRY RUN) ' : '';
+        $mode = $isDryRun ? '(DRY RUN) ' : '';
 
         $this->info("✅ {$mode}Weekly stats reports completed in {$duration}s");
         $this->table(
@@ -127,4 +159,3 @@ class SendWeeklyStatsReports extends Command
         return self::SUCCESS;
     }
 }
-
