@@ -1,8 +1,15 @@
+import SEOHead from "@/Components/Shared/SEOHead";
 import WebLayout from "@/Layouts/WebLayout";
 
 export default function Privacy() {
     return (
         <WebLayout>
+            {/* SEO for client-side navigation (server-side handled by withViewData in SystemRouterController) */}
+            <SEOHead
+                title="Politica de Privacidad - Linkea"
+                description="Conoce nuestra politica de privacidad y como protegemos tus datos en Linkea."
+                canonical="/privacy"
+            />
             <div className="bg-neutral-50 py-12 px-6">
                 <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg p-8 md:p-12">
                     <div className="prose prose-neutral max-w-none space-y-6 text-neutral-700">
@@ -13,8 +20,8 @@ export default function Privacy() {
                             <strong>Última actualización:</strong> 01/01/2026
                         </p>
                         <p>
-                            En Linkea (en adelante, “Linkea”, “nosotros” o la
-                            “Plataforma”) nos tomamos en serio la privacidad.
+                            En Linkea (en adelante, "Linkea", "nosotros" o la
+                            "Plataforma") nos tomamos en serio la privacidad.
                             Esta Política explica qué datos personales
                             recopilamos, cómo los usamos, con quién los
                             compartimos y qué derechos tenés.
@@ -229,7 +236,7 @@ export default function Privacy() {
                         </p>
                         <ul className="list-disc pl-6 space-y-2">
                             <li>
-                                <strong>a) Proveedores (“encargados”):</strong>{" "}
+                                <strong>a) Proveedores ("encargados"):</strong>{" "}
                                 hosting, almacenamiento, analítica, envío de
                                 emails, soporte, monitoreo y seguridad, bajo
                                 acuerdos de confidencialidad y con el objetivo
@@ -328,7 +335,7 @@ export default function Privacy() {
                             >
                                 hola@linkea.ar
                             </a>{" "}
-                            con el asunto “Datos personales” e indicá tu
+                            con el asunto "Datos personales" e indicá tu
                             solicitud. Podemos pedirte información para
                             verificar identidad.
                         </p>

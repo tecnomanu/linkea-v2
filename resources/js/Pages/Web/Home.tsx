@@ -1,3 +1,4 @@
+import SEOHead from "@/Components/Shared/SEOHead";
 import FeaturesHighlightSection from "../../Components/Web/Home/FeaturesHighlightSection";
 import FeaturesSection from "../../Components/Web/Home/FeaturesSection";
 import HeroSection, {
@@ -23,6 +24,12 @@ interface HomeProps {
 export default function Home({ featuredLandings, stats }: HomeProps) {
     return (
         <WebLayout>
+            {/* SEO for client-side navigation (server-side handled by withViewData in WebController) */}
+            <SEOHead
+                title="Linkea - Todos tus enlaces en un solo lugar | Link in Bio Argentina"
+                description="Crea tu Linkea gratis en minutos: links, botones y diseño personalizable. Sin tarjeta, fácil de actualizar."
+                canonical="/"
+            />
             {/* Hero + Stats */}
             <HeroSection landings={featuredLandings} />
             <StatsSection stats={stats} />

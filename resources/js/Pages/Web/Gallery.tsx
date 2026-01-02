@@ -1,3 +1,4 @@
+import SEOHead from "@/Components/Shared/SEOHead";
 import { Link, router } from "@inertiajs/react";
 import {
     ArrowLeft,
@@ -89,6 +90,12 @@ export default function Gallery({ landings, meta, filters }: GalleryProps) {
 
     return (
         <WebLayout>
+            {/* SEO for client-side navigation (server-side handled by withViewData in WebController) */}
+            <SEOHead
+                title="Galeria de Linkeas - Descubre perfiles inspiradores"
+                description="Explora la galeria de Linkea y descubre perfiles creativos de la comunidad. Inspira tu propio diseno viendo los mejores ejemplos de link in bio."
+                canonical="/gallery"
+            />
             {/* Hero section */}
             <section className="relative pt-24 pb-12 overflow-hidden">
                 {/* Background */}

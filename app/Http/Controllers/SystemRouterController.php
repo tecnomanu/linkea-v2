@@ -40,7 +40,7 @@ class SystemRouterController extends Controller
 
     public function privacy()
     {
-        return Inertia::render('Privacy')->withViewData([
+        return Inertia::render('Web/Privacy')->withViewData([
             'seo' => SeoDefaults::forPage(
                 'Politica de Privacidad - Linkea',
                 'Conoce nuestra politica de privacidad y como protegemos tus datos en Linkea.',
