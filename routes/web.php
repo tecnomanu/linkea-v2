@@ -15,6 +15,7 @@
 
 use App\Http\Controllers\WebController;
 use App\Http\Controllers\Panel\PanelController;
+use App\Http\Controllers\Panel\ProfileController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\SystemRouterController;
 use App\Http\Controllers\NewsletterPixelController;
@@ -61,6 +62,9 @@ Route::middleware(['auth', 'verified'])->prefix('panel')->group(function () {
 
     // Profile
     Route::get('/profile', [PanelController::class, 'profile'])->name('panel.profile');
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('password.update');
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
 });
 
 /**

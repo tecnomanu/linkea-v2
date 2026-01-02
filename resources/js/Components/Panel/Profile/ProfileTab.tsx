@@ -1,7 +1,7 @@
 import { Button } from "@/Components/ui/Button";
 import { Input } from "@/Components/ui/Input";
-import { useForm } from "@inertiajs/react";
-import { Camera, Lock, Save, User } from "lucide-react";
+import { router, useForm } from "@inertiajs/react";
+import { Camera, Check, Loader2, Lock, Save, User } from "lucide-react";
 import React, { useState } from "react";
 
 interface ProfileTabProps {
@@ -9,7 +9,7 @@ interface ProfileTabProps {
 }
 
 export const ProfileTab: React.FC<ProfileTabProps> = ({ user }) => {
-    const { data, setData, put, processing, errors, recentlySuccessful } =
+    const { data, setData, post, processing, errors, recentlySuccessful } =
         useForm({
             first_name: user.first_name || "",
             last_name: user.last_name || "",
@@ -17,26 +17,52 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ user }) => {
             current_password: "",
             password: "",
             password_confirmation: "",
-            avatar: null as File | null,
         });
 
     const [avatarPreview, setAvatarPreview] = useState(
         user.avatar || "/images/logos/logo-icon.webp"
     );
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const [avatarSuccess, setAvatarSuccess] = useState(false);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Assuming a route exists to update profile
-        // post(route('profile.update'));
-        // For now we just implement the UI as requested.
-        console.log("Update profile", data);
+        post(route("profile.update"), {
+            preserveScroll: true,
+        });
     };
 
-    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePasswordSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        post(route("password.update"), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setData("current_password", "");
+                setData("password", "");
+                setData("password_confirmation", "");
+            },
+        });
+    };
+
+    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-            setData("avatar", file);
             setAvatarPreview(URL.createObjectURL(file));
+            setUploadingAvatar(true);
+            setAvatarSuccess(false);
+
+            // Upload avatar immediately using Inertia's file upload
+            router.post(route("profile.avatar"), { avatar: file }, {
+                preserveScroll: true,
+                forceFormData: true,
+                onSuccess: () => {
+                    setAvatarSuccess(true);
+                    setTimeout(() => setAvatarSuccess(false), 2000);
+                },
+                onFinish: () => {
+                    setUploadingAvatar(false);
+                },
+            });
         }
     };
 
@@ -53,14 +79,23 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ user }) => {
                                 className="w-full h-full object-cover"
                             />
                         </div>
-                        <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                            <Camera size={24} />
+                        <div className={`absolute inset-0 bg-black/40 rounded-full transition-opacity flex items-center justify-center text-white ${
+                            uploadingAvatar || avatarSuccess ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                        }`}>
+                            {uploadingAvatar ? (
+                                <Loader2 size={24} className="animate-spin" />
+                            ) : avatarSuccess ? (
+                                <Check size={24} className="text-green-400" />
+                            ) : (
+                                <Camera size={24} />
+                            )}
                         </div>
                         <input
                             type="file"
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                             onChange={handleAvatarChange}
                             accept="image/*"
+                            disabled={uploadingAvatar}
                         />
                     </div>
                     <h2 className="text-xl font-bold text-neutral-900 dark:text-white">
@@ -79,10 +114,10 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ user }) => {
                         </div>
                         <div>
                             <h2 className="text-lg font-bold text-neutral-900 dark:text-white">
-                                Personal Information
+                                Información Personal
                             </h2>
                             <p className="text-sm text-neutral-400">
-                                Update your personal details.
+                                Actualizá tus datos personales.
                             </p>
                         </div>
                     </div>
@@ -93,7 +128,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ user }) => {
                         <Input
                             id="first_name"
                             type="text"
-                            label="First Name"
+                            label="Nombre"
                             value={data.first_name}
                             onChange={(e) =>
                                 setData("first_name", e.target.value)
@@ -103,7 +138,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ user }) => {
                         <Input
                             id="last_name"
                             type="text"
-                            label="Last Name"
+                            label="Apellido"
                             value={data.last_name}
                             onChange={(e) =>
                                 setData("last_name", e.target.value)
@@ -115,7 +150,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ user }) => {
                     <Input
                         id="email"
                         type="email"
-                        label="Email Address"
+                        label="Correo electrónico"
                         value={data.email}
                         onChange={(e) => setData("email", e.target.value)}
                         error={errors.email}
@@ -128,7 +163,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ user }) => {
                             className="gap-2"
                         >
                             <Save size={18} />
-                            Save Changes
+                            Guardar cambios
                         </Button>
                     </div>
                 </form>
@@ -143,20 +178,20 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ user }) => {
                         </div>
                         <div>
                             <h2 className="text-lg font-bold text-neutral-900 dark:text-white">
-                                Security
+                                Seguridad
                             </h2>
                             <p className="text-sm text-neutral-400">
-                                Change your password.
+                                Cambiá tu contraseña.
                             </p>
                         </div>
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                <form onSubmit={handlePasswordSubmit} className="p-8 space-y-6">
                     <Input
                         id="current_password"
                         type="password"
-                        label="Current Password"
+                        label="Contraseña actual"
                         value={data.current_password}
                         onChange={(e) =>
                             setData("current_password", e.target.value)
@@ -167,7 +202,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ user }) => {
                         <Input
                             id="password"
                             type="password"
-                            label="New Password"
+                            label="Nueva contraseña"
                             value={data.password}
                             onChange={(e) =>
                                 setData("password", e.target.value)
@@ -177,7 +212,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ user }) => {
                         <Input
                             id="password_confirmation"
                             type="password"
-                            label="Confirm Password"
+                            label="Confirmar contraseña"
                             value={data.password_confirmation}
                             onChange={(e) =>
                                 setData("password_confirmation", e.target.value)
@@ -193,7 +228,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ user }) => {
                             className="gap-2"
                         >
                             <Save size={18} />
-                            Update Password
+                            Actualizar contraseña
                         </Button>
                     </div>
                 </form>

@@ -26,11 +26,11 @@
         <priority>0.3</priority>
     </url>
     
-    {{-- Public landing pages --}}
+    {{-- Public landing pages (verified only) --}}
     @foreach ($landings as $landing)
-    @if($landing->domain_name)
+    @if($landing->slug)
     <url>
-        <loc>{{ config('app.url', 'https://linkea.ar') }}/{{ $landing->domain_name }}</loc>
+        <loc>{{ config('app.url', 'https://linkea.ar') }}/{{ $landing->slug }}</loc>
         <lastmod>{{ $landing->updated_at->tz('UTC')->toAtomString() }}</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.7</priority>
