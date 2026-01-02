@@ -729,7 +729,7 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                 })}
             </div>
 
-            {/* Footer - Uses theme text color, safe-area for iOS */}
+            {/* Footer - Uses contrasting background for readability */}
             <div
                 className="mt-auto pt-6 flex flex-col items-center gap-2"
                 style={{
@@ -738,21 +738,15 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                 }}
             >
                 <div
-                    className={`flex items-center gap-2 text-xs ${
-                        isThemePreset ? subTextColor : ""
-                    }`}
-                    style={
-                        !isThemePreset
-                            ? { color: computedTextColors.textMuted }
-                            : {}
-                    }
+                    className="flex items-center gap-2 text-xs px-4 py-2 rounded-full backdrop-blur-md border"
+                    style={badgeStyle}
                 >
                     <a
                         href="/privacy"
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => isPreview && e.preventDefault()}
-                        className="hover:underline"
+                        className="hover:underline transition-opacity hover:opacity-80"
                         style={{ color: "inherit" }}
                     >
                         Privacidad
@@ -768,7 +762,7 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                                 new Event("linkea:openCookieModal")
                             );
                         }}
-                        className="hover:underline"
+                        className="hover:underline transition-opacity hover:opacity-80"
                         style={{ color: "inherit" }}
                     >
                         Cookies
@@ -781,7 +775,7 @@ export const LandingContent: React.FC<LandingContentProps> = ({
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => isPreview && e.preventDefault()}
-                            className="font-bold hover:underline"
+                            className="font-bold hover:underline transition-opacity hover:opacity-80"
                             style={{ color: "inherit" }}
                         >
                             Linkea
