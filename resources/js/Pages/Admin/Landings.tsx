@@ -120,9 +120,13 @@ export default function Landings({ auth, landings, filters }: LandingsProps) {
                         {landing.name?.charAt(0).toUpperCase() || "L"}
                     </div>
                     <div>
-                        <p className="font-medium">
+                        <button
+                            onClick={() => openLanding(landing)}
+                            className="font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                        >
                             {landing.name || "Sin nombre"}
-                        </p>
+                            <ExternalLink size={12} className="opacity-50" />
+                        </button>
                         <p className="text-xs text-neutral-500 dark:text-neutral-400">
                             /{landing.domain_name || landing.slug}
                         </p>
@@ -198,8 +202,21 @@ export default function Landings({ auth, landings, filters }: LandingsProps) {
             label: "Creado",
             sortable: true,
             render: (landing: Landing) => (
-                <span className="text-neutral-500 dark:text-neutral-400">
+                <span className="text-neutral-500 dark:text-neutral-400 text-sm">
                     {formatDistanceToNow(new Date(landing.created_at), {
+                        addSuffix: true,
+                        locale: es,
+                    })}
+                </span>
+            ),
+        },
+        {
+            key: "updated_at",
+            label: "Actualizado",
+            sortable: true,
+            render: (landing: Landing) => (
+                <span className="text-neutral-500 dark:text-neutral-400 text-sm">
+                    {formatDistanceToNow(new Date(landing.updated_at), {
                         addSuffix: true,
                         locale: es,
                     })}
