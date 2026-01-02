@@ -294,7 +294,7 @@ export const LandingContent: React.FC<LandingContentProps> = ({
     const fontClasses = getFontClass(design.fontPair);
 
     // Layout Width Control based on device
-    const contentWidthClass = device === "mobile" ? "max-w-md" : "max-w-2xl";
+    const contentWidthClass = device === "mobile" ? "max-w-full" : "max-w-2xl";
 
     // Button rounding helper - used for buttons and icon containers
     const getRounding = () => {
@@ -402,11 +402,11 @@ export const LandingContent: React.FC<LandingContentProps> = ({
 
     return (
         <div
-            className={`w-full ${heightClass} overflow-y-auto overlay-scrollbar pt-10 md:pt-14 pb-8 transition-all duration-500 ${containerClasses} ${fontClasses}`}
+            className={`w-full ${heightClass} flex flex-col overflow-y-auto overlay-scrollbar pt-10 md:pt-14 pb-8 transition-all duration-500 ${containerClasses} ${fontClasses}`}
             style={containerStyle}
         >
             {/* Profile Header */}
-            <div className="flex flex-col items-center px-6 mb-6 md:mb-8 text-center pt-2 md:pt-6 animate-in slide-in-from-bottom-4 duration-700 fade-in">
+            <div className="flex flex-col items-center px-4 md:px-6 mb-6 md:mb-8 text-center pt-2 md:pt-6 animate-in slide-in-from-bottom-4 duration-700 fade-in">
                 <div className="relative mb-4 group cursor-pointer">
                     <img
                         src={landing.avatar}
@@ -731,10 +731,9 @@ export const LandingContent: React.FC<LandingContentProps> = ({
 
             {/* Footer - Uses contrasting background for readability */}
             <div
-                className="mt-auto pt-6 flex flex-col items-center gap-2"
+                className="mt-auto pt-12 flex flex-col items-center gap-2"
                 style={{
-                    paddingBottom:
-                        "max(2.5rem, calc(1rem + env(safe-area-inset-bottom)))",
+                    paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
                 }}
             >
                 <div

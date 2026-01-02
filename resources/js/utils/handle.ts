@@ -12,6 +12,8 @@ export const HANDLE_PATTERN = /^[a-z0-9_]([a-z0-9._-]*[a-z0-9_])?$/;
 /**
  * Sanitize handle input - removes invalid characters.
  * Allowed: a-z, 0-9, _, -, .
+ * Note: Does NOT remove special chars from start/end to allow typing mid-word.
+ * Validation will catch format errors after user finishes typing.
  */
 export function sanitizeHandle(value: string): string {
     return value
@@ -21,8 +23,6 @@ export function sanitizeHandle(value: string): string {
         .replace(/-{2,}/g, "-") // No consecutive hyphens
         .replace(/_{2,}/g, "_") // No consecutive underscores
         .replace(/\.{2,}/g, ".") // No consecutive dots
-        .replace(/^[._-]+/, "") // Remove special chars from start
-        .replace(/[._-]+$/, "") // Remove special chars from end
         .slice(0, HANDLE_MAX_LENGTH);
 }
 
@@ -54,11 +54,19 @@ export function validateHandle(handle: string): {
         };
     }
 
-    if (!HANDLE_PATTERN.test(normalized)) {
+    // Check for special chars at start
+    if (/^[._-]/.test(normalized)) {
         return {
             valid: false,
-            message:
-                "Solo letras, numeros, guion (-), guion bajo (_) y punto (.)",
+            message: "No puede empezar con guion, punto o guion bajo",
+        };
+    }
+
+    // Check for special chars at end
+    if (/[._-]$/.test(normalized)) {
+        return {
+            valid: false,
+            message: "No puede terminar con guion, punto o guion bajo",
         };
     }
 
@@ -67,6 +75,14 @@ export function validateHandle(handle: string): {
         return {
             valid: false,
             message: "No se permiten caracteres especiales consecutivos",
+        };
+    }
+
+    if (!HANDLE_PATTERN.test(normalized)) {
+        return {
+            valid: false,
+            message:
+                "Solo letras, numeros, guion (-), guion bajo (_) y punto (.)",
         };
     }
 
