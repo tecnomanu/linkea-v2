@@ -71,6 +71,9 @@ class SystemRouterController extends Controller
             $resource = new PublicLandingResource($landing);
             $data = $resource->resolve();
 
+            // Use separate blade template with minimal bundle for public landings
+            Inertia::setRootView('landing');
+
             return Inertia::render('LandingView', [
                 'landing' => $data,
             ])->withViewData([

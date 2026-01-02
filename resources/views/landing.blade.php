@@ -6,12 +6,9 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         {{-- 
-            SEO Meta Tags - Rendered server-side for social media crawlers.
-            These are required because Facebook, Twitter, etc. don't execute JavaScript.
-            React components (SEOHead) will also render these for client-side navigation.
-            
-            Values come from SeoDefaults::forPage() or SeoDefaults::forLanding()
-            passed via withViewData() in controllers.
+            Minimal blade for public landing pages.
+            Uses a separate, smaller JS bundle (landing.tsx instead of app.tsx).
+            No shared props beyond what the landing needs.
         --}}
         @php
             use App\Constants\SeoDefaults;
@@ -21,18 +18,16 @@
             $seoDescription = $seo['description'] ?? SeoDefaults::DEFAULT_DESCRIPTION;
             $seoImage = $seo['image'] ?? SeoDefaults::imageUrl(SeoDefaults::DEFAULT_OG_IMAGE);
             $seoUrl = $seo['url'] ?? url()->current();
-            $seoType = $seo['type'] ?? 'website';
+            $seoType = $seo['type'] ?? 'profile';
             $seoRobots = $seo['robots'] ?? 'index, follow';
             $seoCanonical = $seo['canonical'] ?? $seoUrl;
         @endphp
 
-        {{-- Title is handled by @inertiaHead from React components --}}
-        {{-- Server-side title for crawlers (they don't execute JS) --}}
         <title inertia>{{ $seoTitle }}</title>
         <meta name="description" content="{{ $seoDescription }}">
         <meta name="robots" content="{{ $seoRobots }}">
 
-        {{-- Open Graph / Facebook --}}
+        {{-- Open Graph --}}
         <meta property="og:type" content="{{ $seoType }}">
         <meta property="og:site_name" content="{{ SeoDefaults::SITE_NAME }}">
         <meta property="og:locale" content="{{ SeoDefaults::LOCALE }}">
@@ -57,15 +52,10 @@
         <link rel="shortcut icon" href="{{ SeoDefaults::FAVICON }}">
         <link rel="apple-touch-icon" sizes="180x180" href="{{ SeoDefaults::APPLE_TOUCH_ICON }}">
         
-        {{-- Theme color for mobile browsers --}}
+        {{-- Theme color --}}
         <meta name="theme-color" content="{{ SeoDefaults::THEME_COLOR }}">
-        <meta name="msapplication-TileColor" content="{{ SeoDefaults::MS_TILE_COLOR }}">
         
-        {{-- hreflang - Currently Spanish only --}}
-        <link rel="alternate" hreflang="es" href="{{ url()->current() }}">
-        <link rel="alternate" hreflang="x-default" href="{{ url()->current() }}">
-        
-        {{-- Fonts - Optimized loading: preload + async to avoid render-blocking --}}
+        {{-- Fonts - Optimized async loading --}}
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap">
@@ -74,21 +64,10 @@
             <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
         </noscript>
 
-        {{-- Scripts --}}
-        @routes
+        {{-- Minimal scripts - no @routes needed for public landings --}}
         @viteReactRefresh
-        @vite(['resources/css/app.css', 'resources/js/app.tsx'])
+        @vite(['resources/css/app.css', 'resources/js/landing.tsx'])
         @inertiaHead
-        
-        {{-- Theme initialization (prevent flash) --}}
-        <script>
-            const savedTheme = localStorage.getItem('darkMode');
-            if (savedTheme === 'true') {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        </script>
     </head>
     <body class="font-sans antialiased">
         @inertia

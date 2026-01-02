@@ -1,26 +1,54 @@
 import { DashboardTab } from "@/Components/Panel/Dashboard/DashboardTab";
-import { DesignTab } from "@/Components/Panel/Design/DesignTab";
 import { LinkBar } from "@/Components/Panel/Links/LinkBar";
 import { LinksTab, SocialLink } from "@/Components/Panel/Links/LinksTab";
-import { ProfileTab } from "@/Components/Panel/Profile/ProfileTab";
-import { SettingsTab } from "@/Components/Panel/Settings/SettingsTab";
 import {
     AutoSaveBadge,
     ManualSaveButton,
 } from "@/Components/Shared/AutoSaveSettings";
-import { DevicePreviewModal } from "@/Components/Shared/DevicePreviewModal";
 import { DeviceMode, PhonePreview } from "@/Components/Shared/PhonePreview";
-import {
-    useWhatsNewModal,
-    WhatsNewModal,
-} from "@/Components/Shared/WhatsNewModal";
+import { useWhatsNewModal } from "@/Components/Shared/WhatsNewModal";
 import { INITIAL_LINKS } from "@/constants";
 import { useAutoSaveContext } from "@/contexts/AutoSaveContext";
 import PanelLayout from "@/Layouts/PanelLayout";
 import { LinkBlock, UserProfile } from "@/types";
 import { Head } from "@inertiajs/react";
 import { Eye, Maximize2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+    lazy,
+    Suspense,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
+
+// Lazy load secondary tabs and modals for better initial load performance
+const DesignTab = lazy(() =>
+    import("@/Components/Panel/Design/DesignTab").then((m) => ({
+        default: m.DesignTab,
+    }))
+);
+const SettingsTab = lazy(() =>
+    import("@/Components/Panel/Settings/SettingsTab").then((m) => ({
+        default: m.SettingsTab,
+    }))
+);
+const ProfileTab = lazy(() =>
+    import("@/Components/Panel/Profile/ProfileTab").then((m) => ({
+        default: m.ProfileTab,
+    }))
+);
+const DevicePreviewModal = lazy(() =>
+    import("@/Components/Shared/DevicePreviewModal").then((m) => ({
+        default: m.DevicePreviewModal,
+    }))
+);
+const WhatsNewModal = lazy(() =>
+    import("@/Components/Shared/WhatsNewModal").then((m) => ({
+        default: m.WhatsNewModal,
+    }))
+);
 
 interface DashboardStats {
     totalClicks: number;
@@ -126,6 +154,15 @@ interface DashboardProps {
     };
     activeTab?: string;
     dashboardStats?: DashboardStats | null;
+}
+
+// Loading fallback for lazy-loaded tabs
+function TabLoadingFallback() {
+    return (
+        <div className="flex items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-neutral-300 border-t-brand-500" />
+        </div>
+    );
 }
 
 export default function Dashboard({
@@ -640,20 +677,28 @@ export default function Dashboard({
                     )}
 
                     {activeTab === "appearance" && (
-                        <DesignTab
-                            user={user}
-                            onUpdateUser={handleUpdateUser}
-                        />
+                        <Suspense fallback={<TabLoadingFallback />}>
+                            <DesignTab
+                                user={user}
+                                onUpdateUser={handleUpdateUser}
+                            />
+                        </Suspense>
                     )}
 
                     {activeTab === "settings" && (
-                        <SettingsTab
-                            user={user}
-                            onUpdateUser={handleUpdateUser}
-                        />
+                        <Suspense fallback={<TabLoadingFallback />}>
+                            <SettingsTab
+                                user={user}
+                                onUpdateUser={handleUpdateUser}
+                            />
+                        </Suspense>
                     )}
 
-                    {activeTab === "profile" && <ProfileTab user={auth.user} />}
+                    {activeTab === "profile" && (
+                        <Suspense fallback={<TabLoadingFallback />}>
+                            <ProfileTab user={auth.user} />
+                        </Suspense>
+                    )}
                 </div>
             </div>
 
@@ -685,21 +730,29 @@ export default function Dashboard({
                 </button>
             </div>
 
-            {/* Fullscreen Responsive Preview Modal */}
-            <DevicePreviewModal
-                isOpen={isPreviewOpen}
-                onClose={() => setIsPreviewOpen(false)}
-                user={user}
-                links={links}
-                socialLinks={socialLinks}
-                initialDevice={initialPreviewDevice}
-            />
+            {/* Fullscreen Responsive Preview Modal - Lazy loaded */}
+            {isPreviewOpen && (
+                <Suspense fallback={null}>
+                    <DevicePreviewModal
+                        isOpen={isPreviewOpen}
+                        onClose={() => setIsPreviewOpen(false)}
+                        user={user}
+                        links={links}
+                        socialLinks={socialLinks}
+                        initialDevice={initialPreviewDevice}
+                    />
+                </Suspense>
+            )}
 
-            {/* What's New Modal - Shows on first visit */}
-            <WhatsNewModal
-                isOpen={whatsNewModal.isOpen}
-                onClose={whatsNewModal.close}
-            />
+            {/* What's New Modal - Shows on first visit, lazy loaded */}
+            {whatsNewModal.isOpen && (
+                <Suspense fallback={null}>
+                    <WhatsNewModal
+                        isOpen={whatsNewModal.isOpen}
+                        onClose={whatsNewModal.close}
+                    />
+                </Suspense>
+            )}
         </>
     );
 }
