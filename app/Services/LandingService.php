@@ -387,22 +387,32 @@ class LandingService
      * Get featured landings for homepage display.
      * Returns verified landings with real images (no generated avatars) and multiple links.
      * 
-     * Note: Returns Landing models. Use FeaturedLandingResource in controller
-     * for consistent transformation.
+     * Optimized: Caches valid IDs for 24h, random selection happens on each request.
      */
     public function getFeaturedForHomepage(int $limit = 5)
     {
-        return Landing::query()
-            ->where('logo', 'NOT LIKE', '%dicebear%')
-            ->where('verify', true)
+        // Cache valid IDs for 24 hours (86400 seconds)
+        $validIds = cache()->remember('featured_landing_ids', 86400, function () {
+            return Landing::query()
+                ->where('logo', 'NOT LIKE', '%dicebear%')
+                ->where('verify', true)
+                ->has('links', '>=', 2)
+                ->pluck('id')
+                ->toArray();
+        });
+
+        if (empty($validIds)) {
+            return collect([]);
+        }
+
+        // Random sample on each request (not cached)
+        $randomIds = collect($validIds)->shuffle()->take($limit)->all();
+
+        return Landing::whereIn('id', $randomIds)
             ->with(['links' => function ($query) {
                 $query->where('state', true)->orderBy('order', 'asc');
             }])
-            ->inRandomOrder()
-            ->limit($limit * 2) // Get more to filter
-            ->get()
-            ->filter(fn($l) => $l->links->count() > 1) // Filter those with 2+ links
-            ->take($limit);
+            ->get();
     }
 
     /**
