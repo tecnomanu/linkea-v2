@@ -173,8 +173,19 @@ class SaveDesignRequest extends FormRequest
         // This prevents clearing the logo when user only changes other design options
         $avatar = $data['avatar'] ?? null;
         if ($avatar !== null && $avatar !== '') {
-            // If base64 or URL, store it
-            $result['logo'] = ['image' => $avatar, 'thumb' => $avatar];
+            // If it's base64, format for upload to S3
+            if (str_starts_with($avatar, 'data:image/')) {
+                // Extract mime type from data URI
+                preg_match('/data:image\/([a-zA-Z]+);/', $avatar, $matches);
+                $type = 'image/' . ($matches[1] ?? 'png');
+                $result['logo'] = [
+                    'base64_image' => $avatar,
+                    'type' => $type,
+                ];
+            } else {
+                // It's already a URL, keep as is
+                $result['logo'] = ['image' => $avatar, 'thumb' => $avatar];
+            }
         }
 
         return $result;

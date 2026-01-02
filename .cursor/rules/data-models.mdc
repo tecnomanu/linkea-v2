@@ -1,6 +1,6 @@
 ---
 description: Data models and structures for Linkea - Landing, Link, User
-globs: 
+globs:
 alwaysApply: true
 ---
 
@@ -10,74 +10,78 @@ alwaysApply: true
 
 Types defined in `types.ts` and correspond to legacy `blockTypes.constants.ts`:
 
-| Type        | Description                    | Legacy equivalent |
-|-------------|--------------------------------|-------------------|
-| `link`      | Standard link                  | `button`          |
-| `header`    | Section header                 | `heading`         |
-| `social`    | Social media icon              | `social`          |
-| `youtube`   | YouTube embed                  | `youtube`         |
-| `spotify`   | Spotify embed                  | `spotify`         |
-| `whatsapp`  | WhatsApp link                  | `whatsapp`        |
-| `mastodon`  | Mastodon profile               | `mastodon`        |
+| Type       | Description       | Legacy equivalent |
+| ---------- | ----------------- | ----------------- |
+| `link`     | Standard link     | `button`          |
+| `header`   | Section header    | `heading`         |
+| `social`   | Social media icon | `social`          |
+| `youtube`  | YouTube embed     | `youtube`         |
+| `spotify`  | Spotify embed     | `spotify`         |
+| `whatsapp` | WhatsApp link     | `whatsapp`        |
+| `mastodon` | Mastodon profile  | `mastodon`        |
 
 ## Landing Structure
 
 ### Frontend (types.ts)
+
 ```typescript
 interface UserProfile {
-  name: string;
-  handle: string;         // slug/domain_name
-  avatar: string;         // logo.image
-  bio: string;            // options.bio
-  theme: string;          // template_config.background.bgName
-  customDesign: {
-    backgroundColor: string;
-    buttonStyle: 'solid' | 'outline' | 'soft' | 'hard';
-    buttonShape: 'sharp' | 'rounded' | 'pill';
-    buttonColor: string;
-    buttonTextColor: string;
-    fontPair: 'modern' | 'elegant' | 'mono';
-    roundedAvatar?: boolean;
-  };
+    name: string;
+    handle: string; // slug
+    avatar: string; // logo.image
+    bio: string; // options.bio
+    theme: string; // template_config.background.bgName
+    customDesign: {
+        backgroundColor: string;
+        buttonStyle: "solid" | "outline" | "soft" | "hard";
+        buttonShape: "sharp" | "rounded" | "pill";
+        buttonColor: string;
+        buttonTextColor: string;
+        fontPair: "modern" | "elegant" | "mono";
+        roundedAvatar?: boolean;
+    };
 }
 ```
 
 ### Backend (Landing model)
-- `name`, `slug`, `domain_name`
-- `logo`: `{ image, thumb }`
-- `template_config`: `{ background, buttons, textColor, icons, socials }`
-- `options`: `{ title, bio, description, ... }`
+
+-   `name`, `slug`, `domain_name`
+-   `logo`: `{ image, thumb }`
+-   `template_config`: `{ background, buttons, textColor, icons, socials }`
+-   `options`: `{ title, bio, description, ... }`
 
 ## Link Structure
 
 ### Frontend (types.ts)
+
 ```typescript
 interface LinkBlock {
-  id: string;
-  title: string;          // text in backend
-  url: string;            // link in backend
-  isEnabled: boolean;     // state in backend
-  type: BlockType;
-  clicks: number;         // visited in backend
-  icon?: { type?: string; name?: string };
-  sparklineData: { value: number }[];
-  
-  // Type-specific fields
-  phoneNumber?: string;      // WhatsApp
-  predefinedMessage?: string; // WhatsApp
-  headerSize?: 'small' | 'medium' | 'large'; // Header
-  showInlinePlayer?: boolean; // YouTube/Spotify
-  autoPlay?: boolean;
-  startMuted?: boolean;
-  playerSize?: 'normal' | 'compact';
+    id: string;
+    title: string; // text in backend
+    url: string; // link in backend
+    isEnabled: boolean; // state in backend
+    type: BlockType;
+    clicks: number; // visited in backend
+    icon?: { type?: string; name?: string };
+    sparklineData: { value: number }[];
+
+    // Type-specific fields
+    phoneNumber?: string; // WhatsApp
+    predefinedMessage?: string; // WhatsApp
+    headerSize?: "small" | "medium" | "large"; // Header
+    showInlinePlayer?: boolean; // YouTube/Spotify
+    autoPlay?: boolean;
+    startMuted?: boolean;
+    playerSize?: "normal" | "compact";
 }
 ```
 
 ### Backend (Link model)
-- `text`, `link`, `state`, `type`, `order`, `group`
-- `icon`: `{ type, name }`
-- `options`: `{ ... type-specific options }`
-- `visited`: number (click count)
+
+-   `text`, `link`, `state`, `type`, `order`, `group`
+-   `icon`: `{ type, name }`
+-   `options`: `{ ... type-specific options }`
+-   `visited`: number (click count)
 
 ## Data Flow (New System)
 
@@ -87,12 +91,12 @@ interface LinkBlock {
 
 ## Field Mapping Frontend <-> Backend
 
-| Frontend Field | Backend Field | Notes |
-|----------------|---------------|-------|
-| `title`        | `text`        | Link display text |
-| `url`          | `link`        | Target URL |
+| Frontend Field | Backend Field | Notes                   |
+| -------------- | ------------- | ----------------------- |
+| `title`        | `text`        | Link display text       |
+| `url`          | `link`        | Target URL              |
 | `isEnabled`    | `state`       | Boolean active/inactive |
-| `clicks`       | `visited`     | Click counter |
-| `handle`       | `slug`/`domain_name` | Landing URL path |
-| `avatar`       | `logo.image`  | Profile image |
-| `bio`          | `options.bio` | User description |
+| `clicks`       | `visited`     | Click counter           |
+| `handle`       | `slug`        | Landing URL path        |
+| `avatar`       | `logo.image`  | Profile image           |
+| `bio`          | `options.bio` | User description        |

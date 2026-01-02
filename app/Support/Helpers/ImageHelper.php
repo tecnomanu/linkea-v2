@@ -4,11 +4,13 @@ namespace App\Support\Helpers;
 
 use Carbon\Carbon;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
  * Image processing and storage helper functions.
+ * Uses the configured FILESYSTEM_DISK (s3 in production, public in local).
  */
 final class ImageHelper
 {
@@ -19,6 +21,16 @@ final class ImageHelper
         'image/webp' => '.webp',
         'image/svg+xml' => '.svg',
     ];
+
+    /**
+     * Get the storage disk to use (s3 or public based on config).
+     */
+    private static function getDisk(): string
+    {
+        $default = config('filesystems.default', 'local');
+        // Use s3 if configured, otherwise fall back to public for local dev
+        return $default === 's3' ? 's3' : 'public';
+    }
 
     /**
      * Save base64 image to storage.
@@ -53,8 +65,10 @@ final class ImageHelper
             return false;
         }
 
-        Storage::disk('public')->put($pathFile, $content);
-        Storage::disk('public')->put($pathThumbFile, $content);
+        $disk = self::getDisk();
+        // Upload with public visibility so files are accessible via URL
+        Storage::disk($disk)->put($pathFile, $content, 'public');
+        Storage::disk($disk)->put($pathThumbFile, $content, 'public');
 
         return [
             'image' => $pathFile,
@@ -84,7 +98,7 @@ final class ImageHelper
      */
     public static function getUrl(string $path): string
     {
-        return Storage::disk('public')->url($path);
+        return Storage::disk(self::getDisk())->url($path);
     }
 
     /**
@@ -92,7 +106,46 @@ final class ImageHelper
      */
     public static function delete(string $path): bool
     {
-        return Storage::disk('public')->delete($path);
+        return Storage::disk(self::getDisk())->delete($path);
+    }
+
+    /**
+     * Save uploaded file to storage.
+     *
+     * @param UploadedFile $file The uploaded file
+     * @param string $directory Target directory
+     * @param string $name Base name for the file
+     * @return array{image: string, thumb: string}|false
+     */
+    public static function saveFromFile(UploadedFile $file, string $directory, string $name): array|false
+    {
+        $mimeType = $file->getMimeType();
+        if (!isset(self::ALLOWED_EXTENSIONS[$mimeType])) {
+            return false;
+        }
+
+        $name = Str::snake(Str::ascii($name));
+        $extension = self::getExtension($mimeType);
+        $fileName = $name . '_' . Carbon::now()->timestamp . $extension;
+
+        $pathFile = $directory . '/' . $fileName;
+        $pathThumbFile = $directory . '/thumb_' . $fileName;
+
+        $content = file_get_contents($file->getRealPath());
+
+        if ($content === false) {
+            return false;
+        }
+
+        $disk = self::getDisk();
+        // Upload with public visibility so files are accessible via URL
+        Storage::disk($disk)->put($pathFile, $content, 'public');
+        Storage::disk($disk)->put($pathThumbFile, $content, 'public');
+
+        return [
+            'image' => $pathFile,
+            'thumb' => $pathThumbFile,
+        ];
     }
 
     /**

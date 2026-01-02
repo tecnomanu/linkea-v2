@@ -18,6 +18,7 @@ import {
     AlignCenter,
     AlignLeft,
     AlignRight,
+    Check,
     Grid,
     Image,
     LayoutTemplate,
@@ -118,6 +119,8 @@ const MAX_SAVED_THEMES = 2;
 export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
     const [saveThemeName, setSaveThemeName] = useState("");
     const [showSaveDialog, setShowSaveDialog] = useState(false);
+    const [avatarSuccess, setAvatarSuccess] = useState(false);
+    const [bgImageSuccess, setBgImageSuccess] = useState(false);
 
     // Check if current theme is a saved custom theme
     const currentSavedTheme = useMemo(() => {
@@ -344,25 +347,38 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                 </div>
                 <div className="flex flex-col md:flex-row gap-6 items-start">
                     {/* Avatar Section */}
-                    <ImageUploader
-                        value={user.avatar}
-                        onChange={(imageData) => {
-                            if (imageData) {
-                                onUpdateUser({ avatar: imageData.base64 });
-                            } else {
-                                onUpdateUser({
-                                    avatar: "/images/logos/logo-icon.webp",
-                                });
-                            }
-                        }}
-                        rounded={user.customDesign.roundedAvatar !== false}
-                        size={112}
-                        aspectRatio={1}
-                        label="Cambiar imagen"
-                        outputFormat="png"
-                        resizeWidth={400}
-                        maxSizeKB={4000}
-                    />
+                    <div className="flex flex-col items-center gap-2">
+                        <div className="relative">
+                            <ImageUploader
+                                value={user.avatar}
+                                onChange={(imageData) => {
+                                    if (imageData) {
+                                        onUpdateUser({ avatar: imageData.base64 });
+                                        setAvatarSuccess(true);
+                                        setTimeout(() => setAvatarSuccess(false), 2000);
+                                    } else {
+                                        onUpdateUser({
+                                            avatar: "/images/logos/logo-icon.webp",
+                                        });
+                                    }
+                                }}
+                                rounded={user.customDesign.roundedAvatar !== false}
+                                size={112}
+                                aspectRatio={1}
+                                outputFormat="png"
+                                resizeWidth={400}
+                                maxSizeKB={4000}
+                                canDelete={false}
+                            />
+                            {/* Success indicator - positioned on the image */}
+                            {avatarSuccess && (
+                                <div className="absolute bottom-0 right-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg animate-in zoom-in duration-200 border-2 border-white">
+                                    <Check size={16} className="text-white" />
+                                </div>
+                            )}
+                        </div>
+                        <span className="text-xs text-neutral-400">Cambiar imagen</span>
+                    </div>
 
                     {/* Right Side: Toggle + Inputs */}
                     <div className="flex-1 w-full space-y-4">
@@ -862,6 +878,9 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                                                               newCustomDesign,
                                                       }),
                                             });
+                                            // Show success indicator
+                                            setBgImageSuccess(true);
+                                            setTimeout(() => setBgImageSuccess(false), 2000);
                                         }
                                     }}
                                     rounded={false}
@@ -881,6 +900,13 @@ export const DesignTab: React.FC<DesignTabProps> = ({ user, onUpdateUser }) => {
                                     }
                                 />
                             </div>
+                            {/* Background image success indicator */}
+                            {bgImageSuccess && (
+                                <div className="absolute top-3 left-3 px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg shadow-lg flex items-center gap-2 animate-in zoom-in duration-200 z-20">
+                                    <Check size={16} />
+                                    Imagen guardada
+                                </div>
+                            )}
                         </div>
                     </div>
 

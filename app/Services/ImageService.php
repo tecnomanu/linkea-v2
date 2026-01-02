@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Support\Helpers\ImageHelper;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -39,6 +40,18 @@ class ImageService
     }
 
     /**
+     * Save avatar image from uploaded file.
+     *
+     * @return array{image: string, thumb: string}|null
+     */
+    public function saveAvatarFile(UploadedFile $file, string $userId): ?array
+    {
+        $result = ImageHelper::saveFromFile($file, 'avatars', $userId);
+
+        return $result ?: null;
+    }
+
+    /**
      * Save generic image from base64 data.
      *
      * @return array{image: string, thumb: string}|null
@@ -57,7 +70,8 @@ class ImageService
      */
     public function getUrl(string $path): string
     {
-        return Storage::disk('public')->url($path);
+        $disk = config('filesystems.default') === 's3' ? 's3' : 'public';
+        return Storage::disk($disk)->url($path);
     }
 
     /**
@@ -65,7 +79,8 @@ class ImageService
      */
     public function delete(string $path): bool
     {
-        return Storage::disk('public')->delete($path);
+        $disk = config('filesystems.default') === 's3' ? 's3' : 'public';
+        return Storage::disk($disk)->delete($path);
     }
 
     /**

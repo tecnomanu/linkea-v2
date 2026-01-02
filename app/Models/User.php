@@ -50,7 +50,7 @@ class User extends Authenticatable
         'capability' => 'array',
     ];
 
-    protected $appends = ['text', 'role_name', 'status'];
+    protected $appends = ['text', 'role_name', 'status', 'is_oauth_user'];
 
     // Accessors
 
@@ -73,6 +73,15 @@ class User extends Authenticatable
     public function getStatusAttribute()
     {
         return $this->verified_at ? 'verify' : 'pending';
+    }
+
+    /**
+     * Check if user registered via OAuth (Google/Apple).
+     * OAuth users cannot change their email.
+     */
+    public function getIsOAuthUserAttribute(): bool
+    {
+        return !empty($this->google_id) || !empty($this->apple_id);
     }
 
     public function getRoleNameAttribute()
