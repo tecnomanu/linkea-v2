@@ -12,7 +12,7 @@ export const LinkBar: React.FC<LinkBarProps> = ({ landing }) => {
     const { appUrl } = usePage<{ appUrl: string }>().props;
     const [copied, setCopied] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
-    
+
     // landing can be either PanelLandingData (with slug/domain_name) or LandingProfile (with handle)
     const domain =
         landing?.domain_name ||

@@ -229,7 +229,23 @@ export const LandingContent: React.FC<LandingContentProps> = ({
     ): string | undefined => {
         if (!bg) return undefined;
         if (typeof bg === "string") {
-            // Already a CSS value (url(...), linear-gradient, etc.)
+            // If already wrapped in url() or is a gradient, use as-is
+            if (
+                bg.startsWith("url(") ||
+                bg.startsWith("linear-gradient(") ||
+                bg.startsWith("radial-gradient(")
+            ) {
+                return bg;
+            }
+            // If base64 or URL, wrap in url()
+            if (
+                bg.startsWith("http") ||
+                bg.startsWith("data:") ||
+                bg.startsWith("/")
+            ) {
+                return `url("${bg}")`;
+            }
+            // SVG data-uri or other CSS value
             return bg;
         }
         if (typeof bg === "object" && bg.image) {

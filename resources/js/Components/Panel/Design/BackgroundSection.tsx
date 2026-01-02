@@ -69,7 +69,9 @@ export const BackgroundSection: React.FC<BackgroundSectionProps> = ({
 
                 {hasBackgroundImage && (
                     <Toggle
-                        checked={landing.customDesign.backgroundEnabled !== false}
+                        checked={
+                            landing.customDesign.backgroundEnabled !== false
+                        }
                         onChange={handleBackgroundToggle}
                         label="Mostrar"
                         labelPosition="left"
@@ -115,7 +117,8 @@ export const BackgroundSection: React.FC<BackgroundSectionProps> = ({
                                 ? {
                                       backgroundImage: (() => {
                                           const bgImg =
-                                              landing.customDesign.backgroundImage;
+                                              landing.customDesign
+                                                  .backgroundImage;
                                           if (!bgImg) return undefined;
                                           const imgStr = bgImg.toString();
                                           // If already wrapped in url(), use as-is
@@ -131,8 +134,8 @@ export const BackgroundSection: React.FC<BackgroundSectionProps> = ({
                                           landing.customDesign
                                               .backgroundPosition || "center",
                                       backgroundRepeat:
-                                          landing.customDesign.backgroundRepeat ||
-                                          "no-repeat",
+                                          landing.customDesign
+                                              .backgroundRepeat || "no-repeat",
                                       backgroundColor:
                                           landing.customDesign.backgroundColor,
                                   }
@@ -214,8 +217,8 @@ export const BackgroundSection: React.FC<BackgroundSectionProps> = ({
                             <div className="flex justify-center md:justify-start">
                                 <PositionSelector
                                     value={
-                                        landing.customDesign.backgroundPosition ||
-                                        "center"
+                                        landing.customDesign
+                                            .backgroundPosition || "center"
                                     }
                                     onChange={(pos) =>
                                         onUpdateCustomDesign(

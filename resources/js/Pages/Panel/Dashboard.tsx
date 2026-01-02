@@ -22,8 +22,8 @@ import {
     ButtonSize,
     ButtonStyle,
     FontPair,
-    LinkBlock,
     LandingProfile,
+    LinkBlock,
 } from "@/types/index";
 import { Head } from "@inertiajs/react";
 import { Eye, Maximize2 } from "lucide-react";
@@ -241,24 +241,24 @@ export default function Dashboard({
     };
 
     // Social links come pre-transformed from PanelLandingResource
-    const initialSocialLinks: SocialLink[] = (landingData?.socialLinks || []).map(
-        (link) => ({
-            id: link.id,
-            url: link.url || "",
-            // Only include icon if it has required fields (name and type)
-            icon:
-                link.icon?.name && link.icon?.type
-                    ? { name: link.icon.name, type: link.icon.type as any }
-                    : undefined,
-            active: link.isEnabled ?? true,
-            clicks: link.clicks || 0,
-            sparklineData:
-                link.sparklineData ||
-                Array(7)
-                    .fill(0)
-                    .map(() => ({ value: 0 })),
-        })
-    );
+    const initialSocialLinks: SocialLink[] = (
+        landingData?.socialLinks || []
+    ).map((link) => ({
+        id: link.id,
+        url: link.url || "",
+        // Only include icon if it has required fields (name and type)
+        icon:
+            link.icon?.name && link.icon?.type
+                ? { name: link.icon.name, type: link.icon.type as any }
+                : undefined,
+        active: link.isEnabled ?? true,
+        clicks: link.clicks || 0,
+        sparklineData:
+            link.sparklineData ||
+            Array(7)
+                .fill(0)
+                .map(() => ({ value: 0 })),
+    }));
 
     // Get context for UI state persistence and save functionality
     const {
@@ -307,7 +307,11 @@ export default function Dashboard({
     );
 
     const setLanding = useCallback(
-        (newLanding: LandingProfile | ((prev: LandingProfile) => LandingProfile)) => {
+        (
+            newLanding:
+                | LandingProfile
+                | ((prev: LandingProfile) => LandingProfile)
+        ) => {
             setLandingInternal((prev) =>
                 typeof newLanding === "function" ? newLanding(prev) : newLanding
             );
