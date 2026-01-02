@@ -250,17 +250,17 @@
                                         <tr>
                                             <td style="padding: 0 8px;">
                                                 <a href="https://instagram.com/linkea.ar" style="display: inline-block; width: 40px; height: 40px; background-color: #1e293b; border-radius: 50%; line-height: 40px; text-align: center;">
-                                                    <img src="{{ asset('images/emails/icons/instagram.svg') }}" alt="Instagram" width="20" height="20" style="vertical-align: middle;">
+                                                    <img src="{{ asset('images/emails/icons/instagram.png') }}" alt="Instagram" width="20" height="20" style="vertical-align: middle;">
                                                 </a>
                                             </td>
                                             <td style="padding: 0 8px;">
                                                 <a href="https://facebook.com/linkea.ar" style="display: inline-block; width: 40px; height: 40px; background-color: #1e293b; border-radius: 50%; line-height: 40px; text-align: center;">
-                                                    <img src="{{ asset('images/emails/icons/facebook.svg') }}" alt="Facebook" width="20" height="20" style="vertical-align: middle;">
+                                                    <img src="{{ asset('images/emails/icons/facebook.png') }}" alt="Facebook" width="20" height="20" style="vertical-align: middle;">
                                                 </a>
                                             </td>
                                             <td style="padding: 0 8px;">
                                                 <a href="https://linkedin.com/company/linkea" style="display: inline-block; width: 40px; height: 40px; background-color: #1e293b; border-radius: 50%; line-height: 40px; text-align: center;">
-                                                    <img src="{{ asset('images/emails/icons/linkedin.svg') }}" alt="LinkedIn" width="20" height="20" style="vertical-align: middle;">
+                                                    <img src="{{ asset('images/emails/icons/linkedin.png') }}" alt="LinkedIn" width="20" height="20" style="vertical-align: middle;">
                                                 </a>
                                             </td>
                                         </tr>
