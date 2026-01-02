@@ -9,7 +9,7 @@
 import { renderBlockIcon } from "@/hooks/useBlockIcon";
 import { createBlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
 import { LinkBlock, UserProfile } from "@/types";
-import { ExternalLink, Play } from "lucide-react";
+import { Play } from "lucide-react";
 import React from "react";
 import { BlockButton } from "./partial";
 
@@ -30,10 +30,8 @@ export const TikTokBlock: React.FC<TikTokBlockProps> = ({
     onClick,
     animationDelay = 0,
 }) => {
-    // Use centralized helper for consistent BlockDesign mapping
     const blockDesign = createBlockDesign(design);
 
-    // Render icon: user custom icon takes priority, else fallback to Play
     const icon = renderBlockIcon({
         linkIcon: link.icon,
         fallbackIcon: (
@@ -43,22 +41,14 @@ export const TikTokBlock: React.FC<TikTokBlockProps> = ({
         color: design.buttonTextColor,
     });
 
-    // Get subtitle based on showLinkSubtext setting
-    const subtitleText = getBlockSubtitle(blockDesign, "TikTok", link.url);
-
-    // Subtitle with external link icon
-    const SubtitleContent = () => (
-        <span className="flex items-center gap-1">
-            <span>{subtitleText}</span>
-            <ExternalLink size={10} />
-        </span>
-    );
+    // Consistent with YouTube: "Ver en TikTok" or URL if showLinkSubtext enabled
+    const subtitle = getBlockSubtitle(blockDesign, "Ver en TikTok", link.url);
 
     return (
         <BlockButton
             href={link.url}
             title={link.title}
-            subtitle={<SubtitleContent />}
+            subtitle={subtitle}
             design={blockDesign}
             position="full"
             icon={icon}

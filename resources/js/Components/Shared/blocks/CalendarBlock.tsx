@@ -11,7 +11,7 @@
 import { renderBlockIcon } from "@/hooks/useBlockIcon";
 import { createBlockDesign, getBlockSubtitle } from "@/hooks/useBlockStyles";
 import { LinkBlock, UserProfile } from "@/types";
-import { Calendar, ExternalLink } from "lucide-react";
+import { Calendar } from "lucide-react";
 import React from "react";
 import { BlockButton, BlockContainer, BlockPreview } from "./partial";
 
@@ -94,16 +94,8 @@ export const CalendarBlock: React.FC<CalendarBlockProps> = ({
         color: design.buttonTextColor,
     });
 
-    // Get subtitle based on showLinkSubtext setting (URL or provider name)
-    const subtitleText = getBlockSubtitle(blockDesign, providerLabel, link.url);
-
-    // Subtitle with external link icon for button mode
-    const ButtonSubtitle = () => (
-        <span className="flex items-center gap-1">
-            <span>{subtitleText}</span>
-            <ExternalLink size={10} />
-        </span>
-    );
+    // Consistent subtitle: provider name or URL if showLinkSubtext enabled
+    const subtitle = getBlockSubtitle(blockDesign, providerLabel, link.url);
 
     // Button + Preview mode (inline calendar embed)
     if (displayMode === "inline" && embedUrl) {
@@ -114,7 +106,7 @@ export const CalendarBlock: React.FC<CalendarBlockProps> = ({
                     <BlockButton
                         href={link.url}
                         title={link.title}
-                        subtitle={subtitleText}
+                        subtitle={subtitle}
                         design={blockDesign}
                         position="top"
                         icon={icon}
@@ -157,7 +149,7 @@ export const CalendarBlock: React.FC<CalendarBlockProps> = ({
         <BlockButton
             href={link.url}
             title={link.title}
-            subtitle={<ButtonSubtitle />}
+            subtitle={subtitle}
             design={blockDesign}
             position="full"
             icon={icon}

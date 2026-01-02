@@ -212,8 +212,7 @@ export const getIconContainerStyles = (
 ): { className: string; style: React.CSSProperties } => {
     const rounding = getRoundingClass(design.buttonShape, "full");
     // Size based on buttonSize: compact (legacy) vs normal
-    const sizeClass =
-        design.buttonSize === "normal" ? "w-11 h-11 mr-4" : "w-9 h-9 mr-3";
+    const sizeClass = design.buttonSize === "normal" ? "w-11 h-11" : "w-9 h-9";
     // For outline without border enabled, use subtle bg; otherwise use white/20
     const borderEnabled = design.buttonBorderEnabled === true;
     const hasBg = design.buttonStyle !== "outline" || borderEnabled;

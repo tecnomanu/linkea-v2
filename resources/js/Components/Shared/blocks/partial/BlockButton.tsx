@@ -1,11 +1,9 @@
 /**
  * BlockButton - Reusable button component for all block types
  *
- * Can be used as:
- * - Standalone button (full rounding)
- * - Header button for button+preview blocks (top rounding only)
- *
- * Handles all button styles: solid, outline, soft, hard (brutalist)
+ * Icon alignment modes:
+ * - left/right: icon fixed, text fills remaining space and centers within it
+ * - inline: icon and text flow together, both centered
  */
 
 import {
@@ -16,29 +14,17 @@ import {
 import React from "react";
 
 interface BlockButtonProps {
-    /** Target URL for the link */
     href: string;
-    /** Button title/label */
     title: string;
-    /** Optional subtitle (e.g., "Twitch", "Calendario") - can be string or ReactNode */
     subtitle?: React.ReactNode;
-    /** Design configuration */
     design: BlockDesign;
-    /** Position: "full" for standalone, "top" for button+preview */
     position?: "full" | "top";
-    /** Icon element to display */
     icon?: React.ReactNode;
-    /** Right side content (e.g., badge) */
     rightContent?: React.ReactNode;
-    /** If true, prevents navigation (preview mode) */
     isPreview?: boolean;
-    /** Click handler */
     onClick?: (e: React.MouseEvent) => void;
-    /** Animation delay in ms */
     animationDelay?: number;
-    /** Whether this is part of a dark theme */
     isDarkTheme?: boolean;
-    /** Additional className */
     className?: string;
 }
 
@@ -59,6 +45,7 @@ export const BlockButton: React.FC<BlockButtonProps> = ({
     const buttonStyles = getButtonStyles(design, position, isDarkTheme);
     const iconStyles = getIconContainerStyles(design);
     const showIcon = design.showButtonIcons !== false && icon;
+    const iconAlignment = design.buttonIconAlignment || "left";
 
     const handleClick = (e: React.MouseEvent) => {
         if (isPreview) {
@@ -68,29 +55,23 @@ export const BlockButton: React.FC<BlockButtonProps> = ({
         onClick?.(e);
     };
 
-    // Animation classes only for standalone buttons (position === "full")
     const animationClasses =
         position === "full"
             ? "animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards"
             : "";
 
-    const iconAlignment = design.buttonIconAlignment || "left";
-
-    // Render icon element
-    const renderIcon = () =>
-        showIcon && (
-            <div className={iconStyles.className} style={iconStyles.style}>
+    const IconBox = () =>
+        showIcon ? (
+            <div
+                className={`${iconStyles.className} shrink-0`}
+                style={iconStyles.style}
+            >
                 {icon}
             </div>
-        );
+        ) : null;
 
-    // Render text content - for inline, text doesn't expand (no flex-1)
-    const renderText = () => (
-        <div
-            className={`min-w-0 ${
-                iconAlignment === "inline" ? "text-center" : "flex-1 text-left"
-            }`}
-        >
+    const TextBox = ({ centered = true }: { centered?: boolean }) => (
+        <div className={`min-w-0 flex-1 ${centered ? "text-center" : ""}`}>
             <h3 className="text-base font-bold truncate">{title}</h3>
             {subtitle && (
                 <p className="text-xs truncate opacity-70">{subtitle}</p>
@@ -112,25 +93,31 @@ export const BlockButton: React.FC<BlockButtonProps> = ({
                 }),
             }}
         >
-            <div
-                className={`flex items-center p-3 ${
-                    iconAlignment === "inline" ? "justify-center gap-2" : ""
-                }`}
-            >
-                {/* Left: icon first, then text expands */}
-                {iconAlignment === "left" && renderIcon()}
-                {iconAlignment === "left" && renderText()}
+            <div className="flex items-center gap-2 px-3 py-2">
+                {/* Inline: everything centered together */}
+                {iconAlignment === "inline" && (
+                    <div className="flex-1 flex items-center justify-center gap-2">
+                        <IconBox />
+                        <TextBox centered={false} />
+                    </div>
+                )}
 
-                {/* Inline: icon and text centered together */}
-                {iconAlignment === "inline" && renderIcon()}
-                {iconAlignment === "inline" && renderText()}
+                {/* Left: icon first, text fills rest and centers */}
+                {iconAlignment === "left" && (
+                    <>
+                        <IconBox />
+                        <TextBox />
+                        {rightContent}
+                    </>
+                )}
 
-                {/* Right: text expands, then icon */}
-                {iconAlignment === "right" && renderText()}
-                {iconAlignment === "right" && renderIcon()}
-
-                {/* Right content (badge, indicator, etc.) - only for non-right alignment */}
-                {iconAlignment !== "right" && rightContent}
+                {/* Right: text fills and centers, icon last */}
+                {iconAlignment === "right" && (
+                    <>
+                        <TextBox />
+                        <IconBox />
+                    </>
+                )}
             </div>
         </a>
     );
