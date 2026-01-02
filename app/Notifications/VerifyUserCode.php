@@ -45,11 +45,13 @@ class VerifyUserCode extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $code = $notifiable->verification_code;
+        $firstName = $notifiable->first_name ?? $notifiable->name ?? 'Usuario';
 
         return (new MailMessage)
             ->subject('Verifica tu cuenta - Linkea')
             ->view('emails.verification-code', [
                 'code' => $code,
+                'firstName' => $firstName,
                 'headerImage' => 'images/emails/linky_otp.png',
                 'headerTitle' => 'Verificar Email',
                 'headerSubtitle' => 'Ingresá el código para continuar',

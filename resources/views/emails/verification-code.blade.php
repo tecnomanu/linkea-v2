@@ -1,7 +1,7 @@
 @extends('emails.layouts.default')
 
 @section('content')
-    <p style="font-size: 16px; margin-bottom: 16px;">Hola <strong>{{ $notifiable->first_name ?? 'Usuario' }}</strong>!</p>
+    <p style="font-size: 16px; margin-bottom: 16px;">Hola <strong>{{ $firstName ?? 'Usuario' }}</strong>!</p>
 
     <p>Gracias por registrarte en <strong>Linkea</strong>. Estamos emocionados de tenerte con nosotros.</p>
     <p>Para completar tu registro, ingresa el siguiente código de verificación:</p>
