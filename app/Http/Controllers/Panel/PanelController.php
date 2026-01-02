@@ -73,15 +73,17 @@ class PanelController extends Controller
         $landings = $this->landingService->getByUserId($user->id);
         $landing = $landings->first();
 
-        $links = $landing
-            ? $this->linkService->getBlockLinksWithStats($landing->id)
+        // OPTIMIZATION: Single query for all links, then separate by group in memory
+        $allLinks = $landing
+            ? $this->linkService->getAllLinksWithStats($landing->id)
             : collect();
 
-        $socialLinks = $landing
-            ? $this->linkService->getSocialLinks($landing->id)
-            : collect();
+        // Separate links and socials from the same collection (zero additional queries)
+        $links = $allLinks->where('group', 'links')->values();
+        $socialLinks = $allLinks->where('group', 'socials')->values();
 
         // Get dashboard stats only for dashboard tab (lazy load for performance)
+        // OPTIMIZATION: Stats are now cached for 5 minutes
         $dashboardStats = ($activeTab === 'dashboard' && $landing)
             ? $this->statisticsService->getLandingDashboardStats($landing->id)
             : null;

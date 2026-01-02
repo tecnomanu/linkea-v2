@@ -2,14 +2,21 @@ import {
     DashboardStats,
     DashboardTab,
 } from "@/Components/Panel/Dashboard/DashboardTab";
+import { DesignTab } from "@/Components/Panel/Design/DesignTab";
 import { LinkBar } from "@/Components/Panel/Links/LinkBar";
 import { LinksTab, SocialLink } from "@/Components/Panel/Links/LinksTab";
+import { ProfileTab } from "@/Components/Panel/Profile/ProfileTab";
+import { SettingsTab } from "@/Components/Panel/Settings/SettingsTab";
 import {
     AutoSaveBadge,
     ManualSaveButton,
 } from "@/Components/Shared/AutoSaveSettings";
+import { DevicePreviewModal } from "@/Components/Shared/DevicePreviewModal";
 import { DeviceMode, PhonePreview } from "@/Components/Shared/PhonePreview";
-import { useWhatsNewModal } from "@/Components/Shared/WhatsNewModal";
+import {
+    useWhatsNewModal,
+    WhatsNewModal,
+} from "@/Components/Shared/WhatsNewModal";
 import { useAutoSaveContext } from "@/contexts/AutoSaveContext";
 import PanelLayout from "@/Layouts/PanelLayout";
 import {
@@ -28,41 +35,13 @@ import {
 import { Head } from "@inertiajs/react";
 import { Eye, Maximize2 } from "lucide-react";
 import {
-    lazy,
-    Suspense,
+    memo,
     useCallback,
     useEffect,
     useMemo,
     useRef,
     useState,
 } from "react";
-
-// Lazy load secondary tabs and modals for better initial load performance
-const DesignTab = lazy(() =>
-    import("@/Components/Panel/Design/DesignTab").then((m) => ({
-        default: m.DesignTab,
-    }))
-);
-const SettingsTab = lazy(() =>
-    import("@/Components/Panel/Settings/SettingsTab").then((m) => ({
-        default: m.SettingsTab,
-    }))
-);
-const ProfileTab = lazy(() =>
-    import("@/Components/Panel/Profile/ProfileTab").then((m) => ({
-        default: m.ProfileTab,
-    }))
-);
-const DevicePreviewModal = lazy(() =>
-    import("@/Components/Shared/DevicePreviewModal").then((m) => ({
-        default: m.DevicePreviewModal,
-    }))
-);
-const WhatsNewModal = lazy(() =>
-    import("@/Components/Shared/WhatsNewModal").then((m) => ({
-        default: m.WhatsNewModal,
-    }))
-);
 
 /**
  * Landing data from PanelLandingResource.
@@ -158,14 +137,8 @@ interface DashboardProps {
     dashboardStats?: DashboardStats | null;
 }
 
-// Loading fallback for lazy-loaded tabs
-function TabLoadingFallback() {
-    return (
-        <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-neutral-300 border-t-brand-500" />
-        </div>
-    );
-}
+// Memoized PhonePreview to avoid unnecessary re-renders
+const MemoizedPhonePreview = memo(PhonePreview);
 
 export default function Dashboard({
     landing: landingData,
@@ -173,13 +146,25 @@ export default function Dashboard({
     activeTab: serverActiveTab = "dashboard",
     dashboardStats = null,
 }: DashboardProps) {
-    // Sync state with prop if needed, but primarily rely on prop for the "View"
-    const activeTab = serverActiveTab;
+    // CLIENT-SIDE TAB DETECTION: Get tab from URL query params
+    const getActiveTabFromUrl = () => {
+        if (typeof window === "undefined") return serverActiveTab;
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get("tab") || serverActiveTab;
+    };
 
-    // Links come pre-transformed from PanelLandingResource
+    const [activeTab, setActiveTab] = useState(getActiveTabFromUrl());
+
+    // Listen for URL changes (back/forward + programmatic navigation)
+    useEffect(() => {
+        const handlePopState = () => {
+            setActiveTab(getActiveTabFromUrl());
+        };
+        window.addEventListener("popstate", handlePopState);
+        return () => window.removeEventListener("popstate", handlePopState);
+    }, []);
     const initialLinks: LinkBlock[] = landingData?.links || [];
 
-    // Build LandingProfile from pre-transformed landing data
     const tc = landingData?.template_config;
     const bg = tc?.background;
     const buttons = tc?.buttons;
@@ -201,7 +186,6 @@ export default function Dashboard({
         showSubtitle: tc?.showSubtitle ?? true,
         theme: bg?.bgName || "custom",
         customDesign: {
-            // Background
             backgroundColor: bg?.backgroundColor || "#fed7aa",
             backgroundImage: bg?.backgroundImage || undefined,
             backgroundEnabled: bg?.backgroundEnabled ?? true,
@@ -211,7 +195,6 @@ export default function Dashboard({
             backgroundAttachment: bg?.backgroundAttachment || "scroll",
             backgroundProps: bg?.props || undefined,
             backgroundControls: bg?.controls || undefined,
-            // Buttons
             buttonStyle: buttons?.style || "soft",
             buttonShape: buttons?.shape || "pill",
             buttonSize: buttons?.size || "compact",
@@ -222,10 +205,8 @@ export default function Dashboard({
             showButtonIcons: buttons?.showIcons ?? true,
             buttonIconAlignment: buttons?.iconAlignment || "left",
             showLinkSubtext: tc?.showLinkSubtext ?? true,
-            // Typography
             fontPair: tc?.fontPair || "modern",
             textColor: tc?.textColor || "#1f2937",
-            // Avatar
             roundedAvatar: header?.roundedAvatar ?? true,
             avatarFloating: header?.avatarFloating ?? true,
         },
@@ -240,13 +221,11 @@ export default function Dashboard({
         isLegacy: !!landingData?.mongo_id,
     };
 
-    // Social links come pre-transformed from PanelLandingResource
     const initialSocialLinks: SocialLink[] = (
         landingData?.socialLinks || []
     ).map((link) => ({
         id: link.id,
         url: link.url || "",
-        // Only include icon if it has required fields (name and type)
         icon:
             link.icon?.name && link.icon?.type
                 ? { name: link.icon.name, type: link.icon.type as any }
@@ -260,7 +239,6 @@ export default function Dashboard({
                 .map(() => ({ value: 0 })),
     }));
 
-    // Get context for UI state persistence and save functionality
     const {
         uiState,
         setUiState,
@@ -271,15 +249,13 @@ export default function Dashboard({
         autoSaveEnabled,
     } = useAutoSaveContext();
 
-    // Check if we should use context state (same landing, has data)
     const isSameLanding = contextLandingId === landingData?.id;
 
-    // Initialize state from context (if same landing) or from server
     const [links, setLinksInternal] = useState<LinkBlock[]>(() => {
         if (isSameLanding && uiState.links) {
             return uiState.links;
         }
-        return initialLinks; // Empty array if no backend data
+        return initialLinks;
     });
 
     const [landing, setLandingInternal] = useState<LandingProfile>(() => {
@@ -296,7 +272,6 @@ export default function Dashboard({
         return initialSocialLinks;
     });
 
-    // Wrapper functions that update local state only
     const setLinks = useCallback(
         (newLinks: LinkBlock[] | ((prev: LinkBlock[]) => LinkBlock[])) => {
             setLinksInternal((prev) =>
@@ -328,40 +303,25 @@ export default function Dashboard({
         []
     );
 
-    // Sync local state to context UI state (separate from setters to avoid setState during render)
+    // OPTIMIZACIÓN: Batch context updates
     useEffect(() => {
         setUiState("links", links);
-    }, [links, setUiState]);
-
-    useEffect(() => {
         setUiState("landing", landing);
-    }, [landing, setUiState]);
-
-    useEffect(() => {
         setUiState("socialLinks", socialLinks);
-    }, [socialLinks, setUiState]);
+    }, [links, landing, socialLinks, setUiState]);
 
     const [currentLinkType, setCurrentLinkType] = useState<"blocks" | "social">(
         "blocks"
     );
 
-    // What's New modal for first-time visitors
     const whatsNewModal = useWhatsNewModal();
-
-    // =================================================================
-    // LANDING ID SYNC - Context handles reset when landing changes
-    // =================================================================
 
     useEffect(() => {
         if (landingData?.id) {
-            // setLandingId internally resets all state when landing changes
             setLandingId(landingData.id);
         }
     }, [landingData?.id, setLandingId]);
 
-    // Transform links to API format for saving
-    // IMPORTANT: All block-specific config fields must be included here
-    // See: .cursor/rules/block-development.mdc for full list
     const linksPayload = useMemo(
         () => ({
             links: links.map((link, index) => ({
@@ -372,25 +332,19 @@ export default function Dashboard({
                 isEnabled: link.isEnabled,
                 order: index,
                 icon: link.icon,
-                // Header
                 headerSize: link.headerSize,
-                // Video embeds (YouTube, Spotify, Vimeo, etc.)
                 mediaDisplayMode: link.mediaDisplayMode,
                 showInlinePlayer: link.showInlinePlayer,
                 autoPlay: link.autoPlay,
                 startMuted: link.startMuted,
                 playerSize: link.playerSize,
-                // WhatsApp
                 phoneNumber: link.phoneNumber,
                 predefinedMessage: link.predefinedMessage,
-                // Calendar
                 calendarProvider: link.calendarProvider,
                 calendarDisplayMode: link.calendarDisplayMode,
-                // Email
                 emailAddress: link.emailAddress,
                 emailSubject: link.emailSubject,
                 emailBody: link.emailBody,
-                // Map
                 mapAddress: link.mapAddress,
                 mapQuery: link.mapQuery,
                 mapZoom: link.mapZoom,
@@ -401,7 +355,6 @@ export default function Dashboard({
         [links]
     );
 
-    // Transform social links to API format
     const socialLinksPayload = useMemo(
         () => ({
             links: socialLinks.map((link, index) => ({
@@ -417,7 +370,6 @@ export default function Dashboard({
         [socialLinks]
     );
 
-    // Transform design/user data to API format
     const designPayload = useMemo(
         () => ({
             title: landing.title,
@@ -447,7 +399,6 @@ export default function Dashboard({
         ]
     );
 
-    // Transform settings data to API format
     const settingsPayload = useMemo(
         () => ({
             handle: landing.handle,
@@ -467,32 +418,14 @@ export default function Dashboard({
         ]
     );
 
-    // =================================================================
-    // TRACK CHANGES - Always call setPendingChanges, context handles comparison
-    // The context automatically captures initial state on first call per section
-    // =================================================================
-
-    // Track changes to links
+    // OPTIMIZACIÓN: Batched pending changes tracking
     useEffect(() => {
         setPendingChanges("links", linksPayload);
-    }, [linksPayload, setPendingChanges]);
-
-    // Track changes to social links
-    useEffect(() => {
         setPendingChanges("socialLinks", socialLinksPayload);
-    }, [socialLinksPayload, setPendingChanges]);
-
-    // Track changes to design (user appearance data)
-    useEffect(() => {
         setPendingChanges("design", designPayload);
-    }, [designPayload, setPendingChanges]);
-
-    // Track changes to settings
-    useEffect(() => {
         setPendingChanges("settings", settingsPayload);
-    }, [settingsPayload, setPendingChanges]);
+    }, [linksPayload, socialLinksPayload, designPayload, settingsPayload, setPendingChanges]);
 
-    // Auto-save with debounce when enabled
     const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
@@ -519,19 +452,16 @@ export default function Dashboard({
         saveAllChanges,
     ]);
 
-    // Manual save handler
     const handleManualSave = () => {
         saveAllChanges();
     };
 
-    // Preview State
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [initialPreviewDevice, setInitialPreviewDevice] =
         useState<DeviceMode>("mobile");
 
-    const handleUpdateLanding = (updates: Partial<LandingProfile>) => {
+    const handleUpdateLanding = useCallback((updates: Partial<LandingProfile>) => {
         setLanding((prev) => {
-            // Deep merge customDesign if present in updates
             if (updates.customDesign) {
                 return {
                     ...prev,
@@ -544,12 +474,12 @@ export default function Dashboard({
             }
             return { ...prev, ...updates };
         });
-    };
+    }, [setLanding]);
 
-    const openPreview = (device: DeviceMode = "mobile") => {
+    const openPreview = useCallback((device: DeviceMode = "mobile") => {
         setInitialPreviewDevice(device);
         setIsPreviewOpen(true);
-    };
+    }, []);
 
     return (
         <>
@@ -567,10 +497,8 @@ export default function Dashboard({
                 }
             />
 
-            {/* Added top padding for mobile to account for fixed MobileNav */}
             <div className="flex-1 w-full mx-auto p-4 md:p-8 lg:p-12 pt-32 md:pt-8 overflow-y-auto h-screen overlay-scrollbar relative">
                 <div className=" max-w-5xl  mx-auto">
-                    {/* Header - Hidden on Mobile to save space (MobileNav has context) */}
                     <header className="hidden md:flex justify-between items-end mb-8 sticky top-0 z-40 bg-slate-50/90 dark:bg-neutral-950/90 backdrop-blur-xl py-4 -mx-8 px-8 lg:-mx-12 lg:px-12 transition-all">
                         <div className="flex items-center gap-6">
                             <div>
@@ -593,7 +521,6 @@ export default function Dashboard({
                                         : activeTab}
                                 </h1>
                             </div>
-                            {/* Links Tab Switcher - Desktop */}
                             {activeTab === "links" && (
                                 <div className="flex bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl">
                                     <button
@@ -623,11 +550,9 @@ export default function Dashboard({
                                 </div>
                             )}
                         </div>
-                        {/* Auto-save status, preview button, and manual save - Hidden on profile tab */}
                         {activeTab !== "profile" && (
                             <div className="flex items-center gap-3">
                                 <AutoSaveBadge />
-                                {/* Preview button - visible when Live Preview sidebar is hidden */}
                                 <button
                                     onClick={() => openPreview("mobile")}
                                     className="xl:hidden flex items-center gap-2 px-4 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-semibold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all"
@@ -640,7 +565,6 @@ export default function Dashboard({
                         )}
                     </header>
 
-                    {/* Mobile Title */}
                     <div className="md:hidden mb-4">
                         <div className="flex justify-between items-center">
                             <h1 className="text-2xl font-bold text-neutral-900 dark:text-white capitalize">
@@ -665,7 +589,6 @@ export default function Dashboard({
                                 <AutoSaveBadge />
                             </div>
                         )}
-                        {/* Links Tab Switcher - Mobile */}
                         {activeTab === "links" && (
                             <div className="flex bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl mt-4">
                                 <button
@@ -692,15 +615,12 @@ export default function Dashboard({
                         )}
                     </div>
 
-                    {/* Sticky LinkBar - Shows public URL (visible on all tabs except profile and links) */}
-                    {/* Note: Links tab has its own sticky container that includes LinkBar */}
                     {activeTab !== "profile" && activeTab !== "links" && (
                         <div className="sticky top-0 md:top-20 z-30 bg-slate-50/95 dark:bg-neutral-950/95 backdrop-blur-xl -mx-4 px-4 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12 py-4">
                             <LinkBar landing={landingData} user={auth.user} />
                         </div>
                     )}
 
-                    {/* Content Rendering based on activeTab */}
                     {activeTab === "dashboard" && (
                         <DashboardTab stats={dashboardStats} />
                     )}
@@ -719,45 +639,36 @@ export default function Dashboard({
                     )}
 
                     {activeTab === "appearance" && (
-                        <Suspense fallback={<TabLoadingFallback />}>
-                            <DesignTab
-                                landing={landing}
-                                onUpdateLanding={handleUpdateLanding}
-                            />
-                        </Suspense>
+                        <DesignTab
+                            landing={landing}
+                            onUpdateLanding={handleUpdateLanding}
+                        />
                     )}
 
                     {activeTab === "settings" && (
-                        <Suspense fallback={<TabLoadingFallback />}>
-                            <SettingsTab
-                                landing={landing}
-                                onUpdateLanding={handleUpdateLanding}
-                            />
-                        </Suspense>
+                        <SettingsTab
+                            landing={landing}
+                            onUpdateLanding={handleUpdateLanding}
+                        />
                     )}
 
                     {activeTab === "profile" && (
-                        <Suspense fallback={<TabLoadingFallback />}>
-                            <ProfileTab user={auth.user} />
-                        </Suspense>
+                        <ProfileTab user={auth.user} />
                     )}
                 </div>
             </div>
 
-            {/* Right: Live Preview (Desktop Sticky - Only Mobile Mode) - Hidden on profile tab */}
             <div
                 className={`w-[440px] ${
                     activeTab === "profile" ? "hidden" : "hidden xl:flex"
                 } flex-col items-center justify-center gap-4 py-6 sticky top-0 h-screen bg-white/50 dark:bg-neutral-900/50 backdrop-blur-xl border-l border-neutral-200/50 dark:border-neutral-800/50`}
             >
-                {/* Live Preview Badge */}
                 <span className="text-[10px] font-bold tracking-[0.2em] text-neutral-400 uppercase bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full shrink-0">
                     Vista previa
                 </span>
 
-                {/* Phone Component Container - Scales based on available height */}
                 <div className="flex-1 flex items-center justify-center min-h-0 w-full">
-                    <PhonePreview
+                    <MemoizedPhonePreview
                         landing={landing}
                         links={links}
                         socialLinks={socialLinks}
@@ -766,7 +677,6 @@ export default function Dashboard({
                     />
                 </div>
 
-                {/* Desktop Fullscreen Trigger */}
                 <button
                     onClick={() => openPreview("desktop")}
                     className="flex items-center gap-2 px-5 py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-full font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all shrink-0"
@@ -776,28 +686,22 @@ export default function Dashboard({
                 </button>
             </div>
 
-            {/* Fullscreen Responsive Preview Modal - Lazy loaded */}
             {isPreviewOpen && (
-                <Suspense fallback={null}>
-                    <DevicePreviewModal
-                        isOpen={isPreviewOpen}
-                        onClose={() => setIsPreviewOpen(false)}
-                        landing={landing}
-                        links={links}
-                        socialLinks={socialLinks}
-                        initialDevice={initialPreviewDevice}
-                    />
-                </Suspense>
+                <DevicePreviewModal
+                    isOpen={isPreviewOpen}
+                    onClose={() => setIsPreviewOpen(false)}
+                    landing={landing}
+                    links={links}
+                    socialLinks={socialLinks}
+                    initialDevice={initialPreviewDevice}
+                />
             )}
 
-            {/* What's New Modal - Shows on first visit, lazy loaded */}
             {whatsNewModal.isOpen && (
-                <Suspense fallback={null}>
-                    <WhatsNewModal
-                        isOpen={whatsNewModal.isOpen}
-                        onClose={whatsNewModal.close}
-                    />
-                </Suspense>
+                <WhatsNewModal
+                    isOpen={whatsNewModal.isOpen}
+                    onClose={whatsNewModal.close}
+                />
             )}
         </>
     );

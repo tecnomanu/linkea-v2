@@ -3,17 +3,23 @@
 namespace App\Services;
 
 use App\Models\Landing;
-use App\Models\LandingStatistic;
 use App\Models\Link;
-use App\Models\LinkStatistic;
+use App\Repositories\Contracts\LinkRepository;
+use App\Repositories\Contracts\StatisticsRepository;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 /**
  * Service for handling link click statistics and landing view analytics.
+ * OPTIMIZED: Uses repository pattern + caching for better performance.
  */
 class StatisticsService
 {
+    public function __construct(
+        protected StatisticsRepository $statisticsRepository,
+        protected LinkRepository $linkRepository
+    ) {}
+
     /**
      * Record a link click.
      */
@@ -22,40 +28,8 @@ class StatisticsService
         // Increment total visited count
         $link->increment('visited');
 
-        // Record daily statistic
-        $this->recordDailyStatistic($link->id);
-    }
-
-    /**
-     * Record daily statistic for a link.
-     * Uses upsert to avoid race conditions and unique constraint violations.
-     */
-    protected function recordDailyStatistic(string $linkId): void
-    {
-        $today = Carbon::today();
-
-        // Use upsert with raw increment to handle concurrent requests
-        $existing = LinkStatistic::where('link_id', $linkId)
-            ->where('date', $today)
-            ->first();
-
-        if ($existing) {
-            $existing->increment('visits');
-        } else {
-            // Try to create, if it fails due to race condition, increment instead
-            try {
-                LinkStatistic::create([
-                    'link_id' => $linkId,
-                    'date' => $today,
-                    'visits' => 1,
-                ]);
-            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
-                // Another request created the record, just increment
-                LinkStatistic::where('link_id', $linkId)
-                    ->where('date', $today)
-                    ->increment('visits');
-            }
-        }
+        // Record daily statistic via repository
+        $this->statisticsRepository->recordLinkVisit($link->id, Carbon::today());
     }
 
     /**
@@ -65,54 +39,20 @@ class StatisticsService
      */
     public function getSparklineData(string $linkId, int $days = 7): array
     {
-        $statistics = LinkStatistic::where('link_id', $linkId)
-            ->where('date', '>=', Carbon::today()->subDays($days - 1))
-            ->orderBy('date', 'asc')
-            ->get()
-            ->keyBy(fn($stat) => $stat->date->format('Y-m-d'));
-
-        $sparklineData = [];
-
-        for ($i = $days - 1; $i >= 0; $i--) {
-            $date = Carbon::today()->subDays($i)->format('Y-m-d');
-            $sparklineData[] = [
-                'value' => $statistics->get($date)?->visits ?? 0,
-            ];
-        }
-
-        return $sparklineData;
+        return $this->statisticsRepository
+            ->getSparklineDataBulk([$linkId], $days)
+            ->get($linkId, []);
     }
 
     /**
-     * Get statistics for multiple links.
+     * Get statistics for multiple links (BULK).
+     * OPTIMIZATION: Uses repository bulk query method.
      *
      * @return Collection<string, array>
      */
     public function getStatsForLinks(array $linkIds, int $days = 7): Collection
     {
-        $startDate = Carbon::today()->subDays($days - 1);
-
-        $statistics = LinkStatistic::whereIn('link_id', $linkIds)
-            ->where('date', '>=', $startDate)
-            ->orderBy('date', 'asc')
-            ->get()
-            ->groupBy('link_id');
-
-        return collect($linkIds)->mapWithKeys(function ($linkId) use ($statistics, $days) {
-            $linkStats = $statistics->get($linkId, collect())->keyBy(
-                fn($stat) => $stat->date->format('Y-m-d')
-            );
-
-            $sparklineData = [];
-            for ($i = $days - 1; $i >= 0; $i--) {
-                $date = Carbon::today()->subDays($i)->format('Y-m-d');
-                $sparklineData[] = [
-                    'value' => $linkStats->get($date)?->visits ?? 0,
-                ];
-            }
-
-            return [$linkId => $sparklineData];
-        });
+        return $this->statisticsRepository->getSparklineDataBulk($linkIds, $days);
     }
 
     /**
@@ -129,10 +69,10 @@ class StatisticsService
     public function getClickSummary(string $linkId, int $days = 30): array
     {
         $startDate = Carbon::today()->subDays($days - 1);
+        $endDate = Carbon::today();
 
-        $stats = LinkStatistic::where('link_id', $linkId)
-            ->where('date', '>=', $startDate)
-            ->get();
+        $stats = $this->statisticsRepository
+            ->getLinkStatsByDateRange([$linkId], $startDate, $endDate);
 
         return [
             'total' => $stats->sum('visits'),
@@ -147,11 +87,11 @@ class StatisticsService
      */
     public function getDataRange(string $linkId): array
     {
-        $firstStat = LinkStatistic::where('link_id', $linkId)
+        $firstStat = \App\Models\LinkStatistic::where('link_id', $linkId)
             ->orderBy('date', 'asc')
             ->first();
 
-        $lastStat = LinkStatistic::where('link_id', $linkId)
+        $lastStat = \App\Models\LinkStatistic::where('link_id', $linkId)
             ->orderBy('date', 'desc')
             ->first();
 
@@ -172,118 +112,103 @@ class StatisticsService
 
     /**
      * Get comprehensive dashboard stats for a landing.
-     * 
-     * @return array{
-     *     totalViews: int,
-     *     totalClicks: int,
-     *     totalLinks: int,
-     *     activeLinks: int,
-     *     viewsToday: int,
-     *     viewsThisWeek: int,
-     *     viewsThisMonth: int,
-     *     clicksToday: int,
-     *     clicksThisWeek: int,
-     *     clicksThisMonth: int,
-     *     weeklyChange: float,
-     *     dailyAverage: float,
-     *     chartData: array,
-     *     viewChartData: array,
-     *     topLinks: array,
-     *     linksByType: array
-     * }
+     * OPTIMIZATION: Cached for 5 minutes, bulk queries via repository.
      */
     public function getLandingDashboardStats(string $landingId, int $chartDays = 30): array
     {
-        // Get landing for views
-        $landing = Landing::find($landingId);
+        $cacheKey = "landing_dashboard_stats:{$landingId}:{$chartDays}";
 
-        // Explicitly exclude soft deleted links
-        $links = Link::where('landing_id', $landingId)
-            ->whereNull('deleted_at')
-            ->get();
+        return cache()->remember($cacheKey, 300, function () use ($landingId, $chartDays) {
+            return $this->calculateDashboardStats($landingId, $chartDays);
+        });
+    }
+
+    /**
+     * Calculate dashboard stats (called by cache).
+     * OPTIMIZATION: Minimal queries using repositories.
+     */
+    protected function calculateDashboardStats(string $landingId, int $chartDays = 30): array
+    {
+        $landing = Landing::find($landingId);
+        $links = $this->linkRepository->getByLandingId($landingId);
         $linkIds = $links->pluck('id')->toArray();
+
+        if (empty($linkIds)) {
+            return $this->getEmptyDashboardStats();
+        }
 
         $today = Carbon::today();
         $startOfWeek = Carbon::now()->startOfWeek();
         $startOfMonth = Carbon::now()->startOfMonth();
         $startOfLastWeek = Carbon::now()->subWeek()->startOfWeek();
-        $endOfLastWeek = Carbon::now()->subWeek()->endOfWeek();
 
-        // VIEWS STATS
-        $totalViews = $landing?->views ?? 0;
+        // OPTIMIZATION: Single bulk query for ALL click stats
+        $clickStats = $this->statisticsRepository
+            ->getLinkStatsByDateRange($linkIds, $startOfLastWeek, $today)
+            ->keyBy('date');
 
-        $viewsToday = LandingStatistic::where('landing_id', $landingId)
-            ->where('date', $today)
-            ->sum('views');
+        // OPTIMIZATION: Single bulk query for ALL view stats
+        $viewStats = $this->statisticsRepository
+            ->getLandingViewStats($landingId, $startOfWeek)
+            ->keyBy('date');
 
-        $viewsThisWeek = LandingStatistic::where('landing_id', $landingId)
-            ->where('date', '>=', $startOfWeek)
-            ->sum('views');
+        // Calculate periods from cached data
+        $clicksToday = $clickStats->where('date', $today)->sum('visits');
+        $clicksThisWeek = $clickStats->filter(fn($s) => Carbon::parse($s->date) >= $startOfWeek)->sum('visits');
+        $clicksLastWeek = $clickStats->filter(function ($s) use ($startOfLastWeek, $startOfWeek) {
+            $date = Carbon::parse($s->date);
+            return $date >= $startOfLastWeek && $date < $startOfWeek;
+        })->sum('visits');
+        $clicksThisMonth = $clickStats->filter(fn($s) => Carbon::parse($s->date) >= $startOfMonth)->sum('visits');
 
-        $viewsThisMonth = LandingStatistic::where('landing_id', $landingId)
-            ->where('date', '>=', $startOfMonth)
-            ->sum('views');
+        $last30Days = Carbon::today()->subDays(29);
+        $last30DaysClicks = $clickStats->filter(fn($s) => Carbon::parse($s->date) >= $last30Days)->sum('visits');
 
-        // Total clicks (all time)
-        $totalClicks = $links->sum('visited');
-
-        // Clicks today
-        $clicksToday = LinkStatistic::whereIn('link_id', $linkIds)
-            ->where('date', $today)
-            ->sum('visits');
-
-        // Clicks this week
-        $clicksThisWeek = LinkStatistic::whereIn('link_id', $linkIds)
-            ->where('date', '>=', $startOfWeek)
-            ->sum('visits');
-
-        // Clicks last week (for comparison)
-        $clicksLastWeek = LinkStatistic::whereIn('link_id', $linkIds)
-            ->whereBetween('date', [$startOfLastWeek, $endOfLastWeek])
-            ->sum('visits');
-
-        // Clicks this month
-        $clicksThisMonth = LinkStatistic::whereIn('link_id', $linkIds)
-            ->where('date', '>=', $startOfMonth)
-            ->sum('visits');
+        $viewsToday = $viewStats->get($today->toDateString())?->views ?? 0;
+        $viewsThisWeek = $viewStats->sum('views');
+        $viewsThisMonth = $viewStats->filter(fn($s) => Carbon::parse($s->date) >= $startOfMonth)->sum('views');
 
         // Weekly change percentage
         $weeklyChange = $clicksLastWeek > 0
             ? round((($clicksThisWeek - $clicksLastWeek) / $clicksLastWeek) * 100, 1)
             : ($clicksThisWeek > 0 ? 100 : 0);
 
-        // Daily average (last 30 days)
-        $last30DaysClicks = LinkStatistic::whereIn('link_id', $linkIds)
-            ->where('date', '>=', Carbon::today()->subDays(29))
-            ->sum('visits');
         $dailyAverage = round($last30DaysClicks / 30, 1);
+        $totalClicks = $links->sum('visited');
 
-        // Chart data (clicks per day)
+        // Chart data via repository
         $chartData = $this->getAggregatedChartData($linkIds, $chartDays);
-
-        // View chart data
         $viewChartData = $this->getViewChartData($landingId, $chartDays);
 
-        // Top performing links (by clicks)
+        // Top links with bulk sparklines
+        $topLinkIds = $links
+            ->where('state', true)
+            ->where('type', '!=', 'header')
+            ->sortByDesc('visited')
+            ->take(5)
+            ->pluck('id')
+            ->toArray();
+
+        $topLinksSparklines = $this->getStatsForLinks($topLinkIds, 7);
+
         $topLinks = $links
             ->where('state', true)
             ->where('type', '!=', 'header')
             ->sortByDesc('visited')
             ->take(5)
-            ->map(function ($link) use ($linkIds) {
-                $sparkline = $this->getSparklineData($link->id, 7);
+            ->map(function ($link) use ($topLinksSparklines) {
                 return [
                     'id' => $link->id,
                     'title' => $link->text,
                     'type' => $link->type,
                     'clicks' => $link->visited ?? 0,
-                    'sparklineData' => $sparkline,
+                    'sparklineData' => $topLinksSparklines->get($link->id, []),
                 ];
             })
             ->values()
             ->toArray();
 
-        // Links breakdown by type (only clickable types)
+        // Links breakdown by type
         $nonClickableTypes = ['header'];
         $linksByType = $links
             ->where('state', true)
@@ -301,7 +226,7 @@ class StatisticsService
             ->toArray();
 
         return [
-            'totalViews' => $totalViews,
+            'totalViews' => $landing?->views ?? 0,
             'totalClicks' => $totalClicks,
             'totalLinks' => $links->count(),
             'activeLinks' => $links->where('state', true)->count(),
@@ -320,51 +245,39 @@ class StatisticsService
         ];
     }
 
+    protected function getEmptyDashboardStats(): array
+    {
+        return [
+            'totalViews' => 0,
+            'totalClicks' => 0,
+            'totalLinks' => 0,
+            'activeLinks' => 0,
+            'viewsToday' => 0,
+            'viewsThisWeek' => 0,
+            'viewsThisMonth' => 0,
+            'clicksToday' => 0,
+            'clicksThisWeek' => 0,
+            'clicksThisMonth' => 0,
+            'weeklyChange' => 0,
+            'dailyAverage' => 0,
+            'chartData' => [],
+            'viewChartData' => [],
+            'topLinks' => [],
+            'linksByType' => [],
+        ];
+    }
+
     // =======================================================================
     // LANDING VIEWS TRACKING
     // =======================================================================
 
     /**
      * Record a landing page view.
-     * Should only be called for human visitors (use BotDetector first).
      */
     public function recordLandingView(Landing $landing): void
     {
-        // Increment total views count
         $landing->increment('views');
-
-        // Record daily statistic
-        $this->recordDailyLandingStatistic($landing->id);
-    }
-
-    /**
-     * Record daily statistic for a landing view.
-     * Uses upsert to avoid race conditions and unique constraint violations.
-     */
-    protected function recordDailyLandingStatistic(string $landingId): void
-    {
-        $today = Carbon::today();
-
-        $existing = LandingStatistic::where('landing_id', $landingId)
-            ->where('date', $today)
-            ->first();
-
-        if ($existing) {
-            $existing->increment('views');
-        } else {
-            try {
-                LandingStatistic::create([
-                    'landing_id' => $landingId,
-                    'date' => $today,
-                    'views' => 1,
-                ]);
-            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
-                // Race condition: another request created the record
-                LandingStatistic::where('landing_id', $landingId)
-                    ->where('date', $today)
-                    ->increment('views');
-            }
-        }
+        $this->statisticsRepository->recordLandingView($landing->id, Carbon::today());
     }
 
     /**
@@ -381,9 +294,8 @@ class StatisticsService
     public function getViewsForPeriod(string $landingId, int $days = 30): int
     {
         $startDate = Carbon::today()->subDays($days - 1);
-
-        return LandingStatistic::where('landing_id', $landingId)
-            ->where('date', '>=', $startDate)
+        return $this->statisticsRepository
+            ->getLandingViewStats($landingId, $startDate)
             ->sum('views');
     }
 
@@ -394,10 +306,8 @@ class StatisticsService
     {
         $startDate = Carbon::today()->subDays($days - 1);
 
-        $statistics = LandingStatistic::where('landing_id', $landingId)
-            ->where('date', '>=', $startDate)
-            ->orderBy('date', 'asc')
-            ->get()
+        $statistics = $this->statisticsRepository
+            ->getLandingViewStats($landingId, $startDate)
             ->keyBy(fn($stat) => Carbon::parse($stat->date)->format('Y-m-d'));
 
         $chartData = [];
@@ -421,12 +331,8 @@ class StatisticsService
     {
         $startDate = Carbon::today()->subDays($days - 1);
 
-        $statistics = LinkStatistic::whereIn('link_id', $linkIds)
-            ->where('date', '>=', $startDate)
-            ->selectRaw('date, SUM(visits) as total_visits')
-            ->groupBy('date')
-            ->orderBy('date', 'asc')
-            ->get()
+        $statistics = $this->statisticsRepository
+            ->getAggregatedClickStats($linkIds, $startDate)
             ->keyBy(fn($stat) => Carbon::parse($stat->date)->format('Y-m-d'));
 
         $chartData = [];

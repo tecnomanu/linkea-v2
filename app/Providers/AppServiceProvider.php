@@ -25,6 +25,10 @@ class AppServiceProvider extends ServiceProvider
             \App\Repositories\Contracts\LinkRepository::class,
             \App\Repositories\Eloquent\EloquentLinkRepository::class
         );
+        $this->app->bind(
+            \App\Repositories\Contracts\StatisticsRepository::class,
+            \App\Repositories\Eloquent\EloquentStatisticsRepository::class
+        );
 
         // Service singletons (for shared state if needed)
         $this->app->singleton(\App\Services\ImageService::class);

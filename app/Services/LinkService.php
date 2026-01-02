@@ -30,7 +30,21 @@ class LinkService
     }
 
     /**
+     * Get ALL links (blocks + socials) with statistics in a SINGLE query.
+     * OPTIMIZATION: Replaces getBlockLinksWithStats + getSocialLinks to avoid duplicate queries.
+     */
+    public function getAllLinksWithStats(string $landingId): Collection
+    {
+        // Single query for all links (both groups)
+        $links = $this->linkRepository->getByLandingId($landingId);
+
+        // Single batch query for statistics
+        return $this->enrichWithSparklineData($links);
+    }
+
+    /**
      * Get block links (not social) with statistics.
+     * @deprecated Use getAllLinksWithStats() and filter by group in memory
      */
     public function getBlockLinksWithStats(string $landingId): Collection
     {
@@ -43,6 +57,7 @@ class LinkService
 
     /**
      * Get social links for landing with statistics.
+     * @deprecated Use getAllLinksWithStats() and filter by group in memory
      */
     public function getSocialLinks(string $landingId): Collection
     {
