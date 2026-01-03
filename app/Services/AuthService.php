@@ -152,8 +152,8 @@ class AuthService
             'company_id' => $company->id,
         ]);
 
-        // Assign admin role
-        $this->assignRole($user, UserRoles::ADMIN);
+        // Assign user role (regular user, NOT admin)
+        $this->assignRole($user, UserRoles::USER);
 
         // Create default landing with the unique Linkea handle
         $this->landingService->createDefault($user, $linkeaHandle);
