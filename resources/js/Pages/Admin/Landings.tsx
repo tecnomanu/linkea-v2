@@ -4,7 +4,13 @@ import AdminLayout from "@/Layouts/AdminLayout";
 import { router } from "@inertiajs/react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import { ExternalLink, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import {
+    BadgeCheck,
+    ExternalLink,
+    MoreHorizontal,
+    Pencil,
+    Trash2,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface Landing {
@@ -12,10 +18,16 @@ interface Landing {
     name: string;
     slug: string;
     domain_name?: string;
+    logo?: {
+        image?: string;
+        thumb?: string;
+    };
     user?: {
         id: string;
         name: string;
         email: string;
+        verified_at?: string;
+        avatar_thumb?: string;
     };
     company?: {
         id: string;
@@ -116,15 +128,29 @@ export default function Landings({ auth, landings, filters }: LandingsProps) {
             sortable: true,
             render: (landing: Landing) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-500 font-medium">
-                        {landing.name?.charAt(0).toUpperCase() || "L"}
-                    </div>
+                    {landing.logo?.thumb ? (
+                        <img
+                            src={landing.logo.thumb}
+                            alt={landing.name}
+                            className="w-9 h-9 rounded-lg object-cover"
+                        />
+                    ) : (
+                        <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-500 font-medium">
+                            {landing.name?.charAt(0).toUpperCase() || "L"}
+                        </div>
+                    )}
                     <div>
                         <button
                             onClick={() => openLanding(landing)}
                             className="font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                         >
                             {landing.name || "Sin nombre"}
+                            {landing.verify && (
+                                <BadgeCheck
+                                    size={14}
+                                    className="text-blue-500 fill-blue-500/20"
+                                />
+                            )}
                             <ExternalLink size={12} className="opacity-50" />
                         </button>
                         <p className="text-xs text-neutral-500 dark:text-neutral-400">
@@ -139,11 +165,36 @@ export default function Landings({ auth, landings, filters }: LandingsProps) {
             label: "Usuario",
             render: (landing: Landing) =>
                 landing.user ? (
-                    <div>
-                        <p className="font-medium">{landing.user.name}</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                            {landing.user.email}
-                        </p>
+                    <div className="flex items-center gap-2">
+                        {landing.user.avatar_thumb ? (
+                            <img
+                                src={landing.user.avatar_thumb}
+                                alt={landing.user.name}
+                                className="w-8 h-8 rounded-full object-cover"
+                            />
+                        ) : (
+                            <div className="w-8 h-8 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center text-neutral-500 dark:text-neutral-400 text-xs font-medium">
+                                {landing.user.name?.charAt(0).toUpperCase() ||
+                                    "U"}
+                            </div>
+                        )}
+                        <div>
+                            <p className="font-medium">{landing.user.name}</p>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                                    {landing.user.email}
+                                </span>
+                                {landing.user.verified_at ? (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400">
+                                        ✓
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400">
+                                        ✗
+                                    </span>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 ) : (
                     <span className="text-neutral-400">-</span>
@@ -179,21 +230,6 @@ export default function Landings({ auth, landings, filters }: LandingsProps) {
             render: (landing: Landing) => (
                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400">
                     {(landing.total_clicks || 0).toLocaleString()}
-                </span>
-            ),
-        },
-        {
-            key: "verify",
-            label: "Estado",
-            render: (landing: Landing) => (
-                <span
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                        landing.verify
-                            ? "bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400"
-                            : "bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400"
-                    }`}
-                >
-                    {landing.verify ? "Verificado" : "No verificado"}
                 </span>
             ),
         },
@@ -314,13 +350,53 @@ export default function Landings({ auth, landings, filters }: LandingsProps) {
         <AdminLayout title="Admin - Landings" user={auth.user}>
             <div className="p-6 md:p-8 pt-20 md:pt-8">
                 {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-                        Landings
-                    </h1>
-                    <p className="text-neutral-500 dark:text-neutral-400 mt-1">
-                        Gestiona todas las landings del sistema
-                    </p>
+                <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
+                            Landings
+                        </h1>
+                        <p className="text-neutral-500 dark:text-neutral-400 mt-1">
+                            Gestiona todas las landings del sistema
+                        </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm text-neutral-500 dark:text-neutral-400 mr-1">
+                            Ordenar por:
+                        </span>
+                        {[
+                            { label: "Mas vistos", key: "views", dir: "desc" },
+                            {
+                                label: "Mas clicks",
+                                key: "total_clicks",
+                                dir: "desc",
+                            },
+                            {
+                                label: "Recientes",
+                                key: "created_at",
+                                dir: "desc",
+                            },
+                            {
+                                label: "Actualizados",
+                                key: "updated_at",
+                                dir: "desc",
+                            },
+                        ].map((option) => (
+                            <button
+                                key={option.label}
+                                onClick={() =>
+                                    handleSort(option.key, option.dir as "desc")
+                                }
+                                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                                    filters.sort === option.key
+                                        ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+                                        : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
+                                }`}
+                            >
+                                {option.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Data Table */}
