@@ -36,7 +36,8 @@ class AdminService
      */
     public function getLandingsPaginated(Request $request): LengthAwarePaginator
     {
-        $query = Landing::with(['user:id,name,email', 'company:id,name'])
+        $query = Landing::with(['user:id,name,email,verified_at,avatar', 'company:id,name'])
+            ->select(['id', 'name', 'slug', 'logo', 'verify', 'domain_name', 'views', 'company_id', 'user_id', 'created_at', 'updated_at'])
             ->withCount('links')
             ->withSum('links as total_clicks', 'visited');
 
@@ -190,7 +191,7 @@ class AdminService
     public function sendNotificationToAll(Notification $notification): void
     {
         $users = User::all();
-        
+
         foreach ($users as $user) {
             if (!$notification->users()->where('user_id', $user->id)->exists()) {
                 $notification->users()->attach($user->id, [
@@ -227,4 +228,3 @@ class AdminService
         $query->orderBy($sortField, $sortDirection);
     }
 }
-

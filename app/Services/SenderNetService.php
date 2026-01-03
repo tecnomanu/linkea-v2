@@ -125,6 +125,27 @@ class SenderNetService
     }
 
     /**
+     * Build tags for a verified user (e.g., social login).
+     * Forces verified status regardless of model state.
+     * 
+     * @param User $user The user
+     * @return array Array of tag names
+     */
+    public function buildTagsForVerifiedUser(User $user): array
+    {
+        $tags = [self::TAG_VERIFIED];
+
+        // Legacy user (migrated from MongoDB)
+        if ($user->mongo_id) {
+            $tags[] = self::TAG_LEGACY;
+        }
+
+        $tags[] = self::TAG_FREEMIUM;
+
+        return $tags;
+    }
+
+    /**
      * Get tags to add when user verifies their email.
      * Returns tags to add and tags to remove (prefixed with -).
      * 
@@ -149,12 +170,14 @@ class SenderNetService
      * @param User $user The user to add
      * @param array $extraGroups Optional additional group IDs to assign
      * @param bool $triggerAutomation Whether to trigger automations
+     * @param bool $forceVerified Force verified status (for social login users)
      * @return array|null The subscriber data or null on failure
      */
     public function addSubscriber(
         User $user,
         array $extraGroups = [],
-        bool $triggerAutomation = true
+        bool $triggerAutomation = true,
+        bool $forceVerified = false
     ): ?array {
         if (!$this->isEnabled()) {
             Log::info('SenderNet integration disabled, skipping addSubscriber');
@@ -178,8 +201,10 @@ class SenderNetService
             }
             $groups = array_merge($groups, $extraGroups);
 
-            // Build tags based on user state
-            $tags = $this->buildTagsForUser($user);
+            // Build tags based on user state, respecting forceVerified flag
+            $tags = $forceVerified
+                ? $this->buildTagsForVerifiedUser($user)
+                : $this->buildTagsForUser($user);
 
             // Improved name resolution
             $firstName = $user->first_name;

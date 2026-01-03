@@ -167,8 +167,10 @@ class AuthService
         }
 
         // Dispatch CRM/Marketing jobs (queued)
+        // isVerified=true for social login users who are already verified
+        $isVerified = (bool) $user->verified_at;
         AddToMautic::dispatch($user);
-        AddToSenderNet::dispatch($user);
+        AddToSenderNet::dispatch($user, [], true, $isVerified);
     }
 
     /**

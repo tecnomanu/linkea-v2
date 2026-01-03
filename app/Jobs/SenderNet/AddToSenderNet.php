@@ -47,19 +47,27 @@ class AddToSenderNet implements ShouldQueue
     protected bool $triggerAutomation;
 
     /**
+     * Whether the user is already verified (e.g., from social login).
+     */
+    protected bool $isVerified;
+
+    /**
      * Create a new job instance.
      *
      * @param User $user The user to add
      * @param array $groups Optional group IDs
      * @param bool $triggerAutomation Whether to trigger automations
+     * @param bool $isVerified Whether user is already verified (social login)
      */
     public function __construct(
         public User $user,
         array $groups = [],
-        bool $triggerAutomation = true
+        bool $triggerAutomation = true,
+        bool $isVerified = false
     ) {
         $this->groups = $groups;
         $this->triggerAutomation = $triggerAutomation;
+        $this->isVerified = $isVerified;
     }
 
     /**
@@ -70,7 +78,8 @@ class AddToSenderNet implements ShouldQueue
         $senderNetService->addSubscriber(
             $this->user,
             $this->groups,
-            $this->triggerAutomation
+            $this->triggerAutomation,
+            $this->isVerified
         );
     }
 }
