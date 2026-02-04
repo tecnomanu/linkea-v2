@@ -69,7 +69,15 @@ export default function Landings({ auth, landings, filters }: LandingsProps) {
         isOpen: false,
         landing: null,
     });
+    const [blockModal, setBlockModal] = useState<{
+        isOpen: boolean;
+        landing: Landing | null;
+    }>({
+        isOpen: false,
+        landing: null,
+    });
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isBlocking, setIsBlocking] = useState(false);
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
     const handleSearch = (query: string) => {
@@ -122,6 +130,27 @@ export default function Landings({ auth, landings, filters }: LandingsProps) {
     const openLanding = (landing: Landing) => {
         const url = landing.domain_name || landing.slug;
         window.open(`/${url}`, "_blank");
+    };
+
+    const handleToggleBlock = async () => {
+        if (!blockModal.landing) return;
+
+        setIsBlocking(true);
+        router.post(
+            route("admin.landings.toggle-block", blockModal.landing.id),
+            {},
+            {
+                preserveState: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    setBlockModal({ isOpen: false, landing: null });
+                    setIsBlocking(false);
+                },
+                onError: () => {
+                    setIsBlocking(false);
+                },
+            },
+        );
     };
 
     const columns = [
@@ -340,17 +369,7 @@ export default function Landings({ auth, landings, filters }: LandingsProps) {
                             </button>
                             <button
                                 onClick={() => {
-                                    router.post(
-                                        route(
-                                            "admin.landings.toggle-block",
-                                            landing.id,
-                                        ),
-                                        {},
-                                        {
-                                            preserveState: true,
-                                            preserveScroll: true,
-                                        },
-                                    );
+                                    setBlockModal({ isOpen: true, landing });
                                     setOpenDropdown(null);
                                 }}
                                 className={`w-full flex items-center gap-2 px-4 py-2 text-sm ${
@@ -475,6 +494,28 @@ export default function Landings({ auth, landings, filters }: LandingsProps) {
                 confirmText="Eliminar"
                 isLoading={isDeleting}
                 variant="danger"
+            />
+
+            {/* Block Confirmation Modal */}
+            <ConfirmModal
+                isOpen={blockModal.isOpen}
+                onClose={() => setBlockModal({ isOpen: false, landing: null })}
+                onConfirm={handleToggleBlock}
+                title={
+                    blockModal.landing?.is_blocked
+                        ? "Desbloquear landing"
+                        : "Bloquear landing"
+                }
+                message={
+                    blockModal.landing?.is_blocked
+                        ? `¿Deseas desbloquear "${blockModal.landing?.name}"? La landing volverá a ser visible en la galería y accesible por link.`
+                        : `¿Deseas bloquear "${blockModal.landing?.name}"? La landing dejará de aparecer en la galería, no será accesible por link y el usuario no podrá iniciar sesión.`
+                }
+                confirmText={
+                    blockModal.landing?.is_blocked ? "Desbloquear" : "Bloquear"
+                }
+                isLoading={isBlocking}
+                variant={blockModal.landing?.is_blocked ? "info" : "warning"}
             />
         </AdminLayout>
     );

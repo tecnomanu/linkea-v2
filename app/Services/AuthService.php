@@ -39,24 +39,36 @@ class AuthService
     /**
      * Attempt login with identifier (email or landing slug).
      * Supports login with email address OR linkea handle (landing slug).
+     *
+     * @return array{success: bool, error?: string}
      */
-    public function loginWithIdentifier(string $identifier, string $password): bool
+    public function loginWithIdentifier(string $identifier, string $password): array
     {
         $identifier = strtolower(trim($identifier));
         $user = $this->findUserByIdentifier($identifier);
 
         if (!$user) {
-            return false;
+            return ['success' => false, 'error' => 'credentials'];
+        }
+
+        // Check if user's landing is blocked
+        $landing = Landing::where('user_id', $user->id)->first();
+        if ($landing && $landing->is_blocked) {
+            return [
+                'success' => false,
+                'error' => 'blocked',
+                'message' => 'Tu cuenta ha sido suspendida. Contacta al administrador para más información.',
+            ];
         }
 
         if (!Auth::attempt(['email' => $user->email, 'password' => $password])) {
-            return false;
+            return ['success' => false, 'error' => 'credentials'];
         }
 
         // Dispatch Mautic job to update last active (queued)
         UpdateLastActiveMautic::dispatch($user);
 
-        return true;
+        return ['success' => true];
     }
 
     /**

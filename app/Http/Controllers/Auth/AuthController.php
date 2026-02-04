@@ -39,9 +39,18 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        if ($this->authService->loginWithIdentifier($credentials['identifier'], $credentials['password'])) {
+        $result = $this->authService->loginWithIdentifier($credentials['identifier'], $credentials['password']);
+
+        if ($result['success']) {
             $request->session()->regenerate();
             return redirect()->intended('/panel');
+        }
+
+        // Handle blocked user
+        if (($result['error'] ?? '') === 'blocked') {
+            return back()->withErrors([
+                'identifier' => $result['message'] ?? 'Tu cuenta ha sido suspendida.',
+            ]);
         }
 
         return back()->withErrors([
