@@ -73,6 +73,13 @@ class SystemRouterController extends Controller
         $landing = $this->landingService->findBySlugOrDomainWithLinks($path);
 
         if ($landing) {
+            // Check if landing is blocked - show blocked page
+            if ($landing->is_blocked) {
+                return Inertia::render('BlockedLanding', [
+                    'handle' => $landing->domain_name ?? $landing->slug,
+                ]);
+            }
+
             $resource = new PublicLandingResource($landing);
             $data = $resource->resolve();
 

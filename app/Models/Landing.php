@@ -20,6 +20,7 @@ class Landing extends Model
         'slug',
         'logo',
         'verify',
+        'is_blocked',
         'domain_name',
         'views',
         'company_id',
@@ -33,6 +34,7 @@ class Landing extends Model
         'template_config' => 'array',
         'options' => 'array',
         'verify' => 'boolean',
+        'is_blocked' => 'boolean',
     ];
 
     protected $appends = ['text'];

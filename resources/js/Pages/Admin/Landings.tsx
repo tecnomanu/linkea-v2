@@ -7,6 +7,8 @@ import { es } from "date-fns/locale";
 import {
     BadgeCheck,
     ExternalLink,
+    Lock as LockIcon,
+    LockOpen as LockOpenIcon,
     MoreHorizontal,
     Pencil,
     Trash2,
@@ -37,6 +39,7 @@ interface Landing {
     views: number;
     total_clicks: number;
     verify: boolean;
+    is_blocked: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -73,7 +76,7 @@ export default function Landings({ auth, landings, filters }: LandingsProps) {
         router.get(
             route("admin.landings"),
             { search: query, page: 1 },
-            { preserveState: true, preserveScroll: true }
+            { preserveState: true, preserveScroll: true },
         );
     };
 
@@ -81,7 +84,7 @@ export default function Landings({ auth, landings, filters }: LandingsProps) {
         router.get(
             route("admin.landings"),
             { ...filters, page },
-            { preserveState: true, preserveScroll: true }
+            { preserveState: true, preserveScroll: true },
         );
     };
 
@@ -89,7 +92,7 @@ export default function Landings({ auth, landings, filters }: LandingsProps) {
         router.get(
             route("admin.landings"),
             { ...filters, per_page: perPage, page: 1 },
-            { preserveState: true, preserveScroll: true }
+            { preserveState: true, preserveScroll: true },
         );
     };
 
@@ -97,7 +100,7 @@ export default function Landings({ auth, landings, filters }: LandingsProps) {
         router.get(
             route("admin.landings"),
             { ...filters, sort: key, direction },
-            { preserveState: true, preserveScroll: true }
+            { preserveState: true, preserveScroll: true },
         );
     };
 
@@ -151,10 +154,18 @@ export default function Landings({ auth, landings, filters }: LandingsProps) {
                                     className="text-blue-500 fill-blue-500/20"
                                 />
                             )}
+                            {landing.is_blocked && (
+                                <LockIcon size={14} className="text-red-500" />
+                            )}
                             <ExternalLink size={12} className="opacity-50" />
                         </button>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
                             /{landing.domain_name || landing.slug}
+                            {landing.is_blocked && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400">
+                                    Bloqueada
+                                </span>
+                            )}
                         </p>
                     </div>
                 </div>
@@ -315,7 +326,10 @@ export default function Landings({ auth, landings, filters }: LandingsProps) {
                             <button
                                 onClick={() => {
                                     router.visit(
-                                        route("admin.landings.edit", landing.id)
+                                        route(
+                                            "admin.landings.edit",
+                                            landing.id,
+                                        ),
                                     );
                                     setOpenDropdown(null);
                                 }}
@@ -323,6 +337,39 @@ export default function Landings({ auth, landings, filters }: LandingsProps) {
                             >
                                 <Pencil size={14} />
                                 Editar
+                            </button>
+                            <button
+                                onClick={() => {
+                                    router.post(
+                                        route(
+                                            "admin.landings.toggle-block",
+                                            landing.id,
+                                        ),
+                                        {},
+                                        {
+                                            preserveState: true,
+                                            preserveScroll: true,
+                                        },
+                                    );
+                                    setOpenDropdown(null);
+                                }}
+                                className={`w-full flex items-center gap-2 px-4 py-2 text-sm ${
+                                    landing.is_blocked
+                                        ? "text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10"
+                                        : "text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10"
+                                }`}
+                            >
+                                {landing.is_blocked ? (
+                                    <>
+                                        <LockOpenIcon size={14} />
+                                        Desbloquear
+                                    </>
+                                ) : (
+                                    <>
+                                        <LockIcon size={14} />
+                                        Bloquear
+                                    </>
+                                )}
                             </button>
                             <hr className="my-1 border-neutral-200 dark:border-neutral-700" />
                             <button

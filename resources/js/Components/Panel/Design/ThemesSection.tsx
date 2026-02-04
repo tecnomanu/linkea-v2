@@ -5,7 +5,7 @@
 import { Input } from "@/Components/ui/Input";
 import { MAX_SAVED_THEMES } from "@/constants/designOptions";
 import { getThemePreset, THEME_PRESETS } from "@/constants/themePresets";
-import { SavedCustomTheme, LandingProfile } from "@/types/index";
+import { LandingProfile, SavedCustomTheme } from "@/types/index";
 import { Grid, Save, Sparkles, Trash2, X } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 
@@ -70,13 +70,26 @@ export const ThemesSection: React.FC<ThemesSectionProps> = ({
                     });
                 }
 
+                // Check if user has an actual uploaded background image (not a gradient)
+                const currentBg = landing.customDesign.backgroundImage;
+                const hasUploadedImage =
+                    typeof currentBg === "string" &&
+                    (currentBg.includes("http") ||
+                        currentBg.includes("data:image"));
+
+                // Use preset's backgroundImage (gradient) if available,
+                // unless user has an uploaded image
+                const newBackgroundImage = hasUploadedImage
+                    ? currentBg
+                    : preset.backgroundImage || undefined;
+
                 onUpdateLanding({
                     theme: themeId as any,
                     customDesign: {
                         ...landing.customDesign,
                         backgroundColor: preset.backgroundColor,
-                        backgroundImage: landing.customDesign.backgroundImage,
-                        backgroundEnabled: false,
+                        backgroundImage: newBackgroundImage,
+                        backgroundEnabled: hasUploadedImage,
                         buttonStyle: preset.buttonStyle,
                         buttonShape: preset.buttonShape,
                         buttonColor: preset.buttonColor,
@@ -86,7 +99,12 @@ export const ThemesSection: React.FC<ThemesSectionProps> = ({
                 });
             }
         },
-        [landing.customDesign, landing.theme, landing.savedCustomThemes, onUpdateLanding]
+        [
+            landing.customDesign,
+            landing.theme,
+            landing.savedCustomThemes,
+            onUpdateLanding,
+        ]
     );
 
     // Handle selecting "custom" theme
@@ -158,7 +176,8 @@ export const ThemesSection: React.FC<ThemesSectionProps> = ({
     const handleDeleteSavedTheme = useCallback(
         (themeId: string) => {
             const updatedThemes =
-                landing.savedCustomThemes?.filter((t) => t.id !== themeId) || [];
+                landing.savedCustomThemes?.filter((t) => t.id !== themeId) ||
+                [];
 
             if (landing.theme === themeId) {
                 onUpdateLanding({
@@ -371,8 +390,8 @@ export const ThemesSection: React.FC<ThemesSectionProps> = ({
                             backgroundColor:
                                 landing.theme === "custom"
                                     ? landing.customDesign.backgroundColor
-                                    : landing.lastCustomDesign?.backgroundColor ||
-                                      "#f5f5f5",
+                                    : landing.lastCustomDesign
+                                          ?.backgroundColor || "#f5f5f5",
                         }}
                     />
                     <div className="absolute inset-0 flex items-center justify-center">

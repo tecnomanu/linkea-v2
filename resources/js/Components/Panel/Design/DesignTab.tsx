@@ -27,6 +27,7 @@
  * Actual saving is handled by AutoSaveContext (debounced auto-save or manual save)
  */
 
+import { getThemePreset } from "@/constants/themePresets";
 import { CustomDesignConfig, LandingProfile } from "@/types/index";
 import React, { useCallback, useMemo } from "react";
 import { AppearanceSection } from "./AppearanceSection";
@@ -73,7 +74,24 @@ export const DesignTab: React.FC<DesignTabProps> = ({
      */
     const handleCustomDesignChange = useCallback(
         (key: keyof CustomDesignConfig, value: any) => {
-            const newCustomDesign = { ...landing.customDesign, [key]: value };
+            // FIX: Ensure background gradient from preset is preserved when switching to custom
+            let currentBg = landing.customDesign.backgroundImage;
+
+            // If we don't have an explicit background image in customDesign,
+            // but we are currently on a preset theme that HAS a background (gradient),
+            // we must carry it over to the new custom design state to prevent losing it.
+            if (landing.theme !== "custom") {
+                const preset = getThemePreset(landing.theme);
+                if (preset?.backgroundImage) {
+                    currentBg = preset.backgroundImage;
+                }
+            }
+
+            const newCustomDesign = {
+                ...landing.customDesign,
+                [key]: value,
+                backgroundImage: currentBg,
+            };
 
             if (currentSavedTheme) {
                 // Editing a saved theme: update it in the array
@@ -98,6 +116,7 @@ export const DesignTab: React.FC<DesignTabProps> = ({
         [
             landing.customDesign,
             landing.savedCustomThemes,
+            landing.theme,
             currentSavedTheme,
             onUpdateLanding,
         ]

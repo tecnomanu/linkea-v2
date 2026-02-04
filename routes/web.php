@@ -79,6 +79,7 @@ Route::middleware(['auth', 'root'])->prefix('admin')->name('admin.')->group(func
 
     // Landings Management
     Route::get('/landings', [AdminController::class, 'landings'])->name('landings');
+    Route::post('/landings/{landing}/toggle-block', [AdminController::class, 'toggleLandingBlock'])->name('landings.toggle-block');
     Route::delete('/landings/{landing}', [AdminController::class, 'destroyLanding'])->name('landings.destroy');
 
     // Users Management

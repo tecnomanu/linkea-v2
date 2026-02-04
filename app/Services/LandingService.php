@@ -279,6 +279,7 @@ class LandingService
     {
         $query = Landing::query()
             ->where('verify', true)
+            ->where('is_blocked', false)
             // Only real avatars (no generated ones)
             ->where('logo', 'NOT LIKE', '%dicebear%')
             // Must have been modified after creation (shows activity)
@@ -398,6 +399,7 @@ class LandingService
             return Landing::query()
                 ->where('logo', 'NOT LIKE', '%dicebear%')
                 ->where('verify', true)
+                ->where('is_blocked', false)
                 ->has('links', '>=', 2)
                 ->pluck('id')
                 ->toArray();

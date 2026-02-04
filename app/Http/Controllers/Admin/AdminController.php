@@ -50,6 +50,21 @@ class AdminController extends Controller
     }
 
     /**
+     * Toggle landing blocked status.
+     */
+    public function toggleLandingBlock(Landing $landing)
+    {
+        $landing->is_blocked = !$landing->is_blocked;
+        $landing->save();
+
+        $message = $landing->is_blocked
+            ? 'Landing bloqueada correctamente.'
+            : 'Landing desbloqueada correctamente.';
+
+        return redirect()->back()->with('success', $message);
+    }
+
+    /**
      * List all users with pagination.
      */
     public function users(Request $request)
