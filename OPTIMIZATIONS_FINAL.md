@@ -205,3 +205,5 @@ cache()->has('landing_dashboard_stats:YOUR_LANDING_ID:30'); // Debería ser true
 
 **Mejora estimada: 70-85% más rápido** 🚀
 
+
+
